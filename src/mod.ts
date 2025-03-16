@@ -1,3 +1,5 @@
+import { join } from "std/path/mod.ts";
+
 interface PromptConfig {
   base_dir: string;
 }
@@ -28,8 +30,11 @@ export class BreakdownConfig {
   private workingDir: string = "";
   private appConfig: AppConfig | null = null;
   private userConfig: UserConfig | null = null;
+  private baseDir: string;
 
-  constructor() {}
+  constructor(baseDir: string = "") {
+    this.baseDir = baseDir;
+  }
 
   /**
    * Loads both application and user configurations
@@ -40,13 +45,31 @@ export class BreakdownConfig {
   }
 
   /**
-   * Loads the application configuration from /breakdown/config/app.json
+   * Loads the application configuration from breakdown/config/app.json
    * @throws Error if the config file is missing or invalid
    */
   private async loadAppConfig(): Promise<void> {
     try {
-      const text = await Deno.readTextFile("/breakdown/config/app.json");
-      const config = JSON.parse(text) as ConfigRecord;
+      const configPath = this.baseDir ? 
+        join(this.baseDir, "breakdown", "config", "app.json") :
+        join("breakdown", "config", "app.json");
+
+      let text: string;
+      try {
+        text = await Deno.readTextFile(configPath);
+      } catch (error) {
+        if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
+          throw new Error("Application config file not found");
+        }
+        throw error;
+      }
+
+      let config: ConfigRecord;
+      try {
+        config = JSON.parse(text) as ConfigRecord;
+      } catch {
+        throw new Error("Invalid JSON in application config file");
+      }
 
       // Validate required fields
       if (!this.validateAppConfig(config)) {
@@ -65,10 +88,10 @@ export class BreakdownConfig {
       };
       this.workingDir = this.appConfig.working_dir;
     } catch (error) {
-      if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
-        throw new Error("Application config file not found");
+      if (error instanceof Error) {
+        throw error;
       }
-      throw error;
+      throw new Error("Failed to load application config");
     }
   }
 
@@ -76,9 +99,32 @@ export class BreakdownConfig {
    * Loads the user configuration from $working_dir/config/user.json if it exists
    */
   private async loadUserConfig(): Promise<void> {
+    if (!this.workingDir) {
+      throw new Error("Working directory not set");
+    }
+
     try {
-      const text = await Deno.readTextFile(`${this.workingDir}/config/user.json`);
-      const config = JSON.parse(text) as ConfigRecord;
+      const configPath = this.baseDir ?
+        join(this.baseDir, this.workingDir, "config", "user.json") :
+        join(this.workingDir, "config", "user.json");
+
+      let text: string;
+      try {
+        text = await Deno.readTextFile(configPath);
+      } catch (error) {
+        if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
+          // User config is optional, so we just ignore if it's missing
+          return;
+        }
+        throw error;
+      }
+
+      let config: ConfigRecord;
+      try {
+        config = JSON.parse(text) as ConfigRecord;
+      } catch {
+        throw new Error("Invalid JSON in user config file");
+      }
 
       // Validate and transform user config
       const userConfig: UserConfig = {};
@@ -93,11 +139,10 @@ export class BreakdownConfig {
 
       this.userConfig = userConfig;
     } catch (error) {
-      if (error instanceof Error && 'code' in error && error.code === 'ENOENT') {
-        // User config is optional, so we just ignore if it's missing
-        return;
+      if (error instanceof Error) {
+        throw error;
       }
-      throw error;
+      throw new Error("Failed to load user config");
     }
   }
 
