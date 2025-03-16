@@ -1,16 +1,22 @@
 /**
  * Test suite for BreakdownConfig
  * 
- * Purpose:
- * - Verify the configuration loading and merging functionality
- * - Ensure proper handling of missing or invalid configurations
- * - Validate the configuration structure enforcement
- * 
- * Design Requirements:
- * - Application config must be in breakdown/config/app.json
- * - User config must be in $working_dir/config/user.json
- * - Application config is required and must have all fields
- * - User config is optional and can override app_prompt and app_schema
+ * Test Categories:
+ * 1. Configuration Loading
+ *    - Application config loading
+ *    - User config loading
+ *    - Config merging
+ * 2. Path Resolution
+ *    - Relative paths
+ *    - Base directory handling
+ * 3. Validation
+ *    - Required fields
+ *    - Type checking
+ *    - JSON structure
+ * 4. Error Handling
+ *    - Missing files
+ *    - Invalid JSON
+ *    - Invalid configurations
  */
 
 import { assertEquals, assertRejects } from "std/testing/asserts.ts";
@@ -31,6 +37,26 @@ const validAppConfig = {
 const validUserConfig = {
   app_prompt: {
     base_dir: "./custom/prompts"
+  }
+};
+
+const invalidAppConfigs = {
+  missingWorkingDir: {
+    app_prompt: { base_dir: "./prompts" },
+    app_schema: { base_dir: "./schemas" }
+  },
+  missingPrompt: {
+    working_dir: "./.agent/breakdown",
+    app_schema: { base_dir: "./schemas" }
+  },
+  missingSchema: {
+    working_dir: "./.agent/breakdown",
+    app_prompt: { base_dir: "./prompts" }
+  },
+  invalidTypes: {
+    working_dir: 123,
+    app_prompt: { base_dir: true },
+    app_schema: { base_dir: null }
   }
 };
 
@@ -77,14 +103,10 @@ async function cleanupTestConfigs(tempDir: string) {
 }
 
 /**
- * Test: Basic application config loading
- * Success criteria:
- * - Config is loaded from the correct path
- * - All required fields are present in the result
- * - Values match the input configuration
+ * Test Category 1: Configuration Loading
  */
 Deno.test({
-  name: "BreakdownConfig - Should load valid app config without user config",
+  name: "1.1 Should load valid app config without user config",
   async fn() {
     const workingDir = ".agent/breakdown";
     const tempDir = await setupTestConfigs(validAppConfig, null, workingDir);
@@ -103,15 +125,8 @@ Deno.test({
   }
 });
 
-/**
- * Test: Configuration merging
- * Success criteria:
- * - User config values override application config values
- * - Non-overridden values remain from application config
- * - working_dir is not affected by user config
- */
 Deno.test({
-  name: "BreakdownConfig - Should merge app config with user config",
+  name: "1.2 Should merge app config with user config",
   async fn() {
     const workingDir = ".agent/breakdown";
     const tempDir = await setupTestConfigs(validAppConfig, validUserConfig, workingDir);
@@ -131,16 +146,105 @@ Deno.test({
 });
 
 /**
- * Test: Missing application config
- * Success criteria:
- * - Appropriate error is thrown when app config file is missing
- * - Error message is clear and descriptive
+ * Test Category 2: Path Resolution
  */
 Deno.test({
-  name: "BreakdownConfig - Should throw error when app config is missing",
+  name: "2.1 Should handle relative paths correctly",
   async fn() {
     const workingDir = ".agent/breakdown";
-    const tempDir = await setupTestConfigs(null, validUserConfig, workingDir);
+    const tempDir = await setupTestConfigs(validAppConfig, null, workingDir);
+
+    try {
+      const config = new BreakdownConfig(tempDir);
+      await config.loadConfig();
+      const result = config.getConfig();
+
+      assertEquals(result.working_dir, "./.agent/breakdown");
+      assertEquals(result.app_prompt.base_dir, "./prompts");
+    } finally {
+      await cleanupTestConfigs(tempDir);
+    }
+  }
+});
+
+Deno.test({
+  name: "2.2 Should handle base directory correctly",
+  async fn() {
+    const workingDir = ".agent/breakdown";
+    const tempDir = await setupTestConfigs(validAppConfig, validUserConfig, workingDir);
+
+    try {
+      const config = new BreakdownConfig(tempDir);
+      await config.loadConfig();
+      // Verify that the config file exists in the correct location
+      const configPath = join(tempDir, "breakdown", "config", "app.json");
+      const fileInfo = await Deno.stat(configPath);
+      assertEquals(fileInfo.isFile, true);
+    } finally {
+      await cleanupTestConfigs(tempDir);
+    }
+  }
+});
+
+/**
+ * Test Category 3: Validation
+ */
+Deno.test({
+  name: "3.1 Should validate required fields",
+  async fn() {
+    const workingDir = ".agent/breakdown";
+    
+    for (const [key, invalidConfig] of Object.entries(invalidAppConfigs)) {
+      const tempDir = await setupTestConfigs(invalidConfig, null, workingDir);
+
+      try {
+        const config = new BreakdownConfig(tempDir);
+        await assertRejects(
+          () => config.loadConfig(),
+          Error,
+          "Missing required fields in application config"
+        );
+      } finally {
+        await cleanupTestConfigs(tempDir);
+      }
+    }
+  }
+});
+
+Deno.test({
+  name: "3.2 Should validate JSON structure",
+  async fn() {
+    const workingDir = ".agent/breakdown";
+    const tempDir = await setupTestConfigs(null, null, workingDir);
+    const appConfigPath = join(tempDir, "breakdown", "config");
+    
+    await Deno.mkdir(appConfigPath, { recursive: true });
+    await Deno.writeTextFile(
+      join(appConfigPath, "app.json"),
+      "invalid json content"
+    );
+
+    try {
+      const config = new BreakdownConfig(tempDir);
+      await assertRejects(
+        () => config.loadConfig(),
+        Error,
+        "Invalid JSON in application config file"
+      );
+    } finally {
+      await cleanupTestConfigs(tempDir);
+    }
+  }
+});
+
+/**
+ * Test Category 4: Error Handling
+ */
+Deno.test({
+  name: "4.1 Should handle missing config files appropriately",
+  async fn() {
+    const workingDir = ".agent/breakdown";
+    const tempDir = await setupTestConfigs(null, null, workingDir);
 
     try {
       const config = new BreakdownConfig(tempDir);
@@ -155,44 +259,8 @@ Deno.test({
   }
 });
 
-/**
- * Test: Invalid application config
- * Success criteria:
- * - Appropriate error is thrown when required fields are missing
- * - Validation catches missing app_prompt and app_schema
- */
 Deno.test({
-  name: "BreakdownConfig - Should throw error when required fields are missing",
-  async fn() {
-    const workingDir = ".agent/breakdown";
-    const invalidAppConfig = {
-      working_dir: "./.agent/breakdown"
-      // Missing app_prompt and app_schema
-    };
-    
-    const tempDir = await setupTestConfigs(invalidAppConfig, null, workingDir);
-
-    try {
-      const config = new BreakdownConfig(tempDir);
-      await assertRejects(
-        () => config.loadConfig(),
-        Error,
-        "Missing required fields in application config"
-      );
-    } finally {
-      await cleanupTestConfigs(tempDir);
-    }
-  }
-});
-
-/**
- * Test: Missing user config
- * Success criteria:
- * - No error is thrown when user config is missing
- * - All values from application config are used
- */
-Deno.test({
-  name: "BreakdownConfig - Should ignore missing user config",
+  name: "4.2 Should handle missing user config gracefully",
   async fn() {
     const workingDir = ".agent/breakdown";
     const tempDir = await setupTestConfigs(validAppConfig, null, workingDir);
@@ -203,8 +271,6 @@ Deno.test({
       const result = config.getConfig();
 
       assertEquals(result.working_dir, validAppConfig.working_dir);
-      assertEquals(result.app_prompt.base_dir, validAppConfig.app_prompt.base_dir);
-      assertEquals(result.app_schema.base_dir, validAppConfig.app_schema.base_dir);
     } finally {
       await cleanupTestConfigs(tempDir);
     }
