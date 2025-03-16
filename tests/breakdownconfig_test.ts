@@ -227,6 +227,44 @@ Deno.test({
   }
 });
 
+Deno.test({
+  name: "2.3 Should verify config file creation and cleanup",
+  async fn() {
+    const workingDir = ".agent/breakdown";
+    const tempDir = await setupTestConfigs(validAppConfig, validUserConfig, workingDir);
+
+    try {
+      // Verify that files are created
+      const appConfigPath = join(tempDir, "breakdown", "config", "app.json");
+      const userConfigPath = join(tempDir, workingDir, "config", "user.json");
+      
+      // Check app.json
+      const appFileInfo = await Deno.stat(appConfigPath);
+      assertEquals(appFileInfo.isFile, true);
+      
+      // Check user.json
+      const userFileInfo = await Deno.stat(userConfigPath);
+      assertEquals(userFileInfo.isFile, true);
+      
+      // Verify file contents
+      const appConfigContent = JSON.parse(await Deno.readTextFile(appConfigPath));
+      assertEquals(appConfigContent, validAppConfig);
+      
+      const userConfigContent = JSON.parse(await Deno.readTextFile(userConfigPath));
+      assertEquals(userConfigContent, validUserConfig);
+    } finally {
+      await cleanupTestConfigs(tempDir);
+      
+      // Verify cleanup
+      await assertRejects(
+        () => Deno.stat(tempDir),
+        Deno.errors.NotFound,
+        undefined
+      );
+    }
+  }
+});
+
 /**
  * Test Category 3: Validation
  */
