@@ -2,8 +2,9 @@
   "name": "breakdownconfig",
   "version": "1.0.0",
   "description": "A Deno library for managing application and user configurations",
-  "author": "Your Name",
+  "author": "tettuan",
   "license": "MIT",
+  "exports": "./src/mod.ts",
   "compilerOptions": {
     "strict": true,
     "allowJs": true,
