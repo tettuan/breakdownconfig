@@ -1,3 +1,20 @@
+/**
+ * Debug Logger Utility
+ * 
+ * Provides logging functionality for debugging purposes.
+ * Logs are only output when LOG_LEVEL=debug is set in the environment.
+ */
+
+/**
+ * Log a debug message if debug logging is enabled
+ * @param message - The message to log
+ */
+export function debug(message: string): void {
+  if (Deno.env.get("LOG_LEVEL") === "debug") {
+    console.debug(`[DEBUG] ${message}`);
+  }
+}
+
 // デバッグ用ロガー - 詳細なチェックポイントログを提供
 
 // LogLevelの定義
