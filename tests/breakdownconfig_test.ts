@@ -60,6 +60,47 @@ const invalidAppConfigs = {
   }
 };
 
+const extraFieldConfigs = {
+  rootLevel: {
+    working_dir: "./.agent/breakdown",
+    app_prompt: {
+      base_dir: "./prompts"
+    },
+    app_schema: {
+      base_dir: "./schemas"
+    },
+    extra_field: "should be ignored",
+    another_extra: {
+      nested: "value"
+    }
+  },
+  nestedLevel: {
+    working_dir: "./.agent/breakdown",
+    app_prompt: {
+      base_dir: "./prompts",
+      unknown_setting: true,
+      extra: {
+        deeply: {
+          nested: "value"
+        }
+      }
+    },
+    app_schema: {
+      base_dir: "./schemas",
+      custom_option: 123
+    }
+  },
+  emptyStrings: {
+    working_dir: "",
+    app_prompt: {
+      base_dir: ""
+    },
+    app_schema: {
+      base_dir: "./schemas"
+    }
+  }
+};
+
 // Helper function to create temporary config files
 async function setupTestConfigs(
   appConfig: Record<string, unknown> | null,
@@ -230,6 +271,67 @@ Deno.test({
         () => config.loadConfig(),
         Error,
         "Invalid JSON in application config file"
+      );
+    } finally {
+      await cleanupTestConfigs(tempDir);
+    }
+  }
+});
+
+Deno.test({
+  name: "3.3 Should accept extra configuration fields",
+  async fn() {
+    const workingDir = ".agent/breakdown";
+    
+    // Test root level extra fields
+    let tempDir = await setupTestConfigs(extraFieldConfigs.rootLevel, null, workingDir);
+    try {
+      const config = new BreakdownConfig(tempDir);
+      await config.loadConfig();
+      const result = config.getConfig();
+      
+      // Verify that required fields are present and correct
+      assertEquals(result.working_dir, extraFieldConfigs.rootLevel.working_dir);
+      assertEquals(result.app_prompt.base_dir, extraFieldConfigs.rootLevel.app_prompt.base_dir);
+      assertEquals(result.app_schema.base_dir, extraFieldConfigs.rootLevel.app_schema.base_dir);
+      
+      // Verify that extra fields are not included in the result
+      assertEquals(
+        Object.keys(result).sort(),
+        ["working_dir", "app_prompt", "app_schema"].sort()
+      );
+    } finally {
+      await cleanupTestConfigs(tempDir);
+    }
+
+    // Test nested level extra fields
+    tempDir = await setupTestConfigs(extraFieldConfigs.nestedLevel, null, workingDir);
+    try {
+      const config = new BreakdownConfig(tempDir);
+      await config.loadConfig();
+      const result = config.getConfig();
+      
+      // Verify that only expected fields are present in nested objects
+      assertEquals(Object.keys(result.app_prompt), ["base_dir"]);
+      assertEquals(Object.keys(result.app_schema), ["base_dir"]);
+    } finally {
+      await cleanupTestConfigs(tempDir);
+    }
+  }
+});
+
+Deno.test({
+  name: "3.4 Should reject empty working directory",
+  async fn() {
+    const workingDir = ".agent/breakdown";
+    const tempDir = await setupTestConfigs(extraFieldConfigs.emptyStrings, null, workingDir);
+
+    try {
+      const config = new BreakdownConfig(tempDir);
+      await assertRejects(
+        () => config.loadConfig(),
+        Error,
+        "Working directory not set"
       );
     } finally {
       await cleanupTestConfigs(tempDir);
