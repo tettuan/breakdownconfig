@@ -1,30 +1,16 @@
+/**
+ * Main implementation of the BreakdownConfig module
+ * This module provides the core functionality for managing application and user configurations.
+ */
+
 import { join } from 'std/path/mod.ts';
-
-interface PromptConfig {
-  base_dir: string;
-}
-
-interface SchemaConfig {
-  base_dir: string;
-}
-
-interface AppConfig {
-  working_dir: string;
-  app_prompt: PromptConfig;
-  app_schema: SchemaConfig;
-}
-
-interface UserConfig {
-  app_prompt?: PromptConfig;
-  app_schema?: SchemaConfig;
-}
-
-type ConfigRecord = {
-  working_dir?: string;
-  app_prompt?: { base_dir?: string };
-  app_schema?: { base_dir?: string };
-  [key: string]: unknown;
-};
+import type {
+  AppConfig,
+  UserConfig,
+  ConfigRecord,
+  PromptConfig,
+  SchemaConfig
+} from './types.ts';
 
 export class BreakdownConfig {
   private workingDir: string = '';
