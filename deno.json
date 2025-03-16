@@ -1,28 +1,35 @@
 {
+  "name": "breakdownconfig",
+  "version": "1.0.0",
+  "description": "A Deno library for managing application and user configurations",
+  "author": "Your Name",
+  "license": "MIT",
   "compilerOptions": {
+    "strict": true,
     "allowJs": true,
-    "lib": ["deno.window", "deno.unstable"],
-    "strict": true
+    "lib": ["deno.window"],
+    "types": ["deno"]
   },
   "lint": {
-    "files": {
-      "include": ["src/", "tests/"]
-    },
+    "include": ["src/", "tests/"],
     "rules": {
       "tags": ["recommended"]
     }
   },
   "fmt": {
-    "files": {
-      "include": ["src/", "tests/"]
-    },
-    "options": {
-      "lineWidth": 100,
-      "indentWidth": 2,
-      "singleQuote": true
-    }
+    "include": ["src/", "tests/"],
+    "lineWidth": 80,
+    "indentWidth": 2,
+    "singleQuote": true,
+    "proseWrap": "preserve"
   },
   "imports": {
-    "std/": "https://deno.land/std@0.208.0/"
+    "std/": "https://deno.land/std@0.220.1/"
+  },
+  "tasks": {
+    "test": "deno test --allow-read --allow-write",
+    "check": "deno check src/mod.ts",
+    "lint": "deno lint",
+    "fmt": "deno fmt"
   }
 } 
