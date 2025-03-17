@@ -17,8 +17,8 @@
  * - Empty values are handled appropriately
  */
 
-import { assertEquals, assertRejects } from 'std/testing/asserts.ts';
-import { join } from 'std/path/mod.ts';
+import { assertEquals, assertRejects } from '@std/assert';
+import { join } from '@std/path';
 import { BreakdownConfig } from '../../src/mod.ts';
 import {
   cleanupTestConfigs,

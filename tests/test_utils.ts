@@ -12,7 +12,7 @@
  * - Helper functions handle file operations and cleanup
  */
 
-import { join } from 'std/path/mod.ts';
+import { join } from '@std/path';
 import { debug } from '../utils/debug-logger.ts';
 
 // Test data constants

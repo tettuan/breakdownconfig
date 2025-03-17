@@ -7,9 +7,7 @@ import { join } from '@std/path';
 import type {
   AppConfig,
   UserConfig,
-  ConfigRecord,
-  PromptConfig,
-  SchemaConfig
+  ConfigRecord
 } from './types.ts';
 
 export class BreakdownConfig {

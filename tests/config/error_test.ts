@@ -14,7 +14,7 @@
  * - Error messages are clear and descriptive
  */
 
-import { assertEquals, assertRejects } from 'std/testing/asserts.ts';
+import { assertEquals, assertRejects } from '@std/assert';
 import { BreakdownConfig } from '../../src/mod.ts';
 import {
   cleanupTestConfigs,

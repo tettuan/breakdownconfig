@@ -14,7 +14,7 @@
  * - Config structure matches specifications
  */
 
-import { assertEquals } from 'std/testing/asserts.ts';
+import { assertEquals } from '@std/assert';
 import { BreakdownConfig } from '../../src/mod.ts';
 import {
   cleanupTestConfigs,
