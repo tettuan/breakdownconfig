@@ -3,7 +3,7 @@
  * This module provides the core functionality for managing application and user configurations.
  */
 
-import { join } from 'std/path/mod.ts';
+import { join } from '@std/path';
 import type {
   AppConfig,
   UserConfig,

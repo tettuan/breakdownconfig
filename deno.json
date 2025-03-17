@@ -28,7 +28,7 @@
     "proseWrap": "preserve"
   },
   "imports": {
-    "std/": "https://deno.land/std@0.220.1/"
+    "@std/path": "jsr:@std/path@^1.0.8"
   },
   "tasks": {
     "test": "deno test --allow-read --allow-write --allow-env",
