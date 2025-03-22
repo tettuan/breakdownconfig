@@ -1,10 +1,8 @@
-import { ErrorCode, ErrorManager } from "./error_manager.ts";
 import { AppConfigLoader } from "./loaders/app_config_loader.ts";
 import { UserConfigLoader } from "./loaders/user_config_loader.ts";
 import type { AppConfig } from "./types/app_config.ts";
 import type { UserConfig } from "./types/user_config.ts";
 import type { MergedConfig } from "./types/merged_config.ts";
-import { resolvePath } from "./utils/path_resolver.ts";
 
 /**
  * Configuration Manager
@@ -14,25 +12,25 @@ import { resolvePath } from "./utils/path_resolver.ts";
  */
 
 export class ConfigManager {
-  private appLoader: AppConfigLoader;
-  private userLoader: UserConfigLoader | null = null;
-  private config: MergedConfig | null = null;
+  private appConfig: AppConfig | null = null;
+  private userConfig: UserConfig | null = null;
+  private isLoaded = false;
 
-  constructor(configPath?: string) {
-    this.appLoader = new AppConfigLoader(configPath);
-  }
+  constructor(
+    private readonly appConfigLoader: AppConfigLoader,
+    private readonly userConfigLoader: UserConfigLoader,
+  ) {}
 
   async getConfig(): Promise<MergedConfig> {
-    if (this.config) {
-      return this.config;
+    if (this.isLoaded) {
+      return this.mergeConfigs(this.appConfig!, this.userConfig!);
     }
 
-    const appConfig = await this.appLoader.load();
-    this.userLoader = new UserConfigLoader(appConfig.working_dir);
-    const userConfig = await this.userLoader.load();
+    this.appConfig = await this.appConfigLoader.load();
+    this.userConfig = await this.userConfigLoader.load();
+    this.isLoaded = true;
 
-    this.config = this.mergeConfigs(appConfig, userConfig);
-    return this.config;
+    return this.mergeConfigs(this.appConfig, this.userConfig);
   }
 
   private mergeConfigs(appConfig: AppConfig, userConfig: UserConfig | null): MergedConfig {
