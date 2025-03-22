@@ -1,0 +1,35 @@
+{
+  "type": "object",
+  "properties": {
+    "context": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1
+    },
+    "instructions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1
+    },
+    "codeExamples": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "language": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          }
+        },
+        "required": ["language", "code"]
+      }
+    }
+  },
+  "required": ["context", "instructions"]
+} 

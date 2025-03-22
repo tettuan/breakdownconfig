@@ -1,7 +1,7 @@
 # アプリケーション設定の概要
 
 アプリケーションの設定ファイル
-`/breakdown/config/app.yaml` 
+`breakdown/config/app.yaml` 
 を読み込む。
 
 # 設定項目
@@ -27,6 +27,9 @@ root からyaml形式で記載する。
 - 設定項目の必須が欠けているときは、エラーメッセージを出力し、終了する。
 
 # デフォルト値
+デフォルト値はアプリケーション側から求められたら返却するのみ。
+このライブラリ内が直接利用するのは、設定ファイルのみ。
+
 - working_dir : "./.agent/breakdown"
 - app_prompt : 
   - base_dir : "/breakdown/prompts/app"
