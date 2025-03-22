@@ -4,11 +4,8 @@
  */
 
 import { join } from '@std/path';
-import type {
-  AppConfig,
-  UserConfig,
-  ConfigRecord
-} from './types.ts';
+import type { AppConfig, ConfigRecord, UserConfig } from './types.ts';
+import { parse as parseYaml } from "@std/yaml";
 
 export class BreakdownConfig {
   private workingDir: string = '';
@@ -29,14 +26,14 @@ export class BreakdownConfig {
   }
 
   /**
-   * Loads the application configuration from breakdown/config/app.json
+   * Loads the application configuration from breakdown/config/app.yaml
    * @throws Error if the config file is missing or invalid
    */
   private async loadAppConfig(): Promise<void> {
     try {
       const configPath = this.baseDir
-        ? join(this.baseDir, 'breakdown', 'config', 'app.json')
-        : join('breakdown', 'config', 'app.json');
+        ? join(this.baseDir, 'breakdown', 'config', 'app.yaml')
+        : join('breakdown', 'config', 'app.yaml');
 
       let text: string;
       try {
@@ -52,9 +49,9 @@ export class BreakdownConfig {
 
       let config: ConfigRecord;
       try {
-        config = JSON.parse(text) as ConfigRecord;
-      } catch {
-        throw new Error('Invalid JSON in application config file');
+        config = parseYaml(text) as ConfigRecord;
+      } catch (e) {
+        throw new Error('Invalid YAML in application config file');
       }
 
       // Validate required fields
@@ -82,7 +79,7 @@ export class BreakdownConfig {
   }
 
   /**
-   * Loads the user configuration from $working_dir/config/user.json if it exists
+   * Loads the user configuration from $working_dir/config/user.yaml if it exists
    */
   private async loadUserConfig(): Promise<void> {
     if (!this.workingDir) {
@@ -91,8 +88,8 @@ export class BreakdownConfig {
 
     try {
       const configPath = this.baseDir
-        ? join(this.baseDir, this.workingDir, 'config', 'user.json')
-        : join(this.workingDir, 'config', 'user.json');
+        ? join(this.baseDir, this.workingDir, 'config', 'user.yaml')
+        : join(this.workingDir, 'config', 'user.yaml');
 
       let text: string;
       try {
@@ -109,9 +106,9 @@ export class BreakdownConfig {
 
       let config: ConfigRecord;
       try {
-        config = JSON.parse(text) as ConfigRecord;
-      } catch {
-        throw new Error('Invalid JSON in user config file');
+        config = parseYaml(text) as ConfigRecord;
+      } catch (e) {
+        throw new Error('Invalid YAML in user config file');
       }
 
       // Validate and transform user config

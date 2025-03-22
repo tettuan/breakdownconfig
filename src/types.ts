@@ -27,4 +27,4 @@ export type ConfigRecord = {
   app_prompt?: { base_dir?: string };
   app_schema?: { base_dir?: string };
   [key: string]: unknown;
-}; 
+};
