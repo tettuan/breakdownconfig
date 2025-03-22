@@ -12,8 +12,7 @@
  * - Helper functions handle file operations and cleanup
  */
 
-import { join } from '@std/path';
-import { debug } from '../utils/debug-logger.ts';
+import { join } from 'https://deno.land/std/path/mod.ts';
 
 // Test data constants
 export const TEST_WORKING_DIR = '.agent/breakdown';
@@ -112,7 +111,6 @@ export async function setupTestConfigs(
   workingDir: string,
 ): Promise<string> {
   const tempDir = await Deno.makeTempDir();
-  debug(`Created temporary directory: ${tempDir}`);
 
   const appConfigDir = join(tempDir, 'breakdown', 'config');
   const userConfigDir = join(tempDir, workingDir, 'config');
@@ -120,20 +118,17 @@ export async function setupTestConfigs(
   // Create directories
   await Deno.mkdir(appConfigDir, { recursive: true });
   await Deno.mkdir(userConfigDir, { recursive: true });
-  debug(`Created config directories: ${appConfigDir}, ${userConfigDir}`);
 
   // Write app config if provided
   if (appConfig) {
     const appConfigPath = join(appConfigDir, 'app.json');
     await Deno.writeTextFile(appConfigPath, JSON.stringify(appConfig));
-    debug(`Created app config: ${appConfigPath}`);
   }
 
   // Write user config if provided
   if (userConfig) {
     const userConfigPath = join(userConfigDir, 'user.json');
     await Deno.writeTextFile(userConfigPath, JSON.stringify(userConfig));
-    debug(`Created user config: ${userConfigPath}`);
   }
 
   return tempDir;
@@ -147,12 +142,7 @@ export async function setupTestConfigs(
 export async function cleanupTestConfigs(tempDir: string): Promise<void> {
   try {
     await Deno.remove(tempDir, { recursive: true });
-    debug(`Cleaned up temporary directory: ${tempDir}`);
   } catch (error) {
-    if (error instanceof Error) {
-      debug(`Failed to clean up directory ${tempDir}: ${error.message}`);
-    } else {
-      debug(`Failed to clean up directory ${tempDir}: Unknown error`);
-    }
+    // Silent cleanup errors in tests
   }
 }
