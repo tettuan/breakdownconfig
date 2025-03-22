@@ -1,21 +1,37 @@
+/**
+ * Error codes used throughout the application
+ * Organized by category with specific error codes for each type of error
+ * @enum {string}
+ */
 export enum ErrorCode {
   // 設定ファイル関連 (1000番台)
+  /** Application configuration file not found */
   APP_CONFIG_NOT_FOUND = "ERR1001",
+  /** Invalid application configuration format or content */
   APP_CONFIG_INVALID = "ERR1002",
+  /** User configuration file not found */
   USER_CONFIG_NOT_FOUND = "ERR1003",
+  /** Invalid user configuration format or content */
   USER_CONFIG_INVALID = "ERR1004",
+  /** Configuration not loaded before attempting to access */
   CONFIG_NOT_LOADED = "ERR1010",
 
   // 必須項目関連 (2000番台)
+  /** Required field is missing in configuration */
   REQUIRED_FIELD_MISSING = "ERR1005",
+  /** Field type does not match expected type */
   INVALID_FIELD_TYPE = "ERR1006",
 
   // パス検証関連 (3000番台)
+  /** Path format is invalid */
   INVALID_PATH_FORMAT = "ERR1007",
+  /** Path traversal attempt detected */
   PATH_TRAVERSAL_DETECTED = "ERR1008",
+  /** Absolute path is not allowed */
   ABSOLUTE_PATH_NOT_ALLOWED = "ERR1009",
 
   // その他 (9000番台)
+  /** Unknown or unexpected error occurred */
   UNKNOWN_ERROR = "ERR9999",
 }
 
