@@ -1,0 +1,6 @@
+{
+  "imports": {
+    "@std/": "https://deno.land/std@0.219.0/",
+    "@tettuan/breakdownlogger": "jsr:@tettuan/breakdownlogger@0.1.10"
+  }
+} 

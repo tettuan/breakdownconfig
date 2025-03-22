@@ -13,6 +13,7 @@
  */
 
 import { join } from 'https://deno.land/std/path/mod.ts';
+import { logger } from '@tettuan/breakdownlogger';
 
 // Test data constants
 export const TEST_WORKING_DIR = '.agent/breakdown';
@@ -111,6 +112,7 @@ export async function setupTestConfigs(
   workingDir: string,
 ): Promise<string> {
   const tempDir = await Deno.makeTempDir();
+  logger.debug('Test setup', { tempDir });
 
   const appConfigDir = join(tempDir, 'breakdown', 'config');
   const userConfigDir = join(tempDir, workingDir, 'config');
@@ -118,17 +120,20 @@ export async function setupTestConfigs(
   // Create directories
   await Deno.mkdir(appConfigDir, { recursive: true });
   await Deno.mkdir(userConfigDir, { recursive: true });
+  logger.debug('Created config directories', { appConfigDir, userConfigDir });
 
   // Write app config if provided
   if (appConfig) {
     const appConfigPath = join(appConfigDir, 'app.json');
     await Deno.writeTextFile(appConfigPath, JSON.stringify(appConfig));
+    logger.debug('Created app config', { path: appConfigPath, config: appConfig });
   }
 
   // Write user config if provided
   if (userConfig) {
     const userConfigPath = join(userConfigDir, 'user.json');
     await Deno.writeTextFile(userConfigPath, JSON.stringify(userConfig));
+    logger.debug('Created user config', { path: userConfigPath, config: userConfig });
   }
 
   return tempDir;
@@ -142,7 +147,8 @@ export async function setupTestConfigs(
 export async function cleanupTestConfigs(tempDir: string): Promise<void> {
   try {
     await Deno.remove(tempDir, { recursive: true });
+    logger.debug('Cleaned up test directory', { tempDir });
   } catch (error) {
-    // Silent cleanup errors in tests
+    logger.error('Failed to clean up test directory', { tempDir, error });
   }
 }
