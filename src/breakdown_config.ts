@@ -49,7 +49,7 @@ export class BreakdownConfig {
       let config: unknown;
       try {
         config = parseYaml(text);
-      } catch (e) {
+      } catch (_e) {
         ErrorManager.throwError(
           ErrorCode.APP_CONFIG_INVALID,
           "Invalid application configuration - Invalid YAML format",
@@ -116,7 +116,7 @@ export class BreakdownConfig {
       let config: unknown;
       try {
         config = parseYaml(text);
-      } catch (e) {
+      } catch (_e) {
         ErrorManager.throwError(
           ErrorCode.USER_CONFIG_INVALID,
           "Invalid application configuration - Invalid YAML in user config file",
@@ -185,18 +185,22 @@ export class BreakdownConfig {
    * Returns the merged configuration
    * @throws Error if configurations haven't been loaded
    */
-  async getConfig(): Promise<MergedConfig> {
+  getConfig(): MergedConfig {
     if (!this.appConfig) {
       ErrorManager.throwError(
         ErrorCode.CONFIG_NOT_LOADED,
-        "Configuration not loaded - Call loadConfig() before accessing configuration",
+        "Configuration not loaded - Call loadConfig() first",
       );
     }
 
     const result: MergedConfig = {
-      working_dir: this.appConfig!.working_dir,
-      app_prompt: { ...this.appConfig!.app_prompt },
-      app_schema: { ...this.appConfig!.app_schema },
+      working_dir: this.workingDir,
+      app_prompt: {
+        base_dir: this.appConfig.app_prompt.base_dir,
+      },
+      app_schema: {
+        base_dir: this.appConfig.app_schema.base_dir,
+      },
     };
 
     // Merge user config if it exists

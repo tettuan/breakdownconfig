@@ -90,7 +90,7 @@ export class ConfigValidator {
 
   private static validatePath(path: string): void {
     // パスに使用できない文字のチェック
-    const invalidChars = /[<>:"|?*\x00-\x1F]/g;
+    const invalidChars = /[<>:"|?*]/g;
     if (invalidChars.test(path)) {
       ErrorManager.throwError(
         ErrorCode.INVALID_PATH_FORMAT,

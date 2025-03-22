@@ -8,7 +8,7 @@ import { afterEach, beforeEach } from "@std/testing/bdd";
 
 describe("BreakdownConfig", () => {
   const testDir = "test_config";
-  const appConfig = {
+  const _appConfig = {
     working_dir: "workspace",
     app_prompt: {
       base_dir: "prompts",
