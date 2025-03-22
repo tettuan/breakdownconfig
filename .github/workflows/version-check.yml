@@ -1,0 +1,49 @@
+name: Version Check
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  version-check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Deno
+        uses: denoland/setup-deno@v1
+        with:
+          deno-version: v2.1.9
+
+      - name: Clear cache and regenerate lockfile
+        run: |
+          rm -f deno.lock
+          deno cache --reload mod.ts
+
+      - name: Get latest tag
+        id: get_latest_tag
+        run: |
+          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+          echo "latest_tag=${LATEST_TAG}" >> $GITHUB_OUTPUT
+
+      - name: Get version from deno.json
+        id: get_version
+        run: |
+          VERSION=$(deno eval "console.log(JSON.parse(Deno.readTextFileSync('deno.json')).version)")
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+
+      - name: Check version consistency
+        run: |
+          if [ "v${{ steps.get_version.outputs.version }}" != "${{ steps.get_latest_tag.outputs.latest_tag }}" ]; then
+            echo "Error: Version mismatch!"
+            echo "deno.json version: ${{ steps.get_version.outputs.version }}"
+            echo "Latest git tag: ${{ steps.get_latest_tag.outputs.latest_tag }}"
+            echo "Please ensure the version in deno.json matches the latest git tag."
+            exit 1
+          fi
+          echo "Version check passed! Both versions are ${{ steps.get_version.outputs.version }}"
