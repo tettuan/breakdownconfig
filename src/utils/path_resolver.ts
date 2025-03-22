@@ -1,6 +1,6 @@
 /**
  * Path Resolution Utility
- * 
+ *
  * This module provides utilities for resolving paths using the URL API.
  * It ensures consistent path handling across different platforms and environments.
  */
@@ -22,4 +22,4 @@ export function resolvePath(relativePath: string, baseUrl: URL = new URL(import.
  */
 export function getDefaultAppConfigPath(): string {
   return resolvePath("breakdown/config/app.yaml");
-} 
+}

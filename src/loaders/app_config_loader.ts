@@ -2,11 +2,11 @@ import { parse as parseYaml } from "@std/yaml";
 import { ErrorCode, ErrorManager } from "../error_manager.ts";
 import { ConfigValidator } from "../validators/config_validator.ts";
 import type { AppConfig } from "../types/app_config.ts";
-import { getDefaultAppConfigPath, resolvePath } from "../utils/path_resolver.ts";
+import { getDefaultAppConfigPath } from "../utils/path_resolver.ts";
 
 /**
  * Application Configuration Loader
- * 
+ *
  * This module is responsible for loading and validating the application configuration.
  * It uses the URL API for path resolution to ensure consistent behavior across platforms.
  */

@@ -1,3 +1,4 @@
+import { ErrorCode, ErrorManager } from "./error_manager.ts";
 import { AppConfigLoader } from "./loaders/app_config_loader.ts";
 import { UserConfigLoader } from "./loaders/user_config_loader.ts";
 import type { AppConfig } from "./types/app_config.ts";
@@ -7,7 +8,7 @@ import { resolvePath } from "./utils/path_resolver.ts";
 
 /**
  * Configuration Manager
- * 
+ *
  * This module manages the loading and merging of application and user configurations.
  * It uses the URL API for path resolution to ensure consistent behavior across platforms.
  */
