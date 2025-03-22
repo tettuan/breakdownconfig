@@ -21,6 +21,4 @@ jobs:
           deno-version: v2.x
 
       - name: Publish to Deno
-        run: deno publish
-        env:
-          DENO_DEPLOY_TOKEN: ${{ steps.oidc.outputs.token }} 
+        run: deno publish 
