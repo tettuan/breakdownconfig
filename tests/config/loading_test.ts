@@ -15,6 +15,7 @@
  */
 
 import { assertEquals } from '@std/assert';
+import { describe, it } from '@std/testing/bdd';
 import { BreakdownConfig } from '../../src/mod.ts';
 import {
   cleanupTestConfigs,
@@ -24,60 +25,56 @@ import {
   validUserConfig,
 } from '../test_utils.ts';
 
-Deno.test({
-  name: 'Should load valid app config without user config',
-  async fn() {
-    const tempDir = await setupTestConfigs(
-      validAppConfig,
-      null,
-      TEST_WORKING_DIR,
+describe("Config Loading", () => {
+  it("should load valid app config", async () => {
+    const config = new BreakdownConfig();
+    const result = await config.getConfig();
+    assertEquals(result.working_dir, validAppConfig.working_dir);
+    assertEquals(
+      result.app_prompt.base_dir,
+      validAppConfig.app_prompt.base_dir
     );
+    assertEquals(
+      result.app_schema.base_dir,
+      validAppConfig.app_schema.base_dir
+    );
+  });
 
+  it("should load valid app config without user config", async () => {
+    const tempDir = await setupTestConfigs(validAppConfig, null);
     try {
       const config = new BreakdownConfig(tempDir);
-      await config.loadConfig();
-      const result = config.getConfig();
-
+      const result = await config.getConfig();
       assertEquals(result.working_dir, validAppConfig.working_dir);
       assertEquals(
         result.app_prompt.base_dir,
-        validAppConfig.app_prompt.base_dir,
+        validAppConfig.app_prompt.base_dir
       );
       assertEquals(
         result.app_schema.base_dir,
-        validAppConfig.app_schema.base_dir,
+        validAppConfig.app_schema.base_dir
       );
     } finally {
       await cleanupTestConfigs(tempDir);
     }
-  },
-});
+  });
 
-Deno.test({
-  name: 'Should merge app config with user config',
-  async fn() {
-    const tempDir = await setupTestConfigs(
-      validAppConfig,
-      validUserConfig,
-      TEST_WORKING_DIR,
-    );
-
+  it("should merge app config with user config", async () => {
+    const tempDir = await setupTestConfigs(validAppConfig, validUserConfig);
     try {
       const config = new BreakdownConfig(tempDir);
-      await config.loadConfig();
-      const result = config.getConfig();
-
+      const result = await config.getConfig();
       assertEquals(result.working_dir, validAppConfig.working_dir);
       assertEquals(
         result.app_prompt.base_dir,
-        validUserConfig.app_prompt.base_dir,
+        validUserConfig.app_prompt?.base_dir
       );
       assertEquals(
         result.app_schema.base_dir,
-        validAppConfig.app_schema.base_dir,
+        validAppConfig.app_schema.base_dir
       );
     } finally {
       await cleanupTestConfigs(tempDir);
     }
-  },
+  });
 });

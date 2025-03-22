@@ -1,14 +1,13 @@
-import { BreakdownConfig } from '../mod.ts';
-import {
-  assertEquals,
-  assertRejects,
-} from 'https://deno.land/std@0.220.1/assert/mod.ts';
+import { assertEquals } from "@std/assert/assert_equals";
+import { describe, it } from "@std/testing/bdd";
+import { ensureDir } from "@std/fs";
+import { join } from "@std/path";
+import { BreakdownConfig } from "./breakdown_config.ts";
+import { assertRejects } from "@std/assert/assert_rejects";
 import {
   afterEach,
   beforeEach,
-  describe,
-  it,
-} from 'https://deno.land/std@0.220.1/testing/bdd.ts';
+} from "@std/testing/bdd";
 
 describe('BreakdownConfig', () => {
   const testDir = 'test_config';
@@ -23,23 +22,20 @@ describe('BreakdownConfig', () => {
   };
 
   beforeEach(async () => {
-    // Setup test directories and files
-    await Deno.mkdir(`${testDir}/breakdown/config`, { recursive: true });
-    await Deno.mkdir(`${testDir}/workspace/config`, { recursive: true });
+    // Setup test directories
+    await ensureDir(join(testDir, 'breakdown', 'config'));
+    await ensureDir(join(testDir, 'workspace', 'config'));
 
-    // Create app.yaml
-    await ensureFile(
-      `${testDir}/breakdown/config/app.yaml`,
-      `working_dir: workspace
-log_level: info
-paths:
-  - path1
-  - path2`
-    );
+    // Create app.yaml with valid content
+    const appConfigPath = join(testDir, 'breakdown', 'config', 'app.yaml');
+    await Deno.writeTextFile(appConfigPath, `working_dir: workspace
+app_prompt:
+  base_dir: prompts
+app_schema:
+  base_dir: schemas`);
   });
 
   afterEach(async () => {
-    // Cleanup test directories
     try {
       await Deno.remove(testDir, { recursive: true });
     } catch {
@@ -49,35 +45,35 @@ paths:
 
   it('should load and merge configurations correctly', async () => {
     // Create user.yaml with custom settings
-    await ensureFile(
-      `${testDir}/workspace/config/user.yaml`,
-      `log_level: debug
+    const userConfigPath = join(testDir, 'workspace', 'config', 'user.yaml');
+    await ensureDir(join(testDir, 'workspace', 'config'));
+    await Deno.writeTextFile(userConfigPath, `app_prompt:
+  base_dir: custom_prompts
 paths:
   - custom_path1
-  - custom_path2`
-    );
+  - custom_path2`);
 
     const config = new BreakdownConfig(testDir);
     await config.loadConfig();
-    const result = config.getConfig();
+    const result = await config.getConfig();
 
     assertEquals(result.working_dir, 'workspace');
-    assertEquals(result.app_prompt.base_dir, 'custom_prompts'); // Should use user config
-    assertEquals(result.app_schema.base_dir, 'schemas'); // Should use app config
+    assertEquals(result.app_prompt.base_dir, 'custom_prompts');
+    assertEquals(result.app_schema.base_dir, 'schemas');
   });
 
   it('should use app config when user config is missing', async () => {
     const config = new BreakdownConfig(testDir);
     await config.loadConfig();
-    const result = config.getConfig();
+    const result = await config.getConfig();
 
     assertEquals(result.working_dir, 'workspace');
-    assertEquals(result.app_prompt.base_dir, 'prompts'); // Should use app config
+    assertEquals(result.app_prompt.base_dir, 'prompts');
     assertEquals(result.app_schema.base_dir, 'schemas');
   });
 
   it('should throw error when app config is missing', async () => {
-    await Deno.remove(`${testDir}/breakdown/config/app.yaml`);
+    await Deno.remove(join(testDir, 'breakdown', 'config', 'app.yaml'));
     const config = new BreakdownConfig(testDir);
 
     await assertRejects(
@@ -85,15 +81,13 @@ paths:
         await config.loadConfig();
       },
       Error,
-      'Application config file not found',
+      'ERR1001: Application configuration file not found'
     );
   });
 
   it('should throw error when app config is invalid YAML', async () => {
-    await ensureFile(
-      `${testDir}/breakdown/config/app.yaml`,
-      'invalid: yaml: :'
-    );
+    const appConfigPath = join(testDir, 'breakdown', 'config', 'app.yaml');
+    await Deno.writeTextFile(appConfigPath, 'invalid: yaml: :');
     const config = new BreakdownConfig(testDir);
 
     await assertRejects(
@@ -101,22 +95,18 @@ paths:
         await config.loadConfig();
       },
       Error,
-      'Invalid YAML in application config file',
+      'ERR1002: Invalid application configuration'
     );
   });
 
-  it('should throw error when accessing config before loading', () => {
+  it('should throw error when accessing config before loading', async () => {
     const config = new BreakdownConfig(testDir);
-
-    try {
-      config.getConfig();
-      throw new Error('Expected getConfig() to throw');
-    } catch (error) {
-      if (error instanceof Error) {
-        assertEquals(error.message, 'Configuration not loaded');
-      } else {
-        throw new Error('Unexpected error type');
-      }
-    }
+    await assertRejects(
+      async () => {
+        await config.getConfig();
+      },
+      Error,
+      'Configuration not loaded'
+    );
   });
 });

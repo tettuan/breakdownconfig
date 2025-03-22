@@ -25,54 +25,39 @@ import {
   validAppConfig,
   validUserConfig,
 } from '../test_utils.ts';
+import { describe, it } from "@std/testing/bdd";
 
-Deno.test({
-  name: 'Should handle relative paths correctly',
-  async fn() {
-    const tempDir = await setupTestConfigs(
-      validAppConfig,
-      null,
-      TEST_WORKING_DIR,
-    );
-
+describe("Path Handling", () => {
+  it("should handle relative paths correctly", async () => {
+    const tempDir = await setupTestConfigs(validAppConfig, null);
     try {
       const config = new BreakdownConfig(tempDir);
-      await config.loadConfig();
-      const result = config.getConfig();
-
-      assertEquals(result.working_dir, './.agent/breakdown');
-      assertEquals(result.app_prompt.base_dir, './prompts');
+      const result = await config.getConfig();
+      const mergedConfig = await result;
+      assertEquals(mergedConfig.working_dir, "./.agent/breakdown");
+      assertEquals(mergedConfig.app_prompt.base_dir, "./prompts");
     } finally {
       await cleanupTestConfigs(tempDir);
     }
-  },
-});
+  });
 
-Deno.test({
-  name: 'Should handle base directory correctly',
-  async fn() {
-    const tempDir = await setupTestConfigs(
-      validAppConfig,
-      validUserConfig,
-      TEST_WORKING_DIR,
-    );
-
+  it("should handle base directory correctly", async () => {
+    const tempDir = await setupTestConfigs(validAppConfig, validUserConfig);
     try {
       const config = new BreakdownConfig(tempDir);
-      await config.loadConfig();
-      // Verify that the config file exists in the correct location
-      const configPath = join(tempDir, 'breakdown', 'config', 'app.json');
-      const fileInfo = await Deno.stat(configPath);
-      assertEquals(fileInfo.isFile, true);
+      const result = await config.getConfig();
+      const mergedConfig = await result;
+      assertEquals(mergedConfig.working_dir, validAppConfig.working_dir);
+      assertEquals(
+        mergedConfig.app_prompt.base_dir,
+        validUserConfig.app_prompt?.base_dir
+      );
     } finally {
       await cleanupTestConfigs(tempDir);
     }
-  },
-});
+  });
 
-Deno.test({
-  name: 'Should verify config file creation and cleanup',
-  async fn() {
+  it("should verify config file creation and cleanup", async () => {
     const tempDir = await setupTestConfigs(
       validAppConfig,
       validUserConfig,
@@ -117,5 +102,5 @@ Deno.test({
         undefined,
       );
     }
-  },
+  });
 });

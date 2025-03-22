@@ -12,11 +12,13 @@
  * - Helper functions handle file operations and cleanup
  */
 
-import { join } from 'https://deno.land/std/path/mod.ts';
-import { logger } from '@tettuan/breakdownlogger';
+import { join } from "@std/path";
+import { BreakdownLogger } from "@tettuan/breakdownlogger";
+
+const logger = new BreakdownLogger();
 
 // Test data constants
-export const TEST_WORKING_DIR = '.agent/breakdown';
+export const TEST_WORKING_DIR = "./.agent/breakdown";
 
 // Valid configuration examples
 export const validAppConfig = {
@@ -99,49 +101,83 @@ export const extraFieldConfigs = {
 };
 
 /**
- * Creates temporary configuration files for testing
- *
- * @param appConfig - Application configuration object
- * @param userConfig - User configuration object
- * @param workingDir - Working directory path
- * @returns Path to temporary directory
+ * Creates a base temporary test directory structure
+ * @returns Path to temporary directory with created config directories
  */
-export async function setupTestConfigs(
-  appConfig: Record<string, unknown> | null,
-  userConfig: Record<string, unknown> | null,
-  workingDir: string,
-): Promise<string> {
+async function createTestDirStructure(): Promise<{ tempDir: string; configDir: string; userConfigDir: string }> {
   const tempDir = await Deno.makeTempDir();
   logger.debug('Test setup', { tempDir });
 
-  const appConfigDir = join(tempDir, 'breakdown', 'config');
-  const userConfigDir = join(tempDir, workingDir, 'config');
+  const configDir = join(tempDir, "breakdown", "config");
+  const userConfigDir = join(tempDir, TEST_WORKING_DIR, "config");
 
-  // Create directories
-  await Deno.mkdir(appConfigDir, { recursive: true });
+  await Deno.mkdir(configDir, { recursive: true });
   await Deno.mkdir(userConfigDir, { recursive: true });
-  logger.debug('Created config directories', { appConfigDir, userConfigDir });
+  logger.debug('Created config directories', { configDir, userConfigDir });
 
-  // Write app config if provided
-  if (appConfig) {
-    const appConfigPath = join(appConfigDir, 'app.json');
-    await Deno.writeTextFile(appConfigPath, JSON.stringify(appConfig));
-    logger.debug('Created app config', { path: appConfigPath, config: appConfig });
-  }
+  return { tempDir, configDir, userConfigDir };
+}
 
-  // Write user config if provided
-  if (userConfig) {
-    const userConfigPath = join(userConfigDir, 'user.json');
-    await Deno.writeTextFile(userConfigPath, JSON.stringify(userConfig));
-    logger.debug('Created user config', { path: userConfigPath, config: userConfig });
-  }
+/**
+ * Sets up test environment with only app config for basic validation tests
+ * @returns Path to temporary directory
+ */
+export async function setupAppConfigOnly(): Promise<string> {
+  const { tempDir, configDir } = await createTestDirStructure();
+  const appConfigPath = join(configDir, "app.yaml");
+  await Deno.writeTextFile(appConfigPath, JSON.stringify(validAppConfig));
+  logger.debug('Created app config only', { path: appConfigPath, config: validAppConfig });
+  return tempDir;
+}
 
+/**
+ * Sets up test environment with both app and user configs for merge testing
+ * @returns Path to temporary directory
+ */
+export async function setupMergeConfigs(): Promise<string> {
+  const { tempDir, configDir, userConfigDir } = await createTestDirStructure();
+  
+  const appConfigPath = join(configDir, "app.yaml");
+  const userConfigPath = join(userConfigDir, "user.yaml");
+  
+  await Deno.writeTextFile(appConfigPath, JSON.stringify(validAppConfig));
+  await Deno.writeTextFile(userConfigPath, JSON.stringify(validUserConfig));
+  
+  logger.debug('Created configs for merge testing', {
+    appConfig: { path: appConfigPath, config: validAppConfig },
+    userConfig: { path: userConfigPath, config: validUserConfig }
+  });
+  
+  return tempDir;
+}
+
+/**
+ * Sets up test environment with invalid app config for error testing
+ * @param invalidConfig - The invalid configuration to use
+ * @returns Path to temporary directory
+ */
+export async function setupInvalidConfig(invalidConfig: any): Promise<string> {
+  const { tempDir, configDir } = await createTestDirStructure();
+  const appConfigPath = join(configDir, "app.yaml");
+  await Deno.writeTextFile(appConfigPath, JSON.stringify(invalidConfig));
+  logger.debug('Created invalid config', { path: appConfigPath, config: invalidConfig });
+  return tempDir;
+}
+
+/**
+ * Sets up test environment with extra fields in configs for validation testing
+ * @returns Path to temporary directory
+ */
+export async function setupExtraFieldsConfig(): Promise<string> {
+  const { tempDir, configDir } = await createTestDirStructure();
+  const appConfigPath = join(configDir, "app.yaml");
+  await Deno.writeTextFile(appConfigPath, JSON.stringify(extraFieldConfigs.rootLevel));
+  logger.debug('Created config with extra fields', { path: appConfigPath, config: extraFieldConfigs.rootLevel });
   return tempDir;
 }
 
 /**
  * Cleans up temporary test files and directories
- *
  * @param tempDir - Path to temporary directory to clean up
  */
 export async function cleanupTestConfigs(tempDir: string): Promise<void> {

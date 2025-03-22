@@ -15,6 +15,7 @@
  */
 
 import { assertEquals, assertRejects } from '@std/assert';
+import { describe, it } from '@std/testing/bdd';
 import { BreakdownConfig } from '../../src/mod.ts';
 import {
   cleanupTestConfigs,
@@ -22,10 +23,21 @@ import {
   TEST_WORKING_DIR,
   validAppConfig,
 } from '../test_utils.ts';
+import { ErrorCode } from '../../src/error_manager.ts';
 
-Deno.test({
-  name: 'Should handle missing config files appropriately',
-  async fn() {
+describe("Error Handling", () => {
+  it("should handle missing app config", async () => {
+    const config = new BreakdownConfig();
+    await assertRejects(
+      async () => {
+        await config.getConfig();
+      },
+      Error,
+      ErrorCode.APP_CONFIG_NOT_FOUND
+    );
+  });
+
+  it('Should handle missing config files appropriately', async () => {
     const tempDir = await setupTestConfigs(null, null, TEST_WORKING_DIR);
 
     try {
@@ -38,26 +50,17 @@ Deno.test({
     } finally {
       await cleanupTestConfigs(tempDir);
     }
-  },
-});
+  });
 
-Deno.test({
-  name: 'Should handle missing user config gracefully',
-  async fn() {
-    const tempDir = await setupTestConfigs(
-      validAppConfig,
-      null,
-      TEST_WORKING_DIR,
-    );
-
+  it("should handle missing user config gracefully", async () => {
+    const tempDir = await setupTestConfigs(validAppConfig, null);
     try {
       const config = new BreakdownConfig(tempDir);
-      await config.loadConfig();
-      const result = config.getConfig();
-
-      assertEquals(result.working_dir, validAppConfig.working_dir);
+      const result = await config.getConfig();
+      const mergedConfig = await result;
+      assertEquals(mergedConfig.working_dir, validAppConfig.working_dir);
     } finally {
       await cleanupTestConfigs(tempDir);
     }
-  },
+  });
 });

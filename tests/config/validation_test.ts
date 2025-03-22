@@ -17,138 +17,105 @@
  * - Empty values are handled appropriately
  */
 
-import { assertEquals, assertRejects } from '@std/assert';
-import { join } from '@std/path';
-import { BreakdownConfig } from '../../src/mod.ts';
+import { assertEquals } from "@std/assert/assert_equals";
+import { assertRejects } from "@std/assert/assert_rejects";
+import { join } from "@std/path";
+import { BreakdownConfig } from "../../src/breakdown_config.ts";
 import {
   cleanupTestConfigs,
-  extraFieldConfigs,
+  setupAppConfigOnly,
+  setupExtraFieldsConfig,
+  setupInvalidConfig,
   invalidAppConfigs,
-  setupTestConfigs,
-  TEST_WORKING_DIR,
-} from '../test_utils.ts';
+} from "../test_utils.ts";
+import { describe, it } from "@std/testing/bdd";
+import { ensureDir } from "@std/fs";
 
-Deno.test({
-  name: 'Should validate required fields',
-  async fn() {
-    for (const [key, invalidConfig] of Object.entries(invalidAppConfigs)) {
-      const tempDir = await setupTestConfigs(
-        invalidConfig,
-        null,
-        TEST_WORKING_DIR,
-      );
-
-      try {
-        const config = new BreakdownConfig(tempDir);
-        await assertRejects(
-          () => config.loadConfig(),
-          Error,
-          'Missing required fields in application config',
-        );
-      } finally {
-        await cleanupTestConfigs(tempDir);
-      }
-    }
-  },
-});
-
-Deno.test({
-  name: 'Should validate JSON structure',
-  async fn() {
-    const tempDir = await setupTestConfigs(null, null, TEST_WORKING_DIR);
-    const appConfigPath = join(tempDir, 'breakdown', 'config');
-
-    await Deno.mkdir(appConfigPath, { recursive: true });
-    await Deno.writeTextFile(
-      join(appConfigPath, 'app.json'),
-      'invalid json content',
-    );
-
-    try {
-      const config = new BreakdownConfig(tempDir);
-      await assertRejects(
-        () => config.loadConfig(),
-        Error,
-        'Invalid JSON in application config file',
-      );
-    } finally {
-      await cleanupTestConfigs(tempDir);
-    }
-  },
-});
-
-Deno.test({
-  name: 'Should accept extra configuration fields',
-  async fn() {
-    // Test root level extra fields
-    let tempDir = await setupTestConfigs(
-      extraFieldConfigs.rootLevel,
-      null,
-      TEST_WORKING_DIR,
-    );
+describe("Config Validation", () => {
+  it("should validate extra fields in config", async () => {
+    const tempDir = await setupExtraFieldsConfig();
     try {
       const config = new BreakdownConfig(tempDir);
       await config.loadConfig();
-      const result = config.getConfig();
+      const result = await config.getConfig();
 
-      // Verify that required fields are present and correct
-      assertEquals(result.working_dir, extraFieldConfigs.rootLevel.working_dir);
-      assertEquals(
-        result.app_prompt.base_dir,
-        extraFieldConfigs.rootLevel.app_prompt.base_dir,
-      );
-      assertEquals(
-        result.app_schema.base_dir,
-        extraFieldConfigs.rootLevel.app_schema.base_dir,
-      );
-
-      // Verify that extra fields are not included in the result
-      assertEquals(
-        Object.keys(result).sort(),
-        ['working_dir', 'app_prompt', 'app_schema'].sort(),
-      );
+      assertEquals(result.working_dir, "workspace");
+      assertEquals(result.app_prompt.base_dir, "prompts");
+      assertEquals(result.app_schema.base_dir, "schemas");
     } finally {
       await cleanupTestConfigs(tempDir);
     }
+  });
+});
 
-    // Test nested level extra fields
-    tempDir = await setupTestConfigs(
-      extraFieldConfigs.nestedLevel,
-      null,
-      TEST_WORKING_DIR,
-    );
+describe("Should validate required fields", () => {
+  it("should validate required fields", async () => {
+    const tempDir = await setupAppConfigOnly();
     try {
       const config = new BreakdownConfig(tempDir);
       await config.loadConfig();
-      const result = config.getConfig();
+      const result = await config.getConfig();
 
-      // Verify that only expected fields are present in nested objects
-      assertEquals(Object.keys(result.app_prompt), ['base_dir']);
-      assertEquals(Object.keys(result.app_schema), ['base_dir']);
+      assertEquals(result.working_dir, "workspace");
+      assertEquals(result.app_prompt.base_dir, "prompts");
+      assertEquals(result.app_schema.base_dir, "schemas");
+
+      assertEquals(Object.keys(result).sort(), ["working_dir", "app_prompt", "app_schema"].sort());
     } finally {
       await cleanupTestConfigs(tempDir);
     }
-  },
+  });
 });
 
-Deno.test({
-  name: 'Should reject empty working directory',
-  async fn() {
-    const tempDir = await setupTestConfigs(
-      extraFieldConfigs.emptyStrings,
-      null,
-      TEST_WORKING_DIR,
-    );
-
+describe("Should validate JSON structure", () => {
+  it("should reject invalid YAML", async () => {
+    const tempDir = await setupInvalidConfig({ invalid: "yaml: :" });
     try {
       const config = new BreakdownConfig(tempDir);
       await assertRejects(
-        () => config.loadConfig(),
+        async () => {
+          await config.loadConfig();
+        },
         Error,
-        'Working directory not set',
+        "ERR1002: Invalid application configuration"
       );
     } finally {
       await cleanupTestConfigs(tempDir);
     }
-  },
+  });
+});
+
+describe("Should accept extra configuration fields", () => {
+  it("should accept extra fields", async () => {
+    const tempDir = await setupExtraFieldsConfig();
+    try {
+      const config = new BreakdownConfig(tempDir);
+      await config.loadConfig();
+      const result = await config.getConfig();
+
+      assertEquals(result.working_dir, "workspace");
+      assertEquals(result.app_prompt.base_dir, "prompts");
+      assertEquals(result.app_schema.base_dir, "schemas");
+    } finally {
+      await cleanupTestConfigs(tempDir);
+    }
+  });
+});
+
+describe("Should reject empty working directory", () => {
+  it("should reject empty working directory", async () => {
+    const tempDir = await setupInvalidConfig(invalidAppConfigs.emptyStrings);
+    try {
+      const config = new BreakdownConfig(tempDir);
+      await assertRejects(
+        async () => {
+          await config.loadConfig();
+        },
+        Error,
+        "ERR1002: Invalid application configuration"
+      );
+    } finally {
+      await cleanupTestConfigs(tempDir);
+    }
+  });
 });
