@@ -35,6 +35,7 @@
     "@std/assert/assert_rejects": "jsr:@std/assert@^0.220.1/assert_rejects",
     "@std/testing/bdd": "jsr:@std/testing@^0.220.1/bdd",
     "@std/fs": "jsr:@std/fs@^0.220.1",
+    "@std/expect": "jsr:@std/expect@^0.220.1",
     "@tettuan/breakdownlogger": "jsr:@tettuan/breakdownlogger@^0.1.10"
   },
   "tasks": {

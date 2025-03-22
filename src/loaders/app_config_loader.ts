@@ -14,14 +14,17 @@ export class AppConfigLoader {
     try {
       const content = await Deno.readTextFile(this.configPath);
       const config = parseYaml(content) as unknown;
-      
+
       ConfigValidator.validateAppConfig(config);
       return config;
     } catch (error) {
       if (error instanceof Deno.errors.NotFound) {
-        ErrorManager.throwError(ErrorCode.APP_CONFIG_NOT_FOUND, `Config file not found at: ${this.configPath}`);
+        ErrorManager.throwError(
+          ErrorCode.APP_CONFIG_NOT_FOUND,
+          `Config file not found at: ${this.configPath}`,
+        );
       }
       throw error;
     }
   }
-} 
+}

@@ -1,4 +1,5 @@
 import { assertEquals, assertThrows } from "@std/assert";
+import { expect } from "@std/expect";
 import { describe, it } from "@std/testing/bdd";
 import { BreakdownConfig } from "../../mod.ts";
 import { ConfigManager } from "../../src/config_manager.ts";
@@ -10,20 +11,20 @@ import { ErrorManager } from "../../src/error_manager.ts";
 const TEST_APP_CONFIG = {
   working_dir: "./.agent/breakdown",
   app_prompt: {
-    base_dir: "/breakdown/prompts/app"
+    base_dir: "/breakdown/prompts/app",
   },
   app_schema: {
-    base_dir: "/breakdown/schema/app"
-  }
+    base_dir: "/breakdown/schema/app",
+  },
 };
 
 const TEST_USER_CONFIG = {
   app_prompt: {
-    base_dir: "./prompts/user"
+    base_dir: "./prompts/user",
   },
   app_schema: {
-    base_dir: "./schema/user"
-  }
+    base_dir: "./schema/user",
+  },
 };
 
 Deno.test("Basic Config Loading - App Config", async () => {
@@ -34,12 +35,13 @@ Deno.test("Basic Config Loading - App Config", async () => {
     await Deno.mkdir(configDir, { recursive: true });
     await Deno.writeTextFile(
       `${configDir}/app.yaml`,
-      JSON.stringify(TEST_APP_CONFIG)
+      JSON.stringify(TEST_APP_CONFIG),
     );
 
-    const config = new BreakdownConfig();
+    const config = new BreakdownConfig(testDir);
+    await config.loadConfig();
     const result = await config.getConfig();
-    
+
     assertEquals(result.working_dir, TEST_APP_CONFIG.working_dir);
     assertEquals(result.app_prompt.base_dir, TEST_APP_CONFIG.app_prompt.base_dir);
     assertEquals(result.app_schema.base_dir, TEST_APP_CONFIG.app_schema.base_dir);
@@ -51,14 +53,12 @@ Deno.test("Basic Config Loading - App Config", async () => {
 Deno.test("Basic Config Loading - Missing App Config", async () => {
   const testDir = await Deno.makeTempDir();
   try {
-    await assertThrows(
-      async () => {
-        const config = new BreakdownConfig();
-        await config.getConfig();
-      },
-      Error,
-      "APP_CONFIG_NOT_FOUND"
-    );
+    // Create directory structure but not the config file
+    const configDir = `${testDir}/breakdown/config`;
+    await Deno.mkdir(configDir, { recursive: true });
+
+    const config = new BreakdownConfig(testDir);
+    await expect(config.loadConfig()).rejects.toThrow("ERR1001");
   } finally {
     await Deno.remove(testDir, { recursive: true });
   }
@@ -72,19 +72,20 @@ Deno.test("Basic Config Loading - User Config Integration", async () => {
     const userConfigDir = `${testDir}/.agent/breakdown/config`;
     await Deno.mkdir(configDir, { recursive: true });
     await Deno.mkdir(userConfigDir, { recursive: true });
-    
+
     await Deno.writeTextFile(
       `${configDir}/app.yaml`,
-      JSON.stringify(TEST_APP_CONFIG)
+      JSON.stringify(TEST_APP_CONFIG),
     );
     await Deno.writeTextFile(
       `${userConfigDir}/user.yaml`,
-      JSON.stringify(TEST_USER_CONFIG)
+      JSON.stringify(TEST_USER_CONFIG),
     );
 
-    const config = new BreakdownConfig();
+    const config = new BreakdownConfig(testDir);
+    await config.loadConfig();
     const result = await config.getConfig();
-    
+
     // User config should override app config
     assertEquals(result.working_dir, TEST_APP_CONFIG.working_dir);
     assertEquals(result.app_prompt.base_dir, TEST_USER_CONFIG.app_prompt.base_dir);
@@ -92,4 +93,4 @@ Deno.test("Basic Config Loading - User Config Integration", async () => {
   } finally {
     await Deno.remove(testDir, { recursive: true });
   }
-}); 
+});

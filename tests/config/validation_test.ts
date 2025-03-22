@@ -19,17 +19,15 @@
 
 import { assertEquals } from "@std/assert/assert_equals";
 import { assertRejects } from "@std/assert/assert_rejects";
-import { join } from "@std/path";
 import { BreakdownConfig } from "../../src/breakdown_config.ts";
 import {
   cleanupTestConfigs,
+  invalidAppConfigs,
   setupAppConfigOnly,
   setupExtraFieldsConfig,
   setupInvalidConfig,
-  invalidAppConfigs,
 } from "../test_utils.ts";
 import { describe, it } from "@std/testing/bdd";
-import { ensureDir } from "@std/fs";
 
 describe("Config Validation", () => {
   it("should validate extra fields in config", async () => {
@@ -77,7 +75,7 @@ describe("Should validate JSON structure", () => {
           await config.loadConfig();
         },
         Error,
-        "ERR1002: Invalid application configuration"
+        "ERR1002: Invalid application configuration",
       );
     } finally {
       await cleanupTestConfigs(tempDir);
@@ -112,7 +110,7 @@ describe("Should reject empty working directory", () => {
           await config.loadConfig();
         },
         Error,
-        "ERR1002: Invalid application configuration"
+        "ERR1002: Invalid application configuration",
       );
     } finally {
       await cleanupTestConfigs(tempDir);

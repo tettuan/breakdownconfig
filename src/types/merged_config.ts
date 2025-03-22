@@ -1,4 +1,6 @@
-export interface MergedConfig {
+import type { AppConfig } from "./app_config.ts";
+
+export interface MergedConfig extends AppConfig {
   working_dir: string;
   app_prompt: {
     base_dir: string;
@@ -6,5 +8,6 @@ export interface MergedConfig {
   app_schema: {
     base_dir: string;
   };
-  [key: string]: any; // ユーザー設定からの追加項目を許容
-} 
+  // ユーザー設定からの追加項目を許容
+  [key: string]: string | number | boolean | null | undefined | { [key: string]: unknown };
+}

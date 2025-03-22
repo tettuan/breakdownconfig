@@ -1,4 +1,0 @@
-log_level: debug
-paths:
-  - custom_path1
-  - custom_path2

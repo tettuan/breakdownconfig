@@ -14,65 +14,37 @@
  * - Config structure matches specifications
  */
 
-import { assertEquals } from '@std/assert';
-import { describe, it } from '@std/testing/bdd';
-import { BreakdownConfig } from '../../src/mod.ts';
-import {
-  cleanupTestConfigs,
-  setupTestConfigs,
-  TEST_WORKING_DIR,
-  validAppConfig,
-  validUserConfig,
-} from '../test_utils.ts';
+import { assertEquals } from "@std/assert/assert_equals";
+import { BreakdownConfig } from "../../src/breakdown_config.ts";
+import { cleanupTestConfigs, setupAppConfigOnly, setupMergeConfigs } from "../test_utils.ts";
+import { describe, it } from "@std/testing/bdd";
 
 describe("Config Loading", () => {
-  it("should load valid app config", async () => {
-    const config = new BreakdownConfig();
-    const result = await config.getConfig();
-    assertEquals(result.working_dir, validAppConfig.working_dir);
-    assertEquals(
-      result.app_prompt.base_dir,
-      validAppConfig.app_prompt.base_dir
-    );
-    assertEquals(
-      result.app_schema.base_dir,
-      validAppConfig.app_schema.base_dir
-    );
-  });
-
-  it("should load valid app config without user config", async () => {
-    const tempDir = await setupTestConfigs(validAppConfig, null);
+  it("should load and merge configurations correctly", async () => {
+    const tempDir = await setupMergeConfigs();
     try {
       const config = new BreakdownConfig(tempDir);
+      await config.loadConfig();
       const result = await config.getConfig();
-      assertEquals(result.working_dir, validAppConfig.working_dir);
-      assertEquals(
-        result.app_prompt.base_dir,
-        validAppConfig.app_prompt.base_dir
-      );
-      assertEquals(
-        result.app_schema.base_dir,
-        validAppConfig.app_schema.base_dir
-      );
+
+      assertEquals(result.working_dir, "workspace");
+      assertEquals(result.app_prompt.base_dir, "custom/prompts");
+      assertEquals(result.app_schema.base_dir, "schemas");
     } finally {
       await cleanupTestConfigs(tempDir);
     }
   });
 
-  it("should merge app config with user config", async () => {
-    const tempDir = await setupTestConfigs(validAppConfig, validUserConfig);
+  it("should load app config only when user config is missing", async () => {
+    const tempDir = await setupAppConfigOnly();
     try {
       const config = new BreakdownConfig(tempDir);
+      await config.loadConfig();
       const result = await config.getConfig();
-      assertEquals(result.working_dir, validAppConfig.working_dir);
-      assertEquals(
-        result.app_prompt.base_dir,
-        validUserConfig.app_prompt?.base_dir
-      );
-      assertEquals(
-        result.app_schema.base_dir,
-        validAppConfig.app_schema.base_dir
-      );
+
+      assertEquals(result.working_dir, "workspace");
+      assertEquals(result.app_prompt.base_dir, "prompts");
+      assertEquals(result.app_schema.base_dir, "schemas");
     } finally {
       await cleanupTestConfigs(tempDir);
     }

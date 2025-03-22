@@ -6,4 +6,4 @@ export interface AppConfig {
   app_schema: {
     base_dir: string;
   };
-} 
+}

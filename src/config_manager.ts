@@ -36,14 +36,14 @@ export class ConfigManager {
       ...userConfig,
       app_prompt: {
         ...appConfig.app_prompt,
-        ...(userConfig.app_prompt || {})
+        ...(userConfig.app_prompt || {}),
       },
       app_schema: {
         ...appConfig.app_schema,
-        ...(userConfig.app_schema || {})
-      }
+        ...(userConfig.app_schema || {}),
+      },
     };
 
     return merged;
   }
-} 
+}

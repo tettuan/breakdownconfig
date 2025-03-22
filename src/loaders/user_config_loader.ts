@@ -16,16 +16,19 @@ export class UserConfigLoader {
     try {
       const content = await Deno.readTextFile(configPath);
       const config = parseYaml(content) as unknown;
-      
+
       ConfigValidator.validateUserConfig(config);
       return config;
     } catch (error) {
       if (error instanceof Deno.errors.NotFound) {
         // ユーザー設定は任意なので、存在しない場合は警告を出力して null を返す
-        ErrorManager.logWarning(ErrorCode.USER_CONFIG_INVALID, `User config file not found at: ${configPath}`);
+        ErrorManager.logWarning(
+          ErrorCode.USER_CONFIG_INVALID,
+          `User config file not found at: ${configPath}`,
+        );
         return null;
       }
       throw error;
     }
   }
-} 
+}

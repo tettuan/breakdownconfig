@@ -14,51 +14,71 @@
  * - Error messages are clear and descriptive
  */
 
-import { assertEquals, assertRejects } from '@std/assert';
-import { describe, it } from '@std/testing/bdd';
-import { BreakdownConfig } from '../../src/mod.ts';
-import {
-  cleanupTestConfigs,
-  setupTestConfigs,
-  TEST_WORKING_DIR,
-  validAppConfig,
-} from '../test_utils.ts';
-import { ErrorCode } from '../../src/error_manager.ts';
+import { assertRejects } from "@std/assert/assert_rejects";
+import { BreakdownConfig } from "../../src/breakdown_config.ts";
+import { cleanupTestConfigs, invalidAppConfigs, setupInvalidConfig } from "../test_utils.ts";
+import { describe, it } from "@std/testing/bdd";
 
 describe("Error Handling", () => {
-  it("should handle missing app config", async () => {
-    const config = new BreakdownConfig();
-    await assertRejects(
-      async () => {
-        await config.getConfig();
-      },
-      Error,
-      ErrorCode.APP_CONFIG_NOT_FOUND
-    );
-  });
-
-  it('Should handle missing config files appropriately', async () => {
-    const tempDir = await setupTestConfigs(null, null, TEST_WORKING_DIR);
-
+  it("should handle missing working directory", async () => {
+    const tempDir = await setupInvalidConfig(invalidAppConfigs.missingWorkingDir);
     try {
       const config = new BreakdownConfig(tempDir);
       await assertRejects(
-        () => config.loadConfig(),
+        async () => {
+          await config.loadConfig();
+        },
         Error,
-        'Application config file not found',
+        "ERR1002: Invalid application configuration",
       );
     } finally {
       await cleanupTestConfigs(tempDir);
     }
   });
 
-  it("should handle missing user config gracefully", async () => {
-    const tempDir = await setupTestConfigs(validAppConfig, null);
+  it("should handle missing app prompt", async () => {
+    const tempDir = await setupInvalidConfig(invalidAppConfigs.missingPrompt);
     try {
       const config = new BreakdownConfig(tempDir);
-      const result = await config.getConfig();
-      const mergedConfig = await result;
-      assertEquals(mergedConfig.working_dir, validAppConfig.working_dir);
+      await assertRejects(
+        async () => {
+          await config.loadConfig();
+        },
+        Error,
+        "ERR1002: Invalid application configuration",
+      );
+    } finally {
+      await cleanupTestConfigs(tempDir);
+    }
+  });
+
+  it("should handle missing app schema", async () => {
+    const tempDir = await setupInvalidConfig(invalidAppConfigs.missingSchema);
+    try {
+      const config = new BreakdownConfig(tempDir);
+      await assertRejects(
+        async () => {
+          await config.loadConfig();
+        },
+        Error,
+        "ERR1002: Invalid application configuration",
+      );
+    } finally {
+      await cleanupTestConfigs(tempDir);
+    }
+  });
+
+  it("should handle invalid types", async () => {
+    const tempDir = await setupInvalidConfig(invalidAppConfigs.invalidTypes);
+    try {
+      const config = new BreakdownConfig(tempDir);
+      await assertRejects(
+        async () => {
+          await config.loadConfig();
+        },
+        Error,
+        "ERR1002: Invalid application configuration",
+      );
     } finally {
       await cleanupTestConfigs(tempDir);
     }

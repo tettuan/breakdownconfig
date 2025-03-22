@@ -18,84 +18,80 @@ import { BreakdownLogger } from "@tettuan/breakdownlogger";
 const logger = new BreakdownLogger();
 
 // Test data constants
-export const TEST_WORKING_DIR = "./.agent/breakdown";
+export const TEST_WORKING_DIR = "workspace";
 
 // Valid configuration examples
 export const validAppConfig = {
-  working_dir: './.agent/breakdown',
+  working_dir: "workspace",
   app_prompt: {
-    base_dir: './prompts',
+    base_dir: "prompts",
   },
   app_schema: {
-    base_dir: './schemas',
+    base_dir: "schemas",
   },
 };
 
 export const validUserConfig = {
   app_prompt: {
-    base_dir: './custom/prompts',
+    base_dir: "custom/prompts",
   },
 };
 
 // Invalid configuration examples
 export const invalidAppConfigs = {
   missingWorkingDir: {
-    app_prompt: { base_dir: './prompts' },
-    app_schema: { base_dir: './schemas' },
+    app_prompt: { base_dir: "prompts" },
+    app_schema: { base_dir: "schemas" },
   },
   missingPrompt: {
-    working_dir: './.agent/breakdown',
-    app_schema: { base_dir: './schemas' },
+    working_dir: "workspace",
+    app_schema: { base_dir: "schemas" },
   },
   missingSchema: {
-    working_dir: './.agent/breakdown',
-    app_prompt: { base_dir: './prompts' },
+    working_dir: "workspace",
+    app_prompt: { base_dir: "prompts" },
   },
   invalidTypes: {
     working_dir: 123,
     app_prompt: { base_dir: true },
     app_schema: { base_dir: null },
   },
+  emptyStrings: {
+    working_dir: "",
+    app_prompt: { base_dir: "prompts" },
+    app_schema: { base_dir: "schemas" },
+  },
 };
 
 // Extra fields configuration examples
 export const extraFieldConfigs = {
   rootLevel: {
-    working_dir: './.agent/breakdown',
+    working_dir: "workspace",
     app_prompt: {
-      base_dir: './prompts',
+      base_dir: "prompts",
     },
     app_schema: {
-      base_dir: './schemas',
+      base_dir: "schemas",
     },
-    extra_field: 'should be ignored',
+    extra_field: "should be ignored",
     another_extra: {
-      nested: 'value',
+      nested: "value",
     },
   },
   nestedLevel: {
-    working_dir: './.agent/breakdown',
+    working_dir: "workspace",
     app_prompt: {
-      base_dir: './prompts',
+      base_dir: "prompts",
       unknown_setting: true,
       extra: {
         deeply: {
-          nested: 'value',
+          nested: "value",
         },
       },
     },
     app_schema: {
-      base_dir: './schemas',
+      base_dir: "schemas",
       custom_option: 123,
-    },
-  },
-  emptyStrings: {
-    working_dir: '',
-    app_prompt: {
-      base_dir: '',
-    },
-    app_schema: {
-      base_dir: './schemas',
     },
   },
 };
@@ -104,16 +100,18 @@ export const extraFieldConfigs = {
  * Creates a base temporary test directory structure
  * @returns Path to temporary directory with created config directories
  */
-async function createTestDirStructure(): Promise<{ tempDir: string; configDir: string; userConfigDir: string }> {
+async function createTestDirStructure(): Promise<
+  { tempDir: string; configDir: string; userConfigDir: string }
+> {
   const tempDir = await Deno.makeTempDir();
-  logger.debug('Test setup', { tempDir });
+  logger.debug("Test setup", { tempDir });
 
   const configDir = join(tempDir, "breakdown", "config");
   const userConfigDir = join(tempDir, TEST_WORKING_DIR, "config");
 
   await Deno.mkdir(configDir, { recursive: true });
   await Deno.mkdir(userConfigDir, { recursive: true });
-  logger.debug('Created config directories', { configDir, userConfigDir });
+  logger.debug("Created config directories", { configDir, userConfigDir });
 
   return { tempDir, configDir, userConfigDir };
 }
@@ -126,7 +124,7 @@ export async function setupAppConfigOnly(): Promise<string> {
   const { tempDir, configDir } = await createTestDirStructure();
   const appConfigPath = join(configDir, "app.yaml");
   await Deno.writeTextFile(appConfigPath, JSON.stringify(validAppConfig));
-  logger.debug('Created app config only', { path: appConfigPath, config: validAppConfig });
+  logger.debug("Created app config only", { path: appConfigPath, config: validAppConfig });
   return tempDir;
 }
 
@@ -136,18 +134,18 @@ export async function setupAppConfigOnly(): Promise<string> {
  */
 export async function setupMergeConfigs(): Promise<string> {
   const { tempDir, configDir, userConfigDir } = await createTestDirStructure();
-  
+
   const appConfigPath = join(configDir, "app.yaml");
   const userConfigPath = join(userConfigDir, "user.yaml");
-  
+
   await Deno.writeTextFile(appConfigPath, JSON.stringify(validAppConfig));
   await Deno.writeTextFile(userConfigPath, JSON.stringify(validUserConfig));
-  
-  logger.debug('Created configs for merge testing', {
+
+  logger.debug("Created configs for merge testing", {
     appConfig: { path: appConfigPath, config: validAppConfig },
-    userConfig: { path: userConfigPath, config: validUserConfig }
+    userConfig: { path: userConfigPath, config: validUserConfig },
   });
-  
+
   return tempDir;
 }
 
@@ -156,11 +154,11 @@ export async function setupMergeConfigs(): Promise<string> {
  * @param invalidConfig - The invalid configuration to use
  * @returns Path to temporary directory
  */
-export async function setupInvalidConfig(invalidConfig: any): Promise<string> {
+export async function setupInvalidConfig(invalidConfig: Record<string, unknown>): Promise<string> {
   const { tempDir, configDir } = await createTestDirStructure();
   const appConfigPath = join(configDir, "app.yaml");
   await Deno.writeTextFile(appConfigPath, JSON.stringify(invalidConfig));
-  logger.debug('Created invalid config', { path: appConfigPath, config: invalidConfig });
+  logger.debug("Created invalid config", { path: appConfigPath, config: invalidConfig });
   return tempDir;
 }
 
@@ -172,7 +170,10 @@ export async function setupExtraFieldsConfig(): Promise<string> {
   const { tempDir, configDir } = await createTestDirStructure();
   const appConfigPath = join(configDir, "app.yaml");
   await Deno.writeTextFile(appConfigPath, JSON.stringify(extraFieldConfigs.rootLevel));
-  logger.debug('Created config with extra fields', { path: appConfigPath, config: extraFieldConfigs.rootLevel });
+  logger.debug("Created config with extra fields", {
+    path: appConfigPath,
+    config: extraFieldConfigs.rootLevel,
+  });
   return tempDir;
 }
 
@@ -183,8 +184,8 @@ export async function setupExtraFieldsConfig(): Promise<string> {
 export async function cleanupTestConfigs(tempDir: string): Promise<void> {
   try {
     await Deno.remove(tempDir, { recursive: true });
-    logger.debug('Cleaned up test directory', { tempDir });
+    logger.debug("Cleaned up test directory", { tempDir });
   } catch (error) {
-    logger.error('Failed to clean up test directory', { tempDir, error });
+    logger.error("Failed to clean up test directory", { tempDir, error });
   }
 }

@@ -38,7 +38,10 @@ export class BreakdownConfig {
         text = await Deno.readTextFile(configPath);
       } catch (error) {
         if (error instanceof Deno.errors.NotFound) {
-          ErrorManager.throwError(ErrorCode.APP_CONFIG_NOT_FOUND, `Config file not found at: ${configPath}`);
+          ErrorManager.throwError(
+            ErrorCode.APP_CONFIG_NOT_FOUND,
+            `Application configuration file not found - Config file not found at: ${configPath}`,
+          );
         }
         throw error;
       }
@@ -47,11 +50,17 @@ export class BreakdownConfig {
       try {
         config = parseYaml(text);
       } catch (e) {
-        ErrorManager.throwError(ErrorCode.APP_CONFIG_INVALID, "Invalid YAML in application config file");
+        ErrorManager.throwError(
+          ErrorCode.APP_CONFIG_INVALID,
+          "Invalid application configuration - Invalid YAML format",
+        );
       }
 
       if (!this.validateAppConfig(config)) {
-        ErrorManager.throwError(ErrorCode.APP_CONFIG_INVALID, "Missing required fields in application config");
+        ErrorManager.throwError(
+          ErrorCode.APP_CONFIG_INVALID,
+          "Invalid application configuration - Missing required fields",
+        );
       }
 
       // At this point we know the config has all required fields
@@ -70,7 +79,10 @@ export class BreakdownConfig {
       if (error instanceof Error) {
         throw error;
       }
-      throw new Error("Failed to load application config");
+      ErrorManager.throwError(
+        ErrorCode.APP_CONFIG_INVALID,
+        "Invalid application configuration - Failed to load configuration",
+      );
     }
   }
 
@@ -79,7 +91,10 @@ export class BreakdownConfig {
    */
   private async loadUserConfig(): Promise<void> {
     if (!this.workingDir) {
-      throw new Error("Working directory not set");
+      ErrorManager.throwError(
+        ErrorCode.APP_CONFIG_INVALID,
+        "Invalid application configuration - Working directory not set",
+      );
     }
 
     try {
@@ -102,7 +117,10 @@ export class BreakdownConfig {
       try {
         config = parseYaml(text);
       } catch (e) {
-        ErrorManager.throwError(ErrorCode.USER_CONFIG_INVALID, "Invalid YAML in user config file");
+        ErrorManager.throwError(
+          ErrorCode.USER_CONFIG_INVALID,
+          "Invalid application configuration - Invalid YAML in user config file",
+        );
       }
 
       // Validate and transform user config
@@ -169,7 +187,10 @@ export class BreakdownConfig {
    */
   async getConfig(): Promise<MergedConfig> {
     if (!this.appConfig) {
-      await this.loadConfig();
+      ErrorManager.throwError(
+        ErrorCode.CONFIG_NOT_LOADED,
+        "Configuration not loaded - Call loadConfig() before accessing configuration",
+      );
     }
 
     const result: MergedConfig = {
@@ -197,15 +218,44 @@ export class BreakdownConfig {
     return result;
   }
 
+  /**
+   * Gets the absolute path to the working directory
+   * @returns The absolute path to the working directory
+   */
+  async getWorkingDir(): Promise<string> {
+    const config = await this.getConfig();
+    return join(this.baseDir, config.working_dir);
+  }
+
+  /**
+   * Gets the absolute path to the prompt directory
+   * @returns The absolute path to the prompt directory
+   */
+  async getPromptDir(): Promise<string> {
+    const config = await this.getConfig();
+    const workingDir = await this.getWorkingDir();
+    return join(workingDir, config.app_prompt.base_dir);
+  }
+
+  /**
+   * Gets the absolute path to the schema directory
+   * @returns The absolute path to the schema directory
+   */
+  async getSchemaDir(): Promise<string> {
+    const config = await this.getConfig();
+    const workingDir = await this.getWorkingDir();
+    return join(workingDir, config.app_schema.base_dir);
+  }
+
   static getDefaultConfig(): AppConfig {
     return {
       working_dir: "./.agent/breakdown",
       app_prompt: {
-        base_dir: "/breakdown/prompts/app",
+        base_dir: "./prompts",
       },
       app_schema: {
-        base_dir: "/breakdown/schema/app",
+        base_dir: "./schemas",
       },
     };
   }
-} 
+}
