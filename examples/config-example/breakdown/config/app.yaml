@@ -1,0 +1,20 @@
+app:
+  name: "Example App"
+  version: "1.0.0"
+  description: "A sample application demonstrating config loading"
+
+settings:
+  theme: "dark"
+  language: "en"
+  notifications: true
+  maxRetries: 3
+
+paths:
+  data: "./data"
+  logs: "./logs"
+
+working_dir: "./.agent/breakdown"
+app_prompt:
+  base_dir: "./prompts/app"
+app_schema:
+  base_dir: "./schema/app" 
