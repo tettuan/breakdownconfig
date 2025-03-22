@@ -28,4 +28,4 @@ jobs:
         run: deno check src/mod.ts
 
       - name: Run tests
-        run: deno test --allow-read --allow-write 
+        run: deno test --allow-read --allow-write --allow-env 
