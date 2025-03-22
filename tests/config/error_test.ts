@@ -14,10 +14,10 @@
  * - Error messages are clear and descriptive
  */
 
-import { assertRejects } from "@std/assert/assert_rejects";
+import { assertRejects } from "@std/assert";
+import { describe, it } from "@std/testing/bdd";
 import { BreakdownConfig } from "../../src/breakdown_config.ts";
 import { cleanupTestConfigs, invalidAppConfigs, setupInvalidConfig } from "../test_utils.ts";
-import { describe, it } from "@std/testing/bdd";
 
 describe("Error Handling", () => {
   it("should handle missing working directory", async () => {
