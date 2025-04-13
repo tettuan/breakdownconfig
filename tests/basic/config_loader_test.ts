@@ -137,7 +137,7 @@ Deno.test("Basic Config Loading - App Config", async () => {
     const configDir = `${testDir}/breakdown/config`;
     await Deno.mkdir(configDir, { recursive: true });
     await Deno.writeTextFile(
-      `${configDir}/app.yaml`,
+      `${configDir}/app.yml`,
       JSON.stringify(TEST_APP_CONFIG),
     );
     logger.debug("Created app config file", { configDir, config: TEST_APP_CONFIG });
@@ -211,11 +211,11 @@ Deno.test("Basic Config Loading - User Config Integration", async () => {
     await Deno.mkdir(userConfigDir, { recursive: true });
 
     await Deno.writeTextFile(
-      `${configDir}/app.yaml`,
+      `${configDir}/app.yml`,
       JSON.stringify(TEST_APP_CONFIG),
     );
     await Deno.writeTextFile(
-      `${userConfigDir}/user.yaml`,
+      `${userConfigDir}/user.yml`,
       JSON.stringify(TEST_USER_CONFIG),
     );
     logger.debug("Created config files", {

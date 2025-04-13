@@ -6,7 +6,7 @@ import type { UserConfig } from "../types/user_config.ts";
 /**
  * Loads and validates the user configuration from a working directory.
  * The user configuration is optional and must be located at
- * `$base_dir/.agent/breakdown/config/user.yaml`.
+ * `$base_dir/.agent/breakdown/config/user.yml`.
  *
  * @example
  * ```typescript
@@ -32,8 +32,8 @@ export class UserConfigLoader {
   async load(): Promise<UserConfig> {
     try {
       const configPath = this.baseDir
-        ? join(this.baseDir, ".agent", "breakdown", "config", "user.yaml")
-        : join(".agent", "breakdown", "config", "user.yaml");
+        ? join(this.baseDir, ".agent", "breakdown", "config", "user.yml")
+        : join(".agent", "breakdown", "config", "user.yml");
 
       let text: string;
       try {

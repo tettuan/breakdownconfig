@@ -123,7 +123,7 @@ async function createTestDirStructure(): Promise<
  */
 export async function setupAppConfigOnly(): Promise<string> {
   const { tempDir, configDir } = await createTestDirStructure();
-  const appConfigPath = join(configDir, "app.yaml");
+  const appConfigPath = join(configDir, "app.yml");
   await Deno.writeTextFile(appConfigPath, stringifyYaml(validAppConfig));
   logger.debug("Created app config only", { path: appConfigPath, config: validAppConfig });
   return tempDir;
@@ -136,8 +136,8 @@ export async function setupAppConfigOnly(): Promise<string> {
 export async function setupMergeConfigs(): Promise<string> {
   const { tempDir, configDir, userConfigDir } = await createTestDirStructure();
 
-  const appConfigPath = join(configDir, "app.yaml");
-  const userConfigPath = join(userConfigDir, "user.yaml");
+  const appConfigPath = join(configDir, "app.yml");
+  const userConfigPath = join(userConfigDir, "user.yml");
 
   await Deno.writeTextFile(appConfigPath, stringifyYaml(validAppConfig));
   await Deno.writeTextFile(userConfigPath, stringifyYaml(validUserConfig));
@@ -157,7 +157,7 @@ export async function setupMergeConfigs(): Promise<string> {
  */
 export async function setupInvalidConfig(invalidConfig: Record<string, unknown>): Promise<string> {
   const { tempDir, configDir } = await createTestDirStructure();
-  const appConfigPath = join(configDir, "app.yaml");
+  const appConfigPath = join(configDir, "app.yml");
   await Deno.writeTextFile(appConfigPath, stringifyYaml(invalidConfig));
   logger.debug("Created invalid config", { path: appConfigPath, config: invalidConfig });
   return tempDir;
@@ -169,7 +169,7 @@ export async function setupInvalidConfig(invalidConfig: Record<string, unknown>)
  */
 export async function setupExtraFieldsConfig(): Promise<string> {
   const { tempDir, configDir } = await createTestDirStructure();
-  const appConfigPath = join(configDir, "app.yaml");
+  const appConfigPath = join(configDir, "app.yml");
   await Deno.writeTextFile(appConfigPath, stringifyYaml(extraFieldConfigs.rootLevel));
   logger.debug("Created config with extra fields", {
     path: appConfigPath,

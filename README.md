@@ -28,7 +28,7 @@ graph LR
         F[UserConfigLoader]
     end
     subgraph Utils
-        G[YamlParser]
+        G[YAMLParser]
         H[PathUtils]
     end
     A --> E
@@ -64,7 +64,7 @@ const settings = config.getConfig();
 ### Configuration Structure
 
 #### Application Configuration (Required)
-Located at `/breakdown/config/app.yaml`:
+Located at `/breakdown/config/app.yml`:
 
 ```yaml
 working_dir: "./.agent/breakdown"
@@ -75,7 +75,7 @@ app_schema:
 ```
 
 #### User Configuration (Optional)
-Located at `$working_dir/config/user.yaml`:
+Located at `$working_dir/config/user.yml`:
 
 ```yaml
 app_prompt:

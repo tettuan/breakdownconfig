@@ -1,11 +1,11 @@
 # アプリケーション設定の概要
 
 アプリケーションの設定ファイル
-`breakdown/config/app.yaml` 
+`breakdown/config/app.yml` 
 を読み込む。相対パス。プロジェクトフォルダからの相対。
 
 # 設定項目
-root からyaml形式で記載する。
+root からYAML形式で記載する。
 - working_dir: WorkingDirの設定（必須）
 - app_prompt : プロンプトファイルの設定（必須）
   - base_dir : Baseフォルダ

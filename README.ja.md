@@ -28,7 +28,7 @@ graph LR
         F[UserConfigLoader]
     end
     subgraph Utils
-        G[YamlParser]
+        G[YAMLParser]
         H[PathUtils]
     end
     A --> E
@@ -64,7 +64,7 @@ const settings = config.getConfig();
 ### 設定構造
 
 #### アプリケーション設定（必須）
-`/breakdown/config/app.yaml`に配置：
+`/breakdown/config/app.yml`に配置：
 
 ```yaml
 working_dir: "./.agent/breakdown"
@@ -75,7 +75,7 @@ app_schema:
 ```
 
 #### ユーザー設定（オプション）
-`$working_dir/config/user.yaml`に配置：
+`$working_dir/config/user.yml`に配置：
 
 ```yaml
 app_prompt:

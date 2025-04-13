@@ -26,8 +26,8 @@ describe("BreakdownConfig", () => {
     await ensureDir(join(testDir, "breakdown", "config"));
     await ensureDir(join(testDir, ".agent", "breakdown", "config"));
 
-    // Create app.yaml with valid content
-    const appConfigPath = join(testDir, "breakdown", "config", "app.yaml");
+    // Create app.yml with valid content
+    const appConfigPath = join(testDir, "breakdown", "config", "app.yml");
     await Deno.writeTextFile(
       appConfigPath,
       `working_dir: workspace
@@ -49,8 +49,8 @@ app_schema:
   });
 
   it("should load and merge configurations correctly", async () => {
-    // Create user.yaml with custom settings
-    const userConfigPath = join(testDir, ".agent", "breakdown", "config", "user.yaml");
+    // Create user.yml with custom settings
+    const userConfigPath = join(testDir, ".agent", "breakdown", "config", "user.yml");
     await ensureDir(join(testDir, ".agent", "breakdown", "config"));
     await Deno.writeTextFile(
       userConfigPath,
@@ -132,7 +132,7 @@ paths:
   });
 
   it("should throw error when app config is missing", async () => {
-    await Deno.remove(join(testDir, "breakdown", "config", "app.yaml"));
+    await Deno.remove(join(testDir, "breakdown", "config", "app.yml"));
     const config = new BreakdownConfig(testDir);
     logger.debug("Attempting to load config without app config file");
 
@@ -147,7 +147,7 @@ paths:
   });
 
   it("should throw error when app config is invalid YAML", async () => {
-    const appConfigPath = join(testDir, "breakdown", "config", "app.yaml");
+    const appConfigPath = join(testDir, "breakdown", "config", "app.yml");
     await Deno.writeTextFile(appConfigPath, "invalid: yaml: :");
     const config = new BreakdownConfig(testDir);
     logger.debug("Attempting to load config with invalid YAML");

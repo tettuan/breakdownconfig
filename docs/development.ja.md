@@ -62,7 +62,7 @@ graph LR
         F[UserConfigLoader]
     end
     subgraph Utils
-        G[YamlParser]
+        G[YAMLParser]
         H[PathUtils]
     end
     A --> E

@@ -6,7 +6,7 @@ import type { AppConfig } from "../types/app_config.ts";
 /**
  * Loads and validates the application configuration from a fixed location.
  * The application configuration is required and must be located at
- * `breakdown/config/app.yaml` relative to the base directory.
+ * `breakdown/config/app.yml` relative to the base directory.
  *
  * @example
  * ```typescript
@@ -31,8 +31,8 @@ export class AppConfigLoader {
   async load(): Promise<AppConfig> {
     try {
       const configPath = this.baseDir
-        ? join(this.baseDir, "breakdown", "config", "app.yaml")
-        : join("breakdown", "config", "app.yaml");
+        ? join(this.baseDir, "breakdown", "config", "app.yml")
+        : join("breakdown", "config", "app.yml");
 
       let text: string;
       try {
