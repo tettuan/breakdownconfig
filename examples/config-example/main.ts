@@ -18,7 +18,7 @@
  * 5. Proper module structure
  */
 
-import { BreakdownConfig } from "@tettuan/breakdownconfig";
+import { BreakdownConfig } from "../../mod.ts";
 import { BreakdownLogger } from "@tettuan/breakdownlogger";
 
 const logger = new BreakdownLogger();
@@ -54,7 +54,7 @@ async function loadAndValidateConfig(baseUrl: URL): Promise<{
 }> {
   const config = new BreakdownConfig();
   await config.loadConfig();
-  const settings = config.getConfig();
+  const settings = await config.getConfig();
 
   // Validate paths
   const workingDir = validatePath(settings.working_dir, baseUrl);

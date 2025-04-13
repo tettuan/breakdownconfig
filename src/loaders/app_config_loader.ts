@@ -50,17 +50,17 @@ export class AppConfigLoader {
       let config: unknown;
       try {
         config = parseYaml(text);
-      } catch (_e) {
+      } catch (_error) {
         ErrorManager.throwError(
           ErrorCode.APP_CONFIG_INVALID,
-          "Invalid application configuration - Invalid YAML format",
+          "Invalid application configuration",
         );
       }
 
       if (!this.validateConfig(config)) {
         ErrorManager.throwError(
           ErrorCode.APP_CONFIG_INVALID,
-          "Invalid application configuration - Missing required fields",
+          "Invalid application configuration",
         );
       }
 

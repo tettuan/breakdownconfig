@@ -58,14 +58,11 @@ export class ConfigManager {
       this.config = this.mergeConfigs(appConfig, userConfig);
       this.isLoaded = true;
       return this.config;
-    } catch (error) {
-      if (error instanceof Error) {
-        throw error;
+    } catch (_error) {
+      if (_error instanceof Error) {
+        throw _error;
       }
-      ErrorManager.throwError(
-        ErrorCode.CONFIG_NOT_LOADED,
-        "Failed to load configuration",
-      );
+      ErrorManager.throwError(ErrorCode.APP_CONFIG_INVALID, "Invalid application configuration");
     }
   }
 
@@ -76,14 +73,21 @@ export class ConfigManager {
    * @throws {Error} If the application configuration is invalid
    */
   private async loadAppConfig(): Promise<AppConfig> {
-    this.appConfig = await this.appConfigLoader.load();
-    if (!this.appConfig) {
-      ErrorManager.throwError(
-        ErrorCode.CONFIG_NOT_LOADED,
-        "Configuration not loaded - Call loadConfig() first",
-      );
+    try {
+      this.appConfig = await this.appConfigLoader.load();
+      if (!this.appConfig) {
+        ErrorManager.throwError(
+          ErrorCode.APP_CONFIG_NOT_FOUND,
+          "Application configuration file not found",
+        );
+      }
+      return this.appConfig;
+    } catch (error) {
+      if (error instanceof Error) {
+        throw error;
+      }
+      ErrorManager.throwError(ErrorCode.APP_CONFIG_INVALID, "Invalid application configuration");
     }
-    return this.appConfig;
   }
 
   /**
@@ -95,17 +99,14 @@ export class ConfigManager {
   private async loadUserConfig(): Promise<UserConfig> {
     try {
       this.userConfig = await this.userConfigLoader.load();
-    } catch (error) {
-      // User config is optional, so we ignore loading errors
-      this.userConfig = null;
+      if (!this.userConfig) {
+        return {} as UserConfig; // Return empty config if not found
+      }
+      return this.userConfig;
+    } catch (_error) {
+      // User config is optional, so we return empty config on error
+      return {} as UserConfig;
     }
-    if (!this.userConfig) {
-      ErrorManager.throwError(
-        ErrorCode.CONFIG_NOT_LOADED,
-        "Configuration not loaded - Call loadConfig() first",
-      );
-    }
-    return this.userConfig;
   }
 
   /**
