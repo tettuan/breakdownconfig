@@ -23,6 +23,4 @@ jobs:
           deno-version: v2.x
 
       - name: Publish to JSR
-        run: deno publish --allow-read --allow-write --allow-env
-        env:
-          JSR_TOKEN: ${{ secrets.JSR_TOKEN }} 
+        run: deno publish --allow-dirty 
