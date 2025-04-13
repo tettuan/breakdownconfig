@@ -4,35 +4,23 @@
  */
 
 /**
- * Configuration for prompt-related settings
- * @interface
- */
-export interface PromptConfig {
-  /** Base directory for prompt files */
-  base_dir: string;
-}
-
-/**
- * Configuration for schema-related settings
- * @interface
- */
-export interface SchemaConfig {
-  /** Base directory for schema files */
-  base_dir: string;
-}
-
-/**
  * Application-level configuration settings
  * Contains required configuration for the application to function
  * @interface
  */
-export interface AppConfig {
+interface AppConfig {
   /** Working directory for the application */
   working_dir: string;
   /** Prompt configuration settings */
-  app_prompt: PromptConfig;
+  app_prompt: {
+    /** Base directory for prompt files */
+    base_dir: string;
+  };
   /** Schema configuration settings */
-  app_schema: SchemaConfig;
+  app_schema: {
+    /** Base directory for schema files */
+    base_dir: string;
+  };
 }
 
 /**
@@ -40,12 +28,40 @@ export interface AppConfig {
  * Contains optional overrides for application configuration
  * @interface
  */
-export interface UserConfig {
+interface UserConfig {
   /** Optional prompt configuration overrides */
-  app_prompt?: PromptConfig;
+  app_prompt?: {
+    /** Base directory for prompt files */
+    base_dir?: string;
+  };
   /** Optional schema configuration overrides */
-  app_schema?: SchemaConfig;
+  app_schema?: {
+    /** Base directory for schema files */
+    base_dir?: string;
+  };
 }
+
+/**
+ * Merged configuration settings
+ * Contains the final configuration after merging AppConfig and UserConfig
+ * @interface
+ */
+interface MergedConfig {
+  /** Working directory for the application */
+  working_dir: string;
+  /** Prompt configuration settings */
+  app_prompt: {
+    /** Base directory for prompt files */
+    base_dir: string;
+  };
+  /** Schema configuration settings */
+  app_schema: {
+    /** Base directory for schema files */
+    base_dir: string;
+  };
+}
+
+export type { AppConfig, UserConfig, MergedConfig };
 
 /**
  * Record type for configuration data

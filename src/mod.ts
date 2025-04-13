@@ -6,6 +6,3 @@
  */
 
 export { BreakdownConfig } from "./breakdown_config.ts";
-export type { AppConfig } from "./types/app_config.ts";
-export type { UserConfig } from "./types/user_config.ts";
-export type { MergedConfig } from "./types/merged_config.ts";
