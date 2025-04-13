@@ -114,6 +114,29 @@ enum ErrorCode {
 }
 ```
 
+## Examples
+
+This repository includes two examples demonstrating the library's usage:
+
+### 1. Configuration Example (config-example)
+A sample demonstrating basic configuration file loading and usage:
+- Application configuration loading
+- Path validation and resolution
+- Error handling
+- Log output
+
+See [examples/config-example/README.md](./examples/config-example/README.md) for details.
+
+### 2. Prompt Manager (prompt-manager)
+A multi-prompt management application sample:
+- Prompt and schema file management
+- Integration of application and user configurations
+- Automatic directory structure generation
+- Error handling
+- Log output
+
+See [examples/prompt-manager/README.md](./examples/prompt-manager/README.md) for details.
+
 ## Development
 
 ### Running Tests

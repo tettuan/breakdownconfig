@@ -1,3 +1,5 @@
+import { BreakdownLogger } from "@tettuan/breakdownlogger";
+
 /**
  * Error codes used throughout the application
  * Organized by category with specific error codes for each type of error
@@ -36,6 +38,7 @@ export enum ErrorCode {
 }
 
 export class ErrorManager {
+  private static logger = new BreakdownLogger();
   private static errorMessages: Map<ErrorCode, string> = new Map([
     [ErrorCode.APP_CONFIG_NOT_FOUND, "Application configuration file not found"],
     [ErrorCode.APP_CONFIG_INVALID, "Invalid application configuration"],
@@ -62,6 +65,6 @@ export class ErrorManager {
 
   static logWarning(code: ErrorCode, details?: string): void {
     const message = this.errorMessages.get(code) || "Unknown warning";
-    console.warn(`Warning - ${code}: ${message}${details ? ` - ${details}` : ""}`);
+    this.logger.warn(`${code}: ${message}${details ? ` - ${details}` : ""}`);
   }
 }
