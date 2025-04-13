@@ -14,6 +14,7 @@
 
 import { join } from "@std/path";
 import { BreakdownLogger } from "@tettuan/breakdownlogger";
+import { stringify as stringifyYaml } from "@std/yaml";
 
 const logger = new BreakdownLogger();
 
@@ -107,7 +108,7 @@ async function createTestDirStructure(): Promise<
   logger.debug("Test setup", { tempDir });
 
   const configDir = join(tempDir, "breakdown", "config");
-  const userConfigDir = join(tempDir, TEST_WORKING_DIR, "config");
+  const userConfigDir = join(tempDir, ".agent", "breakdown", "config");
 
   await Deno.mkdir(configDir, { recursive: true });
   await Deno.mkdir(userConfigDir, { recursive: true });
@@ -123,7 +124,7 @@ async function createTestDirStructure(): Promise<
 export async function setupAppConfigOnly(): Promise<string> {
   const { tempDir, configDir } = await createTestDirStructure();
   const appConfigPath = join(configDir, "app.yaml");
-  await Deno.writeTextFile(appConfigPath, JSON.stringify(validAppConfig));
+  await Deno.writeTextFile(appConfigPath, stringifyYaml(validAppConfig));
   logger.debug("Created app config only", { path: appConfigPath, config: validAppConfig });
   return tempDir;
 }
@@ -138,8 +139,8 @@ export async function setupMergeConfigs(): Promise<string> {
   const appConfigPath = join(configDir, "app.yaml");
   const userConfigPath = join(userConfigDir, "user.yaml");
 
-  await Deno.writeTextFile(appConfigPath, JSON.stringify(validAppConfig));
-  await Deno.writeTextFile(userConfigPath, JSON.stringify(validUserConfig));
+  await Deno.writeTextFile(appConfigPath, stringifyYaml(validAppConfig));
+  await Deno.writeTextFile(userConfigPath, stringifyYaml(validUserConfig));
 
   logger.debug("Created configs for merge testing", {
     appConfig: { path: appConfigPath, config: validAppConfig },
@@ -157,7 +158,7 @@ export async function setupMergeConfigs(): Promise<string> {
 export async function setupInvalidConfig(invalidConfig: Record<string, unknown>): Promise<string> {
   const { tempDir, configDir } = await createTestDirStructure();
   const appConfigPath = join(configDir, "app.yaml");
-  await Deno.writeTextFile(appConfigPath, JSON.stringify(invalidConfig));
+  await Deno.writeTextFile(appConfigPath, stringifyYaml(invalidConfig));
   logger.debug("Created invalid config", { path: appConfigPath, config: invalidConfig });
   return tempDir;
 }
@@ -169,7 +170,7 @@ export async function setupInvalidConfig(invalidConfig: Record<string, unknown>)
 export async function setupExtraFieldsConfig(): Promise<string> {
   const { tempDir, configDir } = await createTestDirStructure();
   const appConfigPath = join(configDir, "app.yaml");
-  await Deno.writeTextFile(appConfigPath, JSON.stringify(extraFieldConfigs.rootLevel));
+  await Deno.writeTextFile(appConfigPath, stringifyYaml(extraFieldConfigs.rootLevel));
   logger.debug("Created config with extra fields", {
     path: appConfigPath,
     config: extraFieldConfigs.rootLevel,

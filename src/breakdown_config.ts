@@ -1,265 +1,114 @@
-import { join } from "@std/path";
-import { parse as parseYaml } from "@std/yaml";
-import { ErrorCode, ErrorManager } from "./error_manager.ts";
-import type { AppConfig } from "./types/app_config.ts";
-import type { UserConfig } from "./types/user_config.ts";
+import { resolve } from "@std/path";
 import type { MergedConfig } from "./types/merged_config.ts";
+import { ConfigManager } from "./config_manager.ts";
+import { AppConfigLoader } from "./loaders/app_config_loader.ts";
+import { UserConfigLoader } from "./loaders/user_config_loader.ts";
+import { ErrorCode, ErrorManager } from "./error_manager.ts";
 
+/**
+ * Main configuration class for managing application and user settings.
+ * This class provides methods to load, validate, and merge configurations
+ * from both application-specific and user-specific locations.
+ *
+ * @example
+ * ```typescript
+ * const config = new BreakdownConfig();
+ * await config.loadConfig();
+ * const settings = await config.getConfig();
+ * ```
+ */
 export class BreakdownConfig {
-  private workingDir: string = "";
-  private appConfig: AppConfig | null = null;
-  private userConfig: UserConfig | null = null;
+  private configManager: ConfigManager;
   private baseDir: string;
+  private isConfigLoaded = false;
 
+  /**
+   * Creates a new instance of BreakdownConfig.
+   * Initializes the configuration manager with the specified base directory.
+   *
+   * @param baseDir - Optional base directory for configuration files
+   */
   constructor(baseDir: string = "") {
     this.baseDir = baseDir;
+    const appConfigLoader = new AppConfigLoader(baseDir);
+    const userConfigLoader = new UserConfigLoader(baseDir);
+    this.configManager = new ConfigManager(appConfigLoader, userConfigLoader);
   }
 
   /**
-   * Loads both application and user configurations
+   * Loads and merges application and user configurations.
+   * Validates the configurations and handles any errors that occur.
+   *
+   * @throws {Error} If the application configuration is missing or invalid
+   * @throws {Error} If the user configuration is invalid (if present)
    */
   async loadConfig(): Promise<void> {
-    await this.loadAppConfig();
-    await this.loadUserConfig();
-  }
-
-  /**
-   * Loads the application configuration from breakdown/config/app.yaml
-   * @throws Error if the config file is missing or invalid
-   */
-  private async loadAppConfig(): Promise<void> {
     try {
-      const configPath = this.baseDir
-        ? join(this.baseDir, "breakdown", "config", "app.yaml")
-        : join("breakdown", "config", "app.yaml");
-
-      let text: string;
-      try {
-        text = await Deno.readTextFile(configPath);
-      } catch (error) {
-        if (error instanceof Deno.errors.NotFound) {
-          ErrorManager.throwError(
-            ErrorCode.APP_CONFIG_NOT_FOUND,
-            `Application configuration file not found - Config file not found at: ${configPath}`,
-          );
-        }
-        throw error;
-      }
-
-      let config: unknown;
-      try {
-        config = parseYaml(text);
-      } catch (_e) {
+      const config = await this.configManager.getConfig();
+      if (!config.working_dir || config.working_dir.trim() === "") {
         ErrorManager.throwError(
           ErrorCode.APP_CONFIG_INVALID,
-          "Invalid application configuration - Invalid YAML format",
+          "Invalid application configuration",
         );
       }
-
-      if (!this.validateAppConfig(config)) {
-        ErrorManager.throwError(
-          ErrorCode.APP_CONFIG_INVALID,
-          "Invalid application configuration - Missing required fields",
-        );
-      }
-
-      // At this point we know the config has all required fields
-      const validConfig = config as AppConfig;
-      this.appConfig = {
-        working_dir: validConfig.working_dir,
-        app_prompt: {
-          base_dir: validConfig.app_prompt.base_dir,
-        },
-        app_schema: {
-          base_dir: validConfig.app_schema.base_dir,
-        },
-      };
-      this.workingDir = this.appConfig.working_dir;
+      this.isConfigLoaded = true;
     } catch (error) {
       if (error instanceof Error) {
         throw error;
       }
-      ErrorManager.throwError(
-        ErrorCode.APP_CONFIG_INVALID,
-        "Invalid application configuration - Failed to load configuration",
-      );
+      ErrorManager.throwError(ErrorCode.UNKNOWN_ERROR, "An unknown error occurred");
     }
   }
 
   /**
-   * Loads the user configuration from $working_dir/config/user.yaml if it exists
+   * Returns the merged configuration object.
+   * Throws an error if the configuration hasn't been loaded yet.
+   *
+   * @returns {Promise<MergedConfig>} The merged configuration object
+   * @throws {Error} If the configuration hasn't been loaded
    */
-  private async loadUserConfig(): Promise<void> {
-    if (!this.workingDir) {
-      ErrorManager.throwError(
-        ErrorCode.APP_CONFIG_INVALID,
-        "Invalid application configuration - Working directory not set",
-      );
-    }
-
-    try {
-      const configPath = this.baseDir
-        ? join(this.baseDir, this.workingDir, "config", "user.yaml")
-        : join(this.workingDir, "config", "user.yaml");
-
-      let text: string;
-      try {
-        text = await Deno.readTextFile(configPath);
-      } catch (error) {
-        if (error instanceof Deno.errors.NotFound) {
-          // User config is optional, so we just ignore if it's missing
-          return;
-        }
-        throw error;
-      }
-
-      let config: unknown;
-      try {
-        config = parseYaml(text);
-      } catch (_e) {
-        ErrorManager.throwError(
-          ErrorCode.USER_CONFIG_INVALID,
-          "Invalid application configuration - Invalid YAML in user config file",
-        );
-      }
-
-      // Validate and transform user config
-      const userConfig: UserConfig = {};
-
-      if (config && typeof config === "object") {
-        const configObj = config as Record<string, unknown>;
-        if (this.isValidPromptConfig(configObj.app_prompt)) {
-          userConfig.app_prompt = { base_dir: configObj.app_prompt.base_dir };
-        }
-
-        if (this.isValidSchemaConfig(configObj.app_schema)) {
-          userConfig.app_schema = { base_dir: configObj.app_schema.base_dir };
-        }
-      }
-
-      this.userConfig = userConfig;
-    } catch (error) {
-      if (error instanceof Error) {
-        throw error;
-      }
-      throw new Error("Failed to load user config");
-    }
-  }
-
-  /**
-   * Type guard for PromptConfig
-   */
-  private isValidPromptConfig(config: unknown): config is { base_dir: string } {
-    return typeof config === "object" &&
-      config !== null &&
-      "base_dir" in config &&
-      typeof (config as { base_dir: unknown }).base_dir === "string";
-  }
-
-  /**
-   * Type guard for SchemaConfig
-   */
-  private isValidSchemaConfig(config: unknown): config is { base_dir: string } {
-    return typeof config === "object" &&
-      config !== null &&
-      "base_dir" in config &&
-      typeof (config as { base_dir: unknown }).base_dir === "string";
-  }
-
-  /**
-   * Validates that all required fields are present in the application config
-   */
-  private validateAppConfig(config: unknown): config is AppConfig {
-    if (!config || typeof config !== "object") {
-      return false;
-    }
-
-    const { working_dir, app_prompt, app_schema } = config as Partial<AppConfig>;
-
-    return typeof working_dir === "string" &&
-      this.isValidPromptConfig(app_prompt) &&
-      this.isValidSchemaConfig(app_schema);
-  }
-
-  /**
-   * Returns the merged configuration
-   * @throws Error if configurations haven't been loaded
-   */
-  getConfig(): MergedConfig {
-    if (!this.appConfig) {
+  async getConfig(): Promise<MergedConfig> {
+    if (!this.isConfigLoaded) {
       ErrorManager.throwError(
         ErrorCode.CONFIG_NOT_LOADED,
         "Configuration not loaded - Call loadConfig() first",
       );
     }
-
-    const result: MergedConfig = {
-      working_dir: this.workingDir,
-      app_prompt: {
-        base_dir: this.appConfig.app_prompt.base_dir,
-      },
-      app_schema: {
-        base_dir: this.appConfig.app_schema.base_dir,
-      },
-    };
-
-    // Merge user config if it exists
-    if (this.userConfig) {
-      if (this.userConfig.app_prompt) {
-        result.app_prompt = {
-          ...result.app_prompt,
-          ...this.userConfig.app_prompt,
-        };
-      }
-      if (this.userConfig.app_schema) {
-        result.app_schema = {
-          ...result.app_schema,
-          ...this.userConfig.app_schema,
-        };
-      }
-    }
-
-    return result;
+    return await this.configManager.getConfig();
   }
 
   /**
-   * Gets the absolute path to the working directory
-   * @returns The absolute path to the working directory
+   * Gets the absolute path to the working directory.
+   *
+   * @returns {Promise<string>} The absolute path to the working directory
+   * @throws {Error} If the configuration hasn't been loaded
    */
   async getWorkingDir(): Promise<string> {
     const config = await this.getConfig();
-    return join(this.baseDir, config.working_dir);
+    return resolve(this.baseDir, config.working_dir);
   }
 
   /**
-   * Gets the absolute path to the prompt directory
-   * @returns The absolute path to the prompt directory
+   * Gets the absolute path to the prompt directory.
+   *
+   * @returns {Promise<string>} The absolute path to the prompt directory
+   * @throws {Error} If the configuration hasn't been loaded
    */
   async getPromptDir(): Promise<string> {
     const config = await this.getConfig();
     const workingDir = await this.getWorkingDir();
-    return join(workingDir, config.app_prompt.base_dir);
+    return resolve(workingDir, config.app_prompt.base_dir);
   }
 
   /**
-   * Gets the absolute path to the schema directory
-   * @returns The absolute path to the schema directory
+   * Gets the absolute path to the schema directory.
+   *
+   * @returns {Promise<string>} The absolute path to the schema directory
+   * @throws {Error} If the configuration hasn't been loaded
    */
   async getSchemaDir(): Promise<string> {
     const config = await this.getConfig();
     const workingDir = await this.getWorkingDir();
-    return join(workingDir, config.app_schema.base_dir);
-  }
-
-  static getDefaultConfig(): AppConfig {
-    return {
-      working_dir: "./.agent/breakdown",
-      app_prompt: {
-        base_dir: "./prompts",
-      },
-      app_schema: {
-        base_dir: "./schemas",
-      },
-    };
+    return resolve(workingDir, config.app_schema.base_dir);
   }
 }

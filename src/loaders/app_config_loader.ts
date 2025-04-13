@@ -1,38 +1,123 @@
+import { join } from "@std/path";
 import { parse as parseYaml } from "@std/yaml";
 import { ErrorCode, ErrorManager } from "../error_manager.ts";
-import { ConfigValidator } from "../validators/config_validator.ts";
 import type { AppConfig } from "../types/app_config.ts";
-import { getDefaultAppConfigPath } from "../utils/path_resolver.ts";
 
 /**
- * Application Configuration Loader
+ * Loads and validates the application configuration from a fixed location.
+ * The application configuration is required and must be located at
+ * `breakdown/config/app.yaml` relative to the base directory.
  *
- * This module is responsible for loading and validating the application configuration.
- * It uses the URL API for path resolution to ensure consistent behavior across platforms.
+ * @example
+ * ```typescript
+ * const loader = new AppConfigLoader();
+ * const config = await loader.load();
+ * ```
  */
-
 export class AppConfigLoader {
-  private readonly configPath: string;
+  /**
+   * Creates a new instance of AppConfigLoader.
+   *
+   * @param baseDir - Optional base directory for configuration files
+   */
+  constructor(private readonly baseDir: string = "") {}
 
-  constructor(configPath?: string) {
-    this.configPath = configPath ?? getDefaultAppConfigPath();
-  }
-
+  /**
+   * Loads and validates the application configuration.
+   *
+   * @returns {Promise<AppConfig>} The loaded and validated application configuration
+   * @throws {Error} If the configuration file is missing or invalid
+   */
   async load(): Promise<AppConfig> {
     try {
-      const content = await Deno.readTextFile(this.configPath);
-      const config = parseYaml(content) as unknown;
+      const configPath = this.baseDir
+        ? join(this.baseDir, "breakdown", "config", "app.yaml")
+        : join("breakdown", "config", "app.yaml");
 
-      ConfigValidator.validateAppConfig(config);
-      return config;
-    } catch (error) {
-      if (error instanceof Deno.errors.NotFound) {
+      let text: string;
+      try {
+        text = await Deno.readTextFile(configPath);
+      } catch (error) {
+        if (error instanceof Deno.errors.NotFound) {
+          ErrorManager.throwError(
+            ErrorCode.APP_CONFIG_NOT_FOUND,
+            `Application configuration file not found at: ${configPath}`,
+          );
+        }
+        throw error;
+      }
+
+      let config: unknown;
+      try {
+        config = parseYaml(text);
+      } catch (_e) {
         ErrorManager.throwError(
-          ErrorCode.APP_CONFIG_NOT_FOUND,
-          `Config file not found at: ${this.configPath}`,
+          ErrorCode.APP_CONFIG_INVALID,
+          "Invalid application configuration - Invalid YAML format",
         );
       }
-      throw error;
+
+      if (!this.validateConfig(config)) {
+        ErrorManager.throwError(
+          ErrorCode.APP_CONFIG_INVALID,
+          "Invalid application configuration - Missing required fields",
+        );
+      }
+
+      return config as AppConfig;
+    } catch (error) {
+      if (error instanceof Error) {
+        throw error;
+      }
+      ErrorManager.throwError(
+        ErrorCode.APP_CONFIG_INVALID,
+        "Invalid application configuration - Failed to load configuration",
+      );
     }
+  }
+
+  /**
+   * Validates that the configuration object has all required fields
+   * and that they are of the correct type.
+   *
+   * @param config - The configuration object to validate
+   * @returns {boolean} True if the configuration is valid
+   */
+  private validateConfig(config: unknown): config is AppConfig {
+    if (!config || typeof config !== "object") {
+      return false;
+    }
+
+    const { working_dir, app_prompt, app_schema } = config as Partial<AppConfig>;
+
+    return typeof working_dir === "string" &&
+      this.isValidPromptConfig(app_prompt) &&
+      this.isValidSchemaConfig(app_schema);
+  }
+
+  /**
+   * Type guard for prompt configuration
+   *
+   * @param config - The configuration object to check
+   * @returns {boolean} True if the configuration is valid
+   */
+  private isValidPromptConfig(config: unknown): config is { base_dir: string } {
+    return typeof config === "object" &&
+      config !== null &&
+      "base_dir" in config &&
+      typeof (config as { base_dir: unknown }).base_dir === "string";
+  }
+
+  /**
+   * Type guard for schema configuration
+   *
+   * @param config - The configuration object to check
+   * @returns {boolean} True if the configuration is valid
+   */
+  private isValidSchemaConfig(config: unknown): config is { base_dir: string } {
+    return typeof config === "object" &&
+      config !== null &&
+      "base_dir" in config &&
+      typeof (config as { base_dir: unknown }).base_dir === "string";
   }
 }

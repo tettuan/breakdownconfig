@@ -23,11 +23,6 @@ export class ConfigManager {
   private appConfig: AppConfig | null = null;
   private userConfig: UserConfig | null = null;
   private isLoaded = false;
-  private config: MergedConfig = {
-    working_dir: "",
-    app_prompt: { base_dir: "" },
-    app_schema: { base_dir: "" },
-  };
 
   /**
    * Creates a new instance of ConfigManager.
@@ -47,65 +42,54 @@ export class ConfigManager {
    * @returns {Promise<MergedConfig>} The merged configuration
    * @throws {Error} If the application configuration is invalid
    */
-  public async getConfig(): Promise<MergedConfig> {
-    if (this.isLoaded) {
-      return this.config;
-    }
-
-    try {
-      const appConfig = await this.loadAppConfig();
-      const userConfig = await this.loadUserConfig();
-      this.config = this.mergeConfigs(appConfig, userConfig);
-      this.isLoaded = true;
-      return this.config;
-    } catch (error) {
-      if (error instanceof Error) {
-        throw error;
+  async getConfig(): Promise<MergedConfig> {
+    if (!this.isLoaded) {
+      try {
+        this.appConfig = await this.appConfigLoader.load();
+        this.validateConfig(this.appConfig);
+        this.userConfig = await this.userConfigLoader.load();
+        this.isLoaded = true;
+      } catch (error) {
+        if (error instanceof Error) {
+          throw error;
+        }
+        ErrorManager.throwError(
+          ErrorCode.UNKNOWN_ERROR,
+          "Failed to load configuration",
+        );
       }
-      ErrorManager.throwError(
-        ErrorCode.CONFIG_NOT_LOADED,
-        "Failed to load configuration",
-      );
     }
-  }
 
-  /**
-   * Loads the application configuration.
-   *
-   * @returns {Promise<AppConfig>} The loaded application configuration
-   * @throws {Error} If the application configuration is invalid
-   */
-  private async loadAppConfig(): Promise<AppConfig> {
-    this.appConfig = await this.appConfigLoader.load();
     if (!this.appConfig) {
       ErrorManager.throwError(
         ErrorCode.CONFIG_NOT_LOADED,
         "Configuration not loaded - Call loadConfig() first",
       );
     }
-    return this.appConfig;
+
+    if (!this.isLoaded) {
+      ErrorManager.throwError(
+        ErrorCode.CONFIG_NOT_LOADED,
+        "Configuration not loaded",
+      );
+    }
+
+    return this.mergeConfigs(this.appConfig, this.userConfig);
   }
 
   /**
-   * Loads the user configuration.
+   * Validates the configuration.
    *
-   * @returns {Promise<UserConfig>} The loaded user configuration
-   * @throws {Error} If the user configuration is invalid
+   * @param config - The configuration to validate
+   * @throws {Error} If the configuration is invalid
    */
-  private async loadUserConfig(): Promise<UserConfig> {
-    try {
-      this.userConfig = await this.userConfigLoader.load();
-    } catch (error) {
-      // User config is optional, so we ignore loading errors
-      this.userConfig = null;
-    }
-    if (!this.userConfig) {
+  private validateConfig(config: AppConfig | MergedConfig): void {
+    if (!config.working_dir || config.working_dir.trim() === "") {
       ErrorManager.throwError(
-        ErrorCode.CONFIG_NOT_LOADED,
-        "Configuration not loaded - Call loadConfig() first",
+        ErrorCode.APP_CONFIG_INVALID,
+        "Invalid application configuration",
       );
     }
-    return this.userConfig;
   }
 
   /**
@@ -118,33 +102,34 @@ export class ConfigManager {
    * @param userConfig - The user configuration (optional)
    * @returns {MergedConfig} The merged configuration
    */
-  private mergeConfigs(
-    appConfig: AppConfig,
-    userConfig: UserConfig | null | undefined,
-  ): MergedConfig {
-    const mergedConfig: MergedConfig = {
-      working_dir: String(userConfig?.working_dir || appConfig.working_dir),
+  private mergeConfigs(appConfig: AppConfig, userConfig: UserConfig | null): MergedConfig {
+    if (!userConfig) {
+      return appConfig as MergedConfig;
+    }
+
+    const merged: MergedConfig = {
+      ...appConfig,
+      working_dir:
+        typeof userConfig.working_dir === "string" && userConfig.working_dir.trim() !== ""
+          ? userConfig.working_dir
+          : appConfig.working_dir,
       app_prompt: {
-        base_dir: userConfig?.app_prompt?.base_dir
-          ? String(userConfig.app_prompt.base_dir)
-          : String(appConfig.app_prompt.base_dir),
+        ...appConfig.app_prompt,
+        base_dir: userConfig.app_prompt?.base_dir || appConfig.app_prompt.base_dir,
       },
       app_schema: {
-        base_dir: userConfig?.app_schema?.base_dir
-          ? String(userConfig.app_schema.base_dir)
-          : String(appConfig.app_schema.base_dir),
+        ...appConfig.app_schema,
+        base_dir: userConfig.app_schema?.base_dir || appConfig.app_schema.base_dir,
       },
     };
 
-    // If userConfig exists, merge any additional fields
-    if (userConfig) {
-      for (const [key, value] of Object.entries(userConfig)) {
-        if (!(key in mergedConfig)) {
-          mergedConfig[key] = String(value);
-        }
+    // Handle additional fields from user config
+    for (const [key, value] of Object.entries(userConfig)) {
+      if (!(key in merged)) {
+        (merged as Record<string, unknown>)[key] = value;
       }
     }
 
-    return mergedConfig;
+    return merged;
   }
 }

@@ -15,11 +15,15 @@ interface AppConfig {
   app_prompt: {
     /** Base directory for prompt files */
     base_dir: string;
+    /** List of prompt files */
+    files?: string[];
   };
   /** Schema configuration settings */
   app_schema: {
     /** Base directory for schema files */
     base_dir: string;
+    /** List of schema files */
+    files?: string[];
   };
 }
 
@@ -29,15 +33,21 @@ interface AppConfig {
  * @interface
  */
 interface UserConfig {
+  /** Optional working directory override */
+  working_dir?: string;
   /** Optional prompt configuration overrides */
   app_prompt?: {
     /** Base directory for prompt files */
     base_dir?: string;
+    /** List of prompt files */
+    files?: string[];
   };
   /** Optional schema configuration overrides */
   app_schema?: {
     /** Base directory for schema files */
     base_dir?: string;
+    /** List of schema files */
+    files?: string[];
   };
 }
 
@@ -53,11 +63,15 @@ interface MergedConfig {
   app_prompt: {
     /** Base directory for prompt files */
     base_dir: string;
+    /** List of prompt files */
+    files?: string[];
   };
   /** Schema configuration settings */
   app_schema: {
     /** Base directory for schema files */
     base_dir: string;
+    /** List of schema files */
+    files?: string[];
   };
 }
 

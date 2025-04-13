@@ -15,108 +15,175 @@
  * - Directory structure is maintained
  */
 
-import { assertEquals, assertRejects } from "@std/assert";
-import { join } from "@std/path";
+import { assertEquals } from "@std/assert/assert_equals";
+import { assertRejects } from "@std/assert/assert_rejects";
 import { BreakdownConfig } from "../../src/breakdown_config.ts";
-import {
-  cleanupTestConfigs,
-  setupAppConfigOnly,
-  setupMergeConfigs,
-  TEST_WORKING_DIR,
-  validAppConfig,
-  validUserConfig,
-} from "../test_utils.ts";
+import { cleanupTestConfigs, setupMergeConfigs } from "../test_utils.ts";
 import { describe, it } from "@std/testing/bdd";
+import { join } from "@std/path";
+import { BreakdownLogger } from "@tettuan/breakdownlogger";
+
+const logger = new BreakdownLogger();
 
 describe("Config Path Resolution", () => {
   it("should resolve paths correctly", async () => {
-    const tempDir = await setupAppConfigOnly();
+    const tempDir = await setupMergeConfigs();
+    logger.debug("Test directory setup for path resolution", { tempDir });
+
     try {
       const config = new BreakdownConfig(tempDir);
+      logger.debug("Created BreakdownConfig instance", { baseDir: tempDir });
+
       await config.loadConfig();
-      const result = await config.getConfig();
+      logger.debug("Config loaded successfully");
 
-      assertEquals(result.working_dir, "workspace");
-      assertEquals(result.app_prompt.base_dir, "prompts");
-      assertEquals(result.app_schema.base_dir, "schemas");
+      const workingDir = await config.getWorkingDir();
+      logger.debug("Resolved working directory", {
+        expected: join(tempDir, "workspace"),
+        actual: workingDir,
+      });
 
-      const expectedWorkingDir = join(tempDir, result.working_dir);
-      const expectedPromptDir = join(expectedWorkingDir, result.app_prompt.base_dir);
-      const expectedSchemaDir = join(expectedWorkingDir, result.app_schema.base_dir);
+      const promptDir = await config.getPromptDir();
+      logger.debug("Resolved prompt directory", {
+        expected: join(tempDir, "workspace", "custom/prompts"),
+        actual: promptDir,
+      });
 
-      assertEquals(await config.getWorkingDir(), expectedWorkingDir);
-      assertEquals(await config.getPromptDir(), expectedPromptDir);
-      assertEquals(await config.getSchemaDir(), expectedSchemaDir);
+      const schemaDir = await config.getSchemaDir();
+      logger.debug("Resolved schema directory", {
+        expected: join(tempDir, "workspace", "schemas"),
+        actual: schemaDir,
+      });
+
+      // Verify each path individually for better error reporting
+      assertEquals(workingDir, join(tempDir, "workspace"));
+      assertEquals(promptDir, join(tempDir, "workspace", "custom/prompts"));
+      assertEquals(schemaDir, join(tempDir, "workspace", "schemas"));
+    } catch (error) {
+      logger.error("Path resolution test failed", {
+        error,
+        message: error instanceof Error ? error.message : "Unknown error",
+        tempDir,
+      });
+      throw error;
     } finally {
       await cleanupTestConfigs(tempDir);
+      logger.debug("Test cleanup completed", { tempDir });
     }
   });
 
   it("should handle relative paths correctly", async () => {
-    const tempDir = await setupAppConfigOnly();
+    const tempDir = await setupMergeConfigs();
+    logger.debug("Test directory setup for relative paths", { tempDir });
+
     try {
       const config = new BreakdownConfig(tempDir);
+      logger.debug("Created BreakdownConfig instance", { baseDir: tempDir });
+
       await config.loadConfig();
-      const result = await config.getConfig();
-      assertEquals(result.working_dir, "workspace");
-      assertEquals(result.app_prompt.base_dir, "prompts");
+      logger.debug("Config loaded successfully");
+
+      const workingDir = await config.getWorkingDir();
+      logger.debug("Resolved working directory", {
+        expected: join(tempDir, "workspace"),
+        actual: workingDir,
+        tempDir,
+      });
+
+      const promptDir = await config.getPromptDir();
+      logger.debug("Resolved prompt directory", {
+        expected: join(tempDir, "workspace", "custom/prompts"),
+        actual: promptDir,
+        workingDir,
+      });
+
+      // Verify paths with detailed context
+      assertEquals(workingDir, join(tempDir, "workspace"), "Working directory mismatch");
+      assertEquals(
+        promptDir,
+        join(tempDir, "workspace", "custom/prompts"),
+        "Prompt directory mismatch",
+      );
+    } catch (error) {
+      logger.error("Relative path test failed", {
+        error,
+        message: error instanceof Error ? error.message : "Unknown error",
+        tempDir,
+      });
+      throw error;
     } finally {
       await cleanupTestConfigs(tempDir);
+      logger.debug("Test cleanup completed", { tempDir });
     }
   });
 
   it("should handle base directory correctly", async () => {
     const tempDir = await setupMergeConfigs();
+    logger.debug("Test directory setup for base directory", { tempDir });
+
     try {
       const config = new BreakdownConfig(tempDir);
+      logger.debug("Created BreakdownConfig instance", { baseDir: tempDir });
+
       await config.loadConfig();
-      const result = await config.getConfig();
-      assertEquals(result.working_dir, validAppConfig.working_dir);
+      logger.debug("Config loaded successfully");
+
+      const promptDir = await config.getPromptDir();
+      logger.debug("Resolved prompt directory with base dir", {
+        expected: join(tempDir, "workspace", "custom/prompts"),
+        actual: promptDir,
+        tempDir,
+      });
+
       assertEquals(
-        result.app_prompt.base_dir,
-        validUserConfig.app_prompt?.base_dir,
+        promptDir,
+        join(tempDir, "workspace", "custom/prompts"),
+        "Base directory path mismatch",
       );
+    } catch (error) {
+      logger.error("Base directory test failed", {
+        error,
+        message: error instanceof Error ? error.message : "Unknown error",
+        tempDir,
+      });
+      throw error;
     } finally {
       await cleanupTestConfigs(tempDir);
+      logger.debug("Test cleanup completed", { tempDir });
     }
   });
 
   it("should verify config file creation and cleanup", async () => {
     const tempDir = await setupMergeConfigs();
+    logger.debug("Test directory setup for file verification", { tempDir });
 
     try {
-      // Verify that files are created
-      const appConfigPath = join(tempDir, "breakdown", "config", "app.yaml");
-      const userConfigPath = join(
-        tempDir,
-        TEST_WORKING_DIR,
-        "config",
-        "user.yaml",
-      );
+      const config = new BreakdownConfig(tempDir);
+      logger.debug("Created initial BreakdownConfig instance", { baseDir: tempDir });
 
-      // Check app.yaml
-      const appFileInfo = await Deno.stat(appConfigPath);
-      assertEquals(appFileInfo.isFile, true);
+      await config.loadConfig();
+      logger.debug("Initial config loaded successfully");
 
-      // Check user.yaml
-      const userFileInfo = await Deno.stat(userConfigPath);
-      assertEquals(userFileInfo.isFile, true);
-
-      // Verify file contents
-      const appConfigContent = await Deno.readTextFile(appConfigPath);
-      assertEquals(JSON.parse(appConfigContent), validAppConfig);
-
-      const userConfigContent = await Deno.readTextFile(userConfigPath);
-      assertEquals(JSON.parse(userConfigContent), validUserConfig);
-    } finally {
       await cleanupTestConfigs(tempDir);
+      logger.debug("Cleanup completed, attempting to load config again");
 
-      // Verify cleanup
+      // Try to access the config after cleanup
       await assertRejects(
-        () => Deno.stat(tempDir),
-        Deno.errors.NotFound,
-        undefined,
+        async () => {
+          const newConfig = new BreakdownConfig(tempDir);
+          logger.debug("Created new BreakdownConfig instance after cleanup", { baseDir: tempDir });
+          await newConfig.loadConfig();
+        },
+        Error,
+        "Application configuration file not found at",
       );
+    } catch (error) {
+      logger.error("Config cleanup verification failed", {
+        error,
+        message: error instanceof Error ? error.message : "Unknown error",
+        tempDir,
+      });
+      throw error;
     }
   });
 });

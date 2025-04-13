@@ -28,6 +28,9 @@ import {
   setupInvalidConfig,
 } from "../test_utils.ts";
 import { describe, it } from "@std/testing/bdd";
+import { BreakdownLogger } from "@tettuan/breakdownlogger";
+
+const logger = new BreakdownLogger();
 
 describe("Config Validation", () => {
   it("should validate extra fields in config", async () => {
@@ -42,6 +45,37 @@ describe("Config Validation", () => {
       assertEquals(result.app_schema.base_dir, "schemas");
     } finally {
       await cleanupTestConfigs(tempDir);
+    }
+  });
+
+  it("should reject empty working directory", async () => {
+    const tempDir = await setupInvalidConfig({ working_dir: "" });
+    logger.debug("Test directory setup for empty working dir validation", { tempDir });
+
+    try {
+      const config = new BreakdownConfig(tempDir);
+      logger.debug("Created BreakdownConfig instance", { baseDir: tempDir });
+
+      await assertRejects(
+        async () => {
+          logger.debug("Attempting to load config with empty working directory");
+          await config.loadConfig();
+        },
+        Error,
+        "ERR1002: Invalid application configuration",
+        "Expected error for empty working directory was not thrown",
+      );
+      logger.debug("Config validation rejected as expected");
+    } catch (error) {
+      logger.error("Test failed", {
+        error,
+        message: error instanceof Error ? error.message : "Unknown error",
+        tempDir,
+      });
+      throw error;
+    } finally {
+      await cleanupTestConfigs(tempDir);
+      logger.debug("Test cleanup completed", { tempDir });
     }
   });
 });
