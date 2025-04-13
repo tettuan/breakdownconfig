@@ -24,7 +24,7 @@ done
 
 # Try to get latest version from JSR
 echo "Checking latest version from JSR..."
-latest_jsr_version=$(curl -s https://jsr.io/@tettuan/breakdownprompt/versions | grep -o '0\.[0-9]\+\.[0-9]\+' | head -n 1)
+latest_jsr_version=$(curl -s https://jsr.io/@tettuan/breakdownconfig/versions | grep -o '[0-9]\+\.[0-9]\+\.[0-9]\+' | head -n 1)
 
 if [ -z "$latest_jsr_version" ]; then
     echo "Warning: Could not determine latest version from JSR, using local version"
@@ -61,11 +61,8 @@ echo "New version: $new_version"
 # Update only the version in deno.json
 deno eval "const config = JSON.parse(await Deno.readTextFile('deno.json')); config.version = '$new_version'; await Deno.writeTextFile('deno.json', JSON.stringify(config, null, 2).trimEnd() + '\n');"
 
-# Update version in version.ts
-deno eval "const content = await Deno.readTextFile('version.ts'); const updated = content.replace(/export const VERSION = \"[^\"]+\";/, 'export const VERSION = \"$new_version\";'); await Deno.writeTextFile('version.ts', updated);"
-
 # Commit the version change
-git add deno.json version.ts
+git add deno.json
 git commit -m "chore: bump version to $new_version"
 
 # Create and push tag
