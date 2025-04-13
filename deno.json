@@ -1,6 +1,6 @@
 {
   "name": "@tettuan/breakdownconfig",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "description": "A Deno library for managing application and user configurations",
   "author": "tettuan",
   "license": "MIT",
