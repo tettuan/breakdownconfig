@@ -3,22 +3,26 @@ name: Publish
 on:
   push:
     tags:
-      - 'v*' # Trigger on version tags
+      - 'v*'
 
 jobs:
   publish:
     runs-on: ubuntu-latest
     permissions:
-      id-token: write
       contents: read
+      id-token: write
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Deno
         uses: denoland/setup-deno@v1
         with:
           deno-version: v2.x
 
-      - name: Publish to Deno
-        run: deno publish 
+      - name: Publish to JSR
+        run: deno publish --allow-read --allow-write --allow-env
+        env:
+          JSR_TOKEN: ${{ secrets.JSR_TOKEN }} 

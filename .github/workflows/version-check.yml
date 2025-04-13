@@ -37,6 +37,12 @@ jobs:
           VERSION=$(deno eval "console.log(JSON.parse(Deno.readTextFileSync('deno.json')).version)")
           echo "version=${VERSION}" >> $GITHUB_OUTPUT
 
+      - name: Get latest JSR version
+        id: get_jsr_version
+        run: |
+          JSR_VERSION=$(curl -s https://jsr.io/@tettuan/breakdownprompt/versions | grep -o '0\.[0-9]\+\.[0-9]\+' | head -n 1 || echo "0.0.0")
+          echo "jsr_version=${JSR_VERSION}" >> $GITHUB_OUTPUT
+
       - name: Check version consistency
         run: |
           if [ "v${{ steps.get_version.outputs.version }}" != "${{ steps.get_latest_tag.outputs.latest_tag }}" ]; then
@@ -46,4 +52,11 @@ jobs:
             echo "Please ensure the version in deno.json matches the latest git tag."
             exit 1
           fi
-          echo "Version check passed! Both versions are ${{ steps.get_version.outputs.version }}"
+
+          if [ "${{ steps.get_version.outputs.version }}" == "${{ steps.get_jsr_version.outputs.jsr_version }}" ]; then
+            echo "Error: Version ${{ steps.get_version.outputs.version }} already exists on JSR!"
+            echo "Please bump the version before pushing."
+            exit 1
+          fi
+
+          echo "Version check passed! New version: ${{ steps.get_version.outputs.version }}"

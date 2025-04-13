@@ -61,20 +61,4 @@ interface MergedConfig {
   };
 }
 
-export type { AppConfig, UserConfig, MergedConfig };
-
-/**
- * Record type for configuration data
- * Allows for flexible key-value pairs while maintaining type safety for known fields
- * @type {Object}
- */
-export type ConfigRecord = {
-  /** Working directory for the application */
-  working_dir?: string;
-  /** Prompt configuration with base directory */
-  app_prompt?: { base_dir?: string };
-  /** Schema configuration with base directory */
-  app_schema?: { base_dir?: string };
-  /** Additional configuration fields */
-  [key: string]: unknown;
-};
+export type { AppConfig, MergedConfig, UserConfig };
