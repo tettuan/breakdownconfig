@@ -15,20 +15,21 @@
 import { join } from "@std/path";
 import { BreakdownLogger } from "@tettuan/breakdownlogger";
 import { stringify as stringifyYaml } from "@std/yaml";
+import { DefaultPaths } from "../src/types/app_config.ts";
 
 const logger = new BreakdownLogger();
 
 // Test data constants
-export const TEST_WORKING_DIR = "workspace";
+export const TEST_WORKING_DIR = ".agent/breakdown";
 
 // Valid configuration examples
 export const validAppConfig = {
-  working_dir: "workspace",
+  working_dir: DefaultPaths.WORKING_DIR,
   app_prompt: {
-    base_dir: "prompts",
+    base_dir: DefaultPaths.PROMPT_BASE_DIR,
   },
   app_schema: {
-    base_dir: "schemas",
+    base_dir: DefaultPaths.SCHEMA_BASE_DIR,
   },
 };
 
@@ -41,16 +42,16 @@ export const validUserConfig = {
 // Invalid configuration examples
 export const invalidAppConfigs = {
   missingWorkingDir: {
-    app_prompt: { base_dir: "prompts" },
-    app_schema: { base_dir: "schemas" },
+    app_prompt: { base_dir: DefaultPaths.PROMPT_BASE_DIR },
+    app_schema: { base_dir: DefaultPaths.SCHEMA_BASE_DIR },
   },
   missingPrompt: {
-    working_dir: "workspace",
-    app_schema: { base_dir: "schemas" },
+    working_dir: DefaultPaths.WORKING_DIR,
+    app_schema: { base_dir: DefaultPaths.SCHEMA_BASE_DIR },
   },
   missingSchema: {
-    working_dir: "workspace",
-    app_prompt: { base_dir: "prompts" },
+    working_dir: DefaultPaths.WORKING_DIR,
+    app_prompt: { base_dir: DefaultPaths.PROMPT_BASE_DIR },
   },
   invalidTypes: {
     working_dir: 123,
@@ -59,62 +60,57 @@ export const invalidAppConfigs = {
   },
   emptyStrings: {
     working_dir: "",
-    app_prompt: { base_dir: "prompts" },
-    app_schema: { base_dir: "schemas" },
+    app_prompt: { base_dir: DefaultPaths.PROMPT_BASE_DIR },
+    app_schema: { base_dir: DefaultPaths.SCHEMA_BASE_DIR },
   },
 };
 
-// Extra fields configuration examples
+// Extra field configurations for testing
 export const extraFieldConfigs = {
   rootLevel: {
-    working_dir: "workspace",
+    working_dir: DefaultPaths.WORKING_DIR,
     app_prompt: {
-      base_dir: "prompts",
+      base_dir: DefaultPaths.PROMPT_BASE_DIR,
+      extra_field: "extra",
     },
     app_schema: {
-      base_dir: "schemas",
+      base_dir: DefaultPaths.SCHEMA_BASE_DIR,
+      extra_field: "extra",
     },
-    extra_field: "should be ignored",
-    another_extra: {
-      nested: "value",
-    },
-  },
-  nestedLevel: {
-    working_dir: "workspace",
-    app_prompt: {
-      base_dir: "prompts",
-      unknown_setting: true,
-      extra: {
-        deeply: {
-          nested: "value",
-        },
-      },
-    },
-    app_schema: {
-      base_dir: "schemas",
-      custom_option: 123,
-    },
+    extra_root_field: "extra",
   },
 };
 
 /**
- * Creates a base temporary test directory structure
- * @returns Path to temporary directory with created config directories
+ * Creates the test directory structure
+ * @returns Object containing paths to created directories
  */
-async function createTestDirStructure(): Promise<
-  { tempDir: string; configDir: string; userConfigDir: string }
-> {
+async function createTestDirStructure(): Promise<{
+  tempDir: string;
+  configDir: string;
+  userConfigDir: string;
+}> {
   const tempDir = await Deno.makeTempDir();
   logger.debug("Test setup", { tempDir });
 
-  const configDir = join(tempDir, "breakdown", "config");
+  const configDir = join(tempDir, DefaultPaths.WORKING_DIR, "config");
   const userConfigDir = join(tempDir, ".agent", "breakdown", "config");
 
   await Deno.mkdir(configDir, { recursive: true });
   await Deno.mkdir(userConfigDir, { recursive: true });
+
   logger.debug("Created config directories", { configDir, userConfigDir });
 
   return { tempDir, configDir, userConfigDir };
+}
+
+/**
+ * Cleans up test directories
+ * @param tempDir - Path to temporary directory to clean up
+ */
+export async function cleanupTestConfigs(tempDir: string): Promise<void> {
+  await Deno.remove(tempDir, { recursive: true });
+  logger.debug("Cleaned up test directory", { tempDir });
 }
 
 /**
@@ -176,17 +172,4 @@ export async function setupExtraFieldsConfig(): Promise<string> {
     config: extraFieldConfigs.rootLevel,
   });
   return tempDir;
-}
-
-/**
- * Cleans up temporary test files and directories
- * @param tempDir - Path to temporary directory to clean up
- */
-export async function cleanupTestConfigs(tempDir: string): Promise<void> {
-  try {
-    await Deno.remove(tempDir, { recursive: true });
-    logger.debug("Cleaned up test directory", { tempDir });
-  } catch (error) {
-    logger.error("Failed to clean up test directory", { tempDir, error });
-  }
 }

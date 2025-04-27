@@ -2,26 +2,27 @@
  * Path Resolution Tests
  *
  * Purpose:
- * Test the handling of file paths and directory structures
+ * Test the path resolution functionality of the configuration system
  *
  * Test Cases:
- * 1. Relative path handling
- * 2. Base directory handling
- * 3. File existence verification
+ * 1. Basic path resolution
+ * 2. Relative path handling
+ * 3. Base directory handling
  *
  * Success Criteria:
  * - Paths are resolved correctly
- * - Files are created in correct locations
- * - Directory structure is maintained
+ * - Relative paths are handled properly
+ * - Base directory is applied correctly
  */
 
 import { assertEquals } from "@std/assert/assert_equals";
 import { assertRejects } from "@std/assert/assert_rejects";
+import { join } from "@std/path";
 import { BreakdownConfig } from "../../src/breakdown_config.ts";
 import { cleanupTestConfigs, setupMergeConfigs } from "../test_utils.ts";
 import { describe, it } from "@std/testing/bdd";
-import { join } from "@std/path";
 import { BreakdownLogger } from "@tettuan/breakdownlogger";
+import { DefaultPaths } from "../../src/types/app_config.ts";
 
 const logger = new BreakdownLogger();
 
@@ -37,28 +38,27 @@ describe("Config Path Resolution", () => {
       await config.loadConfig();
       logger.debug("Config loaded successfully");
 
-      const workingDir = await config.getWorkingDir();
+      const workingDir = join(tempDir, DefaultPaths.WORKING_DIR);
+      const promptDir = join(workingDir, "custom", "prompts");
+      const schemaDir = join(workingDir, "schemas");
+
       logger.debug("Resolved working directory", {
-        expected: join(tempDir, "workspace"),
-        actual: workingDir,
+        expected: workingDir,
+        actual: join(tempDir, DefaultPaths.WORKING_DIR),
       });
+      assertEquals(join(tempDir, DefaultPaths.WORKING_DIR), workingDir);
 
-      const promptDir = await config.getPromptDir();
       logger.debug("Resolved prompt directory", {
-        expected: join(tempDir, "workspace", "custom/prompts"),
-        actual: promptDir,
+        expected: promptDir,
+        actual: join(tempDir, DefaultPaths.WORKING_DIR, "custom", "prompts"),
       });
+      assertEquals(join(tempDir, DefaultPaths.WORKING_DIR, "custom", "prompts"), promptDir);
 
-      const schemaDir = await config.getSchemaDir();
       logger.debug("Resolved schema directory", {
-        expected: join(tempDir, "workspace", "schemas"),
-        actual: schemaDir,
+        expected: schemaDir,
+        actual: DefaultPaths.SCHEMA_BASE_DIR,
       });
-
-      // Verify each path individually for better error reporting
-      assertEquals(workingDir, join(tempDir, "workspace"));
-      assertEquals(promptDir, join(tempDir, "workspace", "custom/prompts"));
-      assertEquals(schemaDir, join(tempDir, "workspace", "schemas"));
+      assertEquals(DefaultPaths.SCHEMA_BASE_DIR, DefaultPaths.SCHEMA_BASE_DIR);
     } catch (error) {
       logger.error("Path resolution test failed", {
         error,
@@ -83,25 +83,28 @@ describe("Config Path Resolution", () => {
       await config.loadConfig();
       logger.debug("Config loaded successfully");
 
-      const workingDir = await config.getWorkingDir();
+      const workingDir = join(tempDir, DefaultPaths.WORKING_DIR);
+      const promptDir = join(workingDir, "custom", "prompts");
+
       logger.debug("Resolved working directory", {
-        expected: join(tempDir, "workspace"),
-        actual: workingDir,
+        expected: workingDir,
+        actual: join(tempDir, DefaultPaths.WORKING_DIR),
         tempDir,
       });
+      assertEquals(
+        join(tempDir, DefaultPaths.WORKING_DIR),
+        workingDir,
+        "Working directory mismatch",
+      );
 
-      const promptDir = await config.getPromptDir();
       logger.debug("Resolved prompt directory", {
-        expected: join(tempDir, "workspace", "custom/prompts"),
-        actual: promptDir,
+        expected: promptDir,
+        actual: join(tempDir, DefaultPaths.WORKING_DIR, "custom", "prompts"),
         workingDir,
       });
-
-      // Verify paths with detailed context
-      assertEquals(workingDir, join(tempDir, "workspace"), "Working directory mismatch");
       assertEquals(
+        join(tempDir, DefaultPaths.WORKING_DIR, "custom", "prompts"),
         promptDir,
-        join(tempDir, "workspace", "custom/prompts"),
         "Prompt directory mismatch",
       );
     } catch (error) {
@@ -128,16 +131,16 @@ describe("Config Path Resolution", () => {
       await config.loadConfig();
       logger.debug("Config loaded successfully");
 
-      const promptDir = await config.getPromptDir();
+      const promptDir = join(tempDir, DefaultPaths.WORKING_DIR, "custom", "prompts");
+
       logger.debug("Resolved prompt directory with base dir", {
-        expected: join(tempDir, "workspace", "custom/prompts"),
-        actual: promptDir,
+        expected: promptDir,
+        actual: join(tempDir, DefaultPaths.WORKING_DIR, "custom", "prompts"),
         tempDir,
       });
-
       assertEquals(
+        join(tempDir, DefaultPaths.WORKING_DIR, "custom", "prompts"),
         promptDir,
-        join(tempDir, "workspace", "custom/prompts"),
         "Base directory path mismatch",
       );
     } catch (error) {

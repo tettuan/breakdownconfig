@@ -19,6 +19,7 @@ import { BreakdownConfig } from "../../src/breakdown_config.ts";
 import { cleanupTestConfigs, setupAppConfigOnly, setupMergeConfigs } from "../test_utils.ts";
 import { describe, it } from "@std/testing/bdd";
 import { BreakdownLogger } from "@tettuan/breakdownlogger";
+import { DefaultPaths } from "../../src/types/app_config.ts";
 
 const logger = new BreakdownLogger();
 
@@ -44,10 +45,10 @@ describe("Config Loading", () => {
 
       // Verify each field individually for better error reporting
       logger.debug("Verifying working_dir", {
-        expected: "workspace",
+        expected: DefaultPaths.WORKING_DIR,
         actual: result.working_dir,
       });
-      assertEquals(result.working_dir, "workspace");
+      assertEquals(result.working_dir, DefaultPaths.WORKING_DIR);
 
       logger.debug("Verifying app_prompt.base_dir", {
         expected: "custom/prompts",
@@ -56,10 +57,10 @@ describe("Config Loading", () => {
       assertEquals(result.app_prompt.base_dir, "custom/prompts");
 
       logger.debug("Verifying app_schema.base_dir", {
-        expected: "schemas",
+        expected: DefaultPaths.SCHEMA_BASE_DIR,
         actual: result.app_schema.base_dir,
       });
-      assertEquals(result.app_schema.base_dir, "schemas");
+      assertEquals(result.app_schema.base_dir, DefaultPaths.SCHEMA_BASE_DIR);
     } catch (error) {
       logger.error("Test failed", {
         error,
@@ -94,22 +95,22 @@ describe("Config Loading", () => {
 
       // Verify each field individually for better error reporting
       logger.debug("Verifying working_dir", {
-        expected: "workspace",
+        expected: DefaultPaths.WORKING_DIR,
         actual: result.working_dir,
       });
-      assertEquals(result.working_dir, "workspace");
+      assertEquals(result.working_dir, DefaultPaths.WORKING_DIR);
 
       logger.debug("Verifying app_prompt.base_dir", {
-        expected: "prompts",
+        expected: DefaultPaths.PROMPT_BASE_DIR,
         actual: result.app_prompt.base_dir,
       });
-      assertEquals(result.app_prompt.base_dir, "prompts");
+      assertEquals(result.app_prompt.base_dir, DefaultPaths.PROMPT_BASE_DIR);
 
       logger.debug("Verifying app_schema.base_dir", {
-        expected: "schemas",
+        expected: DefaultPaths.SCHEMA_BASE_DIR,
         actual: result.app_schema.base_dir,
       });
-      assertEquals(result.app_schema.base_dir, "schemas");
+      assertEquals(result.app_schema.base_dir, DefaultPaths.SCHEMA_BASE_DIR);
     } catch (error) {
       logger.error("Test failed", {
         error,

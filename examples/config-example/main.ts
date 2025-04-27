@@ -1,15 +1,15 @@
 /**
  * Configuration Example
- * 
+ *
  * This module demonstrates how to load and use application configuration
  * using the BreakdownConfig class.
- * 
+ *
  * The configuration structure follows the hierarchical design:
  * - breakdown/
  *   - config/
  *     - app.yaml (Application configuration)
  *     - user.yaml (User-specific configuration, optional)
- * 
+ *
  * This example shows:
  * 1. Basic configuration loading
  * 2. Error handling for missing or invalid configurations
@@ -85,7 +85,6 @@ async function main() {
     console.log("Working Directory:", workingDir.pathname);
     console.log("App Prompt Base Directory:", promptDir.pathname);
     console.log("App Schema Base Directory:", schemaDir.pathname);
-
   } catch (error: unknown) {
     if (error instanceof Error) {
       logger.error("Configuration error", { error: error.message });
@@ -101,4 +100,4 @@ async function main() {
 // Run the example
 if (import.meta.main) {
   main();
-} 
+}

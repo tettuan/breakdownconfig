@@ -64,14 +64,14 @@ const settings = config.getConfig();
 ### Configuration Structure
 
 #### Application Configuration (Required)
-Located at `/breakdown/config/app.yml`:
+Located at `./.agent/breakdown/config/app.yml`:
 
 ```yaml
 working_dir: "./.agent/breakdown"
 app_prompt:
-  base_dir: "/breakdown/prompts/app"
+  base_dir: "./.agent/breakdown/prompts/app"
 app_schema:
-  base_dir: "/breakdown/schema/app"
+  base_dir: "./.agent/breakdown/schema/app"
 ```
 
 #### User Configuration (Optional)

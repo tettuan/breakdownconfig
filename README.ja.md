@@ -64,14 +64,14 @@ const settings = config.getConfig();
 ### 設定構造
 
 #### アプリケーション設定（必須）
-`/breakdown/config/app.yml`に配置：
+`./.agent/breakdown/config/app.yml`に配置：
 
 ```yaml
 working_dir: "./.agent/breakdown"
 app_prompt:
-  base_dir: "/breakdown/prompts/app"
+  base_dir: "./.agent/breakdown/prompts/app"
 app_schema:
-  base_dir: "/breakdown/schema/app"
+  base_dir: "./.agent/breakdown/schema/app"
 ```
 
 #### ユーザー設定（オプション）

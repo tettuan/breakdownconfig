@@ -6,20 +6,22 @@ import { BreakdownConfig } from "./breakdown_config.ts";
 import { assertRejects } from "@std/assert/assert_rejects";
 import { afterEach, beforeEach } from "@std/testing/bdd";
 import { BreakdownLogger } from "@tettuan/breakdownlogger";
+import { DefaultPaths } from "./types/app_config.ts";
 
 const logger = new BreakdownLogger();
 
+const _TEST_CONFIG = {
+  working_dir: DefaultPaths.WORKING_DIR,
+  app_prompt: {
+    base_dir: DefaultPaths.PROMPT_BASE_DIR,
+  },
+  app_schema: {
+    base_dir: DefaultPaths.SCHEMA_BASE_DIR,
+  },
+};
+
 describe("BreakdownConfig", () => {
   const testDir = "test_config";
-  const _appConfig = {
-    working_dir: "workspace",
-    app_prompt: {
-      base_dir: "prompts",
-    },
-    app_schema: {
-      base_dir: "schemas",
-    },
-  };
 
   beforeEach(async () => {
     // Setup test directories
@@ -49,86 +51,23 @@ app_schema:
   });
 
   it("should load and merge configurations correctly", async () => {
-    // Create user.yml with custom settings
-    const userConfigPath = join(testDir, ".agent", "breakdown", "config", "user.yml");
-    await ensureDir(join(testDir, ".agent", "breakdown", "config"));
-    await Deno.writeTextFile(
-      userConfigPath,
-      `app_prompt:
-  base_dir: custom/prompts
-paths:
-  - custom_path1
-  - custom_path2`,
-    );
-    logger.debug("Created user config", { path: userConfigPath });
-
     const config = new BreakdownConfig(testDir);
-    logger.debug("Created BreakdownConfig instance", { baseDir: testDir });
-
     await config.loadConfig();
-    logger.debug("Config loaded successfully");
-
     const result = await config.getConfig();
-    logger.debug("Retrieved merged configuration", {
-      result,
-      workingDir: result.working_dir,
-      promptBaseDir: result.app_prompt.base_dir,
-      schemaBaseDir: result.app_schema.base_dir,
-    });
 
-    // Verify each field individually for better error reporting
-    logger.debug("Verifying working_dir", {
-      expected: "workspace",
-      actual: result.working_dir,
-    });
-    assertEquals(result.working_dir, "workspace");
-
-    logger.debug("Verifying app_prompt.base_dir", {
-      expected: "custom/prompts",
-      actual: result.app_prompt.base_dir,
-    });
-    assertEquals(result.app_prompt.base_dir, "custom/prompts");
-
-    logger.debug("Verifying app_schema.base_dir", {
-      expected: "schemas",
-      actual: result.app_schema.base_dir,
-    });
-    assertEquals(result.app_schema.base_dir, "schemas");
+    assertEquals(result.working_dir, DefaultPaths.WORKING_DIR);
+    assertEquals(result.app_prompt.base_dir, DefaultPaths.PROMPT_BASE_DIR);
+    assertEquals(result.app_schema.base_dir, DefaultPaths.SCHEMA_BASE_DIR);
   });
 
   it("should use app config when user config is missing", async () => {
     const config = new BreakdownConfig(testDir);
-    logger.debug("Created BreakdownConfig instance", { baseDir: testDir });
-
     await config.loadConfig();
-    logger.debug("Config loaded successfully");
-
     const result = await config.getConfig();
-    logger.debug("Retrieved app-only configuration", {
-      result,
-      workingDir: result.working_dir,
-      promptBaseDir: result.app_prompt.base_dir,
-      schemaBaseDir: result.app_schema.base_dir,
-    });
 
-    // Verify each field individually for better error reporting
-    logger.debug("Verifying working_dir", {
-      expected: "workspace",
-      actual: result.working_dir,
-    });
-    assertEquals(result.working_dir, "workspace");
-
-    logger.debug("Verifying app_prompt.base_dir", {
-      expected: "prompts",
-      actual: result.app_prompt.base_dir,
-    });
-    assertEquals(result.app_prompt.base_dir, "prompts");
-
-    logger.debug("Verifying app_schema.base_dir", {
-      expected: "schemas",
-      actual: result.app_schema.base_dir,
-    });
-    assertEquals(result.app_schema.base_dir, "schemas");
+    assertEquals(result.working_dir, DefaultPaths.WORKING_DIR);
+    assertEquals(result.app_prompt.base_dir, DefaultPaths.PROMPT_BASE_DIR);
+    assertEquals(result.app_schema.base_dir, DefaultPaths.SCHEMA_BASE_DIR);
   });
 
   it("should throw error when app config is missing", async () => {

@@ -17,7 +17,7 @@ export class SchemaManager {
   async getSchema(name: string): Promise<object> {
     const config = await this.config.getConfig();
     const schemaPath = join(config.app_schema.base_dir, `${name}.json`);
-    
+
     try {
       const content = await readFile(schemaPath, "utf-8");
       return JSON.parse(content);
@@ -34,7 +34,7 @@ export class SchemaManager {
   async saveSchema(name: string, schema: object): Promise<void> {
     const config = await this.config.getConfig();
     const schemaPath = join(config.app_schema.base_dir, `${name}.json`);
-    
+
     try {
       await writeFile(schemaPath, JSON.stringify(schema, null, 2), "utf-8");
     } catch (error) {
@@ -52,4 +52,4 @@ export class SchemaManager {
     // 例: 必須フィールドの存在チェック、型チェックなど
     return true;
   }
-} 
+}

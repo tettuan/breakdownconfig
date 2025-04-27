@@ -1,4 +1,16 @@
 /**
+ * Default paths for application configuration
+ */
+export enum DefaultPaths {
+  /** Default working directory */
+  WORKING_DIR = ".agent/breakdown",
+  /** Default prompt base directory */
+  PROMPT_BASE_DIR = "breakdown/prompts/app",
+  /** Default schema base directory */
+  SCHEMA_BASE_DIR = "breakdown/schema/app",
+}
+
+/**
  * Application-level configuration settings
  * Contains required configuration for the application to function
  * @interface

@@ -1,7 +1,7 @@
 # アプリケーション設定の概要
 
 アプリケーションの設定ファイル
-`breakdown/config/app.yml` 
+`./.agent/breakdown/config/app.yml` 
 を読み込む。相対パス。プロジェクトフォルダからの相対。
 
 # 設定項目
@@ -32,7 +32,7 @@ root からYAML形式で記載する。
 
 - working_dir : "./.agent/breakdown"
 - app_prompt : 
-  - base_dir : "/breakdown/prompts/app"
+  - base_dir : "./.agent/breakdown/prompts/app"
 - app_schema :
-  - base_dir : "/breakdown/schema/app"
+  - base_dir : "./.agent/breakdown/schema/app"
 

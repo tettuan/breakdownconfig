@@ -1,15 +1,15 @@
 /**
  * Prompt Manager Example
- * 
+ *
  * This module demonstrates how to load and use application and user configurations
  * using the BreakdownConfig class.
- * 
+ *
  * The configuration structure follows the hierarchical design:
  * - breakdown/
  *   - config/
  *     - app.yaml (Application configuration)
  *     - user.yaml (User-specific configuration)
- * 
+ *
  * This example shows:
  * 1. Configuration loading with user overrides
  * 2. Path resolution and validation
@@ -61,9 +61,15 @@ async function createDirectoryStructure(baseUrl: URL, dirs: string[]): Promise<v
       if (error instanceof Deno.errors.AlreadyExists) {
         logger.debug("Directory already exists", { directory: url.pathname });
       } else if (error instanceof Error) {
-        logger.warn("Failed to create directory", { directory: url.pathname, error: error.message });
+        logger.warn("Failed to create directory", {
+          directory: url.pathname,
+          error: error.message,
+        });
       } else {
-        logger.warn("Failed to create directory", { directory: url.pathname, error: String(error) });
+        logger.warn("Failed to create directory", {
+          directory: url.pathname,
+          error: String(error),
+        });
       }
     }
   }
@@ -94,8 +100,8 @@ async function loadAndValidateConfig(baseUrl: URL): Promise<{
   }
 
   // Check if user config is being used
-  const isUserConfig = settings.app_prompt.base_dir === "./prompts/user" || 
-                      settings.app_schema.base_dir === "./schema/user";
+  const isUserConfig = settings.app_prompt.base_dir === "./prompts/user" ||
+    settings.app_schema.base_dir === "./schema/user";
 
   return { workingDir, promptDir, schemaDir, isUserConfig };
 }
@@ -116,7 +122,7 @@ async function main() {
     // Display configuration
     console.log("=== Prompt Manager Configuration ===");
     console.log("Working Directory:", workingDir.pathname);
-    
+
     if (isUserConfig) {
       logger.info("User configuration detected");
       console.log("\nFinal Configuration (App + User):");
@@ -137,7 +143,6 @@ async function main() {
       `${workingDir.pathname}/prompts`,
       `${workingDir.pathname}/schema`,
     ]);
-
   } catch (error: unknown) {
     if (error instanceof Error) {
       logger.error("Configuration error", { error: error.message });
@@ -153,4 +158,4 @@ async function main() {
 // Run the example
 if (import.meta.main) {
   main();
-} 
+}

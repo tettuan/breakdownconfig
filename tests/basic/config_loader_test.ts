@@ -4,16 +4,17 @@ import { BreakdownConfig } from "../../mod.ts";
 import { cleanupTestConfigs, setupAppConfigOnly, setupMergeConfigs } from "../test_utils.ts";
 import { describe, it } from "@std/testing/bdd";
 import { BreakdownLogger } from "@tettuan/breakdownlogger";
+import { DefaultPaths } from "../../src/types/app_config.ts";
 
 const logger = new BreakdownLogger();
 
 const TEST_APP_CONFIG = {
-  working_dir: "./.agent/breakdown",
+  working_dir: DefaultPaths.WORKING_DIR,
   app_prompt: {
-    base_dir: "/breakdown/prompts/app",
+    base_dir: DefaultPaths.PROMPT_BASE_DIR,
   },
   app_schema: {
-    base_dir: "/breakdown/schema/app",
+    base_dir: DefaultPaths.SCHEMA_BASE_DIR,
   },
 };
 
@@ -48,10 +49,10 @@ describe("Config Loading", () => {
 
       // Verify each field individually for better error reporting
       logger.debug("Verifying working_dir", {
-        expected: "workspace",
+        expected: DefaultPaths.WORKING_DIR,
         actual: result.working_dir,
       });
-      assertEquals(result.working_dir, "workspace");
+      assertEquals(result.working_dir, DefaultPaths.WORKING_DIR);
 
       logger.debug("Verifying app_prompt.base_dir", {
         expected: "custom/prompts",
@@ -60,10 +61,10 @@ describe("Config Loading", () => {
       assertEquals(result.app_prompt.base_dir, "custom/prompts");
 
       logger.debug("Verifying app_schema.base_dir", {
-        expected: "schemas",
+        expected: DefaultPaths.SCHEMA_BASE_DIR,
         actual: result.app_schema.base_dir,
       });
-      assertEquals(result.app_schema.base_dir, "schemas");
+      assertEquals(result.app_schema.base_dir, DefaultPaths.SCHEMA_BASE_DIR);
     } catch (error) {
       logger.error("Test failed", {
         error,
@@ -98,22 +99,22 @@ describe("Config Loading", () => {
 
       // Verify each field individually for better error reporting
       logger.debug("Verifying working_dir", {
-        expected: "workspace",
+        expected: DefaultPaths.WORKING_DIR,
         actual: result.working_dir,
       });
-      assertEquals(result.working_dir, "workspace");
+      assertEquals(result.working_dir, DefaultPaths.WORKING_DIR);
 
       logger.debug("Verifying app_prompt.base_dir", {
-        expected: "prompts",
+        expected: DefaultPaths.PROMPT_BASE_DIR,
         actual: result.app_prompt.base_dir,
       });
-      assertEquals(result.app_prompt.base_dir, "prompts");
+      assertEquals(result.app_prompt.base_dir, DefaultPaths.PROMPT_BASE_DIR);
 
       logger.debug("Verifying app_schema.base_dir", {
-        expected: "schemas",
+        expected: DefaultPaths.SCHEMA_BASE_DIR,
         actual: result.app_schema.base_dir,
       });
-      assertEquals(result.app_schema.base_dir, "schemas");
+      assertEquals(result.app_schema.base_dir, DefaultPaths.SCHEMA_BASE_DIR);
     } catch (error) {
       logger.error("Test failed", {
         error,
@@ -134,7 +135,7 @@ Deno.test("Basic Config Loading - App Config", async () => {
 
   try {
     // Setup test environment
-    const configDir = `${testDir}/breakdown/config`;
+    const configDir = `${testDir}/${DefaultPaths.WORKING_DIR}/config`;
     await Deno.mkdir(configDir, { recursive: true });
     await Deno.writeTextFile(
       `${configDir}/app.yml`,
@@ -178,7 +179,7 @@ Deno.test("Basic Config Loading - Missing App Config", async () => {
 
   try {
     // Create directory structure but not the config file
-    const configDir = `${testDir}/breakdown/config`;
+    const configDir = `${testDir}/${DefaultPaths.WORKING_DIR}/config`;
     await Deno.mkdir(configDir, { recursive: true });
     logger.debug("Created config directory without app config file", { configDir });
 
@@ -205,7 +206,7 @@ Deno.test("Basic Config Loading - User Config Integration", async () => {
 
   try {
     // Setup test environment
-    const configDir = `${testDir}/breakdown/config`;
+    const configDir = `${testDir}/${DefaultPaths.WORKING_DIR}/config`;
     const userConfigDir = `${testDir}/.agent/breakdown/config`;
     await Deno.mkdir(configDir, { recursive: true });
     await Deno.mkdir(userConfigDir, { recursive: true });

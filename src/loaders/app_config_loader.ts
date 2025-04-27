@@ -2,11 +2,12 @@ import { join } from "@std/path";
 import { parse as parseYaml } from "@std/yaml";
 import { ErrorCode, ErrorManager } from "../error_manager.ts";
 import type { AppConfig } from "../types/app_config.ts";
+import { DefaultPaths } from "../types/app_config.ts";
 
 /**
  * Loads and validates the application configuration from a fixed location.
  * The application configuration is required and must be located at
- * `breakdown/config/app.yml` relative to the base directory.
+ * `.agent/breakdown/config/app.yml` relative to the base directory.
  *
  * @example
  * ```typescript
@@ -31,8 +32,8 @@ export class AppConfigLoader {
   async load(): Promise<AppConfig> {
     try {
       const configPath = this.baseDir
-        ? join(this.baseDir, "breakdown", "config", "app.yml")
-        : join("breakdown", "config", "app.yml");
+        ? join(this.baseDir, DefaultPaths.WORKING_DIR, "config", "app.yml")
+        : join(DefaultPaths.WORKING_DIR, "config", "app.yml");
 
       let text: string;
       try {
