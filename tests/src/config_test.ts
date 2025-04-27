@@ -2,11 +2,11 @@ import { assertEquals } from "@std/assert/assert_equals";
 import { describe, it } from "@std/testing/bdd";
 import { ensureDir } from "@std/fs";
 import { join } from "@std/path";
-import { BreakdownConfig } from "./breakdown_config.ts";
+import { BreakdownConfig } from "../../src/breakdown_config.ts";
 import { assertRejects } from "@std/assert/assert_rejects";
 import { afterEach, beforeEach } from "@std/testing/bdd";
 import { BreakdownLogger } from "@tettuan/breakdownlogger";
-import { DefaultPaths } from "./types/app_config.ts";
+import { DefaultPaths } from "../../src/types/app_config.ts";
 
 const logger = new BreakdownLogger();
 
