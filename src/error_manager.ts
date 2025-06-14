@@ -39,6 +39,18 @@ export enum ErrorCode {
   UNKNOWN_ERROR = "ERR9999",
 }
 
+/**
+ * Central error management class for handling application errors
+ *
+ * This class provides standardized error handling with error codes,
+ * consistent messaging, and centralized error reporting.
+ *
+ * @example
+ * ```typescript
+ * ErrorManager.throwError(ErrorCode.APP_CONFIG_NOT_FOUND, "Config file missing");
+ * ErrorManager.logWarning(ErrorCode.USER_CONFIG_INVALID, "Optional config invalid");
+ * ```
+ */
 export class ErrorManager {
   private static errorMessages: Map<ErrorCode, string> = new Map([
     [ErrorCode.APP_CONFIG_NOT_FOUND, "Application configuration file not found"],
@@ -56,15 +68,38 @@ export class ErrorManager {
   ]);
 
   /**
-   * Throws an error with a standardized format
-   * @param code - Error code from ErrorCode enum
-   * @param message - Main error message
-   * @param details - Optional details about the error
+   * Throws an error with a standardized format including error code
+   *
+   * @param code - Specific error code from ErrorCode enum for categorization
+   * @param message - Descriptive error message for the specific situation
+   * @throws {Error} Always throws an Error with formatted message including error code
+   *
+   * @example
+   * ```typescript
+   * ErrorManager.throwError(
+   *   ErrorCode.APP_CONFIG_NOT_FOUND,
+   *   "Configuration file 'app.yaml' not found in specified directory"
+   * );
+   * ```
    */
   static throwError(code: ErrorCode, message: string): never {
     throw new Error(`${code}: ${message}`);
   }
 
+  /**
+   * Logs a warning message with standardized formatting
+   *
+   * @param code - Warning code from ErrorCode enum
+   * @param details - Optional additional details about the warning
+   *
+   * @example
+   * ```typescript
+   * ErrorManager.logWarning(
+   *   ErrorCode.USER_CONFIG_INVALID,
+   *   "Using default values instead"
+   * );
+   * ```
+   */
   static logWarning(code: ErrorCode, details?: string): void {
     const message = this.errorMessages.get(code) || "Unknown warning";
     console.warn(`${code}: ${message}${details ? ` - ${details}` : ""}`);
