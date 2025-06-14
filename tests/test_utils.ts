@@ -173,3 +173,38 @@ export async function setupExtraFieldsConfig(): Promise<string> {
   });
   return tempDir;
 }
+
+/**
+ * Sets up test environment with custom configuration set
+ * @param prefix - The configuration set prefix (e.g., "production", "staging")
+ * @returns Path to temporary directory
+ */
+export async function setupCustomConfigSet(prefix: string): Promise<string> {
+  const { tempDir, configDir } = await createTestDirStructure();
+
+  // Create custom app config
+  const appConfigPath = join(configDir, `${prefix}-app.yml`);
+  const customAppConfig = {
+    working_dir: DefaultPaths.WORKING_DIR,
+    app_prompt: {
+      base_dir: `${prefix}/prompts`,
+    },
+    app_schema: {
+      base_dir: `${prefix}/schemas`,
+    },
+  };
+  await Deno.writeTextFile(appConfigPath, stringifyYaml(customAppConfig));
+  logger.debug("Created custom app config", { path: appConfigPath, config: customAppConfig });
+
+  // Create custom user config
+  const userConfigPath = join(configDir, `${prefix}-user.yml`);
+  const customUserConfig = {
+    app_prompt: {
+      base_dir: `${prefix}/user-prompts`,
+    },
+  };
+  await Deno.writeTextFile(userConfigPath, stringifyYaml(customUserConfig));
+  logger.debug("Created custom user config", { path: userConfigPath, config: customUserConfig });
+
+  return tempDir;
+}

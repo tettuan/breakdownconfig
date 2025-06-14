@@ -1,6 +1,6 @@
 import { BreakdownConfig } from "@tettuan/breakdownconfig";
-import { join } from "path";
-import { readFile, writeFile } from "fs/promises";
+import { join } from "node:path";
+import { readFile, writeFile } from "node:fs/promises";
 
 export class SchemaManager {
   private config: BreakdownConfig;
@@ -21,7 +21,7 @@ export class SchemaManager {
     try {
       const content = await readFile(schemaPath, "utf-8");
       return JSON.parse(content);
-    } catch (error) {
+    } catch (_error) {
       throw new Error(`Failed to read schema file: ${name}`);
     }
   }
@@ -37,7 +37,7 @@ export class SchemaManager {
 
     try {
       await writeFile(schemaPath, JSON.stringify(schema, null, 2), "utf-8");
-    } catch (error) {
+    } catch (_error) {
       throw new Error(`Failed to save schema file: ${name}`);
     }
   }
@@ -47,7 +47,7 @@ export class SchemaManager {
    * @param schema 検証対象のスキーマ
    * @returns 検証結果
    */
-  validateSchema(schema: object): boolean {
+  validateSchema(_schema: object): boolean {
     // スキーマの検証ロジックを実装
     // 例: 必須フィールドの存在チェック、型チェックなど
     return true;

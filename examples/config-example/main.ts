@@ -81,17 +81,17 @@ async function main() {
     });
 
     // Display configuration
-    console.log("=== Configuration Example ===");
-    console.log("Working Directory:", workingDir.pathname);
-    console.log("App Prompt Base Directory:", promptDir.pathname);
-    console.log("App Schema Base Directory:", schemaDir.pathname);
+    logger.info("=== Configuration Example ===");
+    logger.info("Working Directory", { workingDir: workingDir.pathname });
+    logger.info("App Prompt Base Directory", { promptDir: promptDir.pathname });
+    logger.info("App Schema Base Directory", { schemaDir: schemaDir.pathname });
   } catch (error: unknown) {
     if (error instanceof Error) {
       logger.error("Configuration error", { error: error.message });
-      console.error("Error:", error.message);
+      logger.error("Configuration error", { error: error.message });
     } else {
       logger.error("Unknown error occurred");
-      console.error("Unknown error occurred");
+      logger.error("Unknown error occurred");
     }
     Deno.exit(1);
   }

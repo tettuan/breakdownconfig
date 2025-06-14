@@ -120,20 +120,20 @@ async function main() {
     });
 
     // Display configuration
-    console.log("=== Prompt Manager Configuration ===");
-    console.log("Working Directory:", workingDir.pathname);
+    logger.info("=== Prompt Manager Configuration ===");
+    logger.info("Working Directory", { workingDir: workingDir.pathname });
 
     if (isUserConfig) {
       logger.info("User configuration detected");
-      console.log("\nFinal Configuration (App + User):");
-      console.log("  Prompt Base Directory:", promptDir.pathname);
-      console.log("  Schema Base Directory:", schemaDir.pathname);
-      console.log("\nNote: User configuration has overridden the app configuration");
+      logger.info("Final Configuration (App + User)");
+      logger.info("Prompt Base Directory", { promptDir: promptDir.pathname });
+      logger.info("Schema Base Directory", { schemaDir: schemaDir.pathname });
+      logger.info("Note: User configuration has overridden the app configuration");
     } else {
       logger.info("Using default application configuration");
-      console.log("\nFinal Configuration (App only):");
-      console.log("  Prompt Base Directory:", promptDir.pathname);
-      console.log("  Schema Base Directory:", schemaDir.pathname);
+      logger.info("Final Configuration (App only)");
+      logger.info("Prompt Base Directory", { promptDir: promptDir.pathname });
+      logger.info("Schema Base Directory", { schemaDir: schemaDir.pathname });
     }
 
     // Create directory structure
@@ -146,10 +146,10 @@ async function main() {
   } catch (error: unknown) {
     if (error instanceof Error) {
       logger.error("Configuration error", { error: error.message });
-      console.error("Error:", error.message);
+      logger.error("Configuration error", { error: error.message });
     } else {
       logger.error("Unknown error occurred");
-      console.error("Unknown error occurred");
+      logger.error("Unknown error occurred");
     }
     Deno.exit(1);
   }

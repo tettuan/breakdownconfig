@@ -78,8 +78,8 @@ Codeインスタンスを並列実行し、効率的にタスクを分散処理�
 ### 1. tmux pane構成作成
 
 ```
-# 13画面分割（メイン1つ + サブ12つ）
-tmux split-window -h && tmux split-window -h && tmux split-window -h && tmux select-pane-t 1 && tmux split-window -v && tmux split-window -v && tmux split-window -v && tmuxselect-pane -t 5 && tmux split-window -v && tmux split-window -v && tmux split-window -v&& tmux select-pane -t 9 && tmux split-window -v && tmux split-window -v && tmuxsplit-window -v && tmux select-pane -t 0 && tmux select-pane -P 'fg=white,bg=black,bold'
+# 5つのpaneに分割
+tmux split-window -h && tmux split-window -v && tmux select-pane -t 0 && tmux split-window -v && tmux select-pane -t 2 && tmux split-window -v && tmux select-pane -t 4 && tmux split-window -v
 ```
 
 ### 2. pane番号の確認
@@ -99,18 +99,18 @@ tmux list-panes -F "#{pane_index}: #{pane_id} #{pane_current_command} #{pane_act
 ### 3. Claude Codeセッション起動
 
 **注意**: `cld`はClaude
-Codeのエイリアスです。事前に`alias cld="claude --dangerously-skip-permissions"`を設定してください。
+Codeのエイリアスです。事前に`alias cld="claude --dangerously-skip-permissions"`を設定するか、直接`claude`コマンドを使用してください。
 
 **%27等の番号について**: これらはtmuxが自動割り当てするpane
 IDです。上記の確認コマンドで実際のIDを確認してから使用してください。
 
 ```
-# 全paneで並列起動（実際のpane IDに置き換えて使用, sleep は 3秒以内のランダム数値）
-tmux send-keys -t %27 "cld" && sleep 0.3 && tmux send-keys -t %27 Enter & \
+# 全paneで並列起動（実際のpane IDに置き換えて使用）
+tmux send-keys -t %27 "cld" && sleep 0.1 && tmux send-keys -t %27 Enter & \
 tmux send-keys -t %28 "cld" && sleep 0.1 && tmux send-keys -t %28 Enter & \
-tmux send-keys -t %25 "cld" && sleep 0.5 && tmux send-keys -t %25 Enter & \
-tmux send-keys -t %29 "cld" && sleep 0.7 && tmux send-keys -t %29 Enter & \
-tmux send-keys -t %26 "cld" && sleep 0.9 && tmux send-keys -t %26 Enter & \
+tmux send-keys -t %25 "cld" && sleep 0.1 && tmux send-keys -t %25 Enter & \
+tmux send-keys -t %29 "cld" && sleep 0.1 && tmux send-keys -t %29 Enter & \
+tmux send-keys -t %26 "cld" && sleep 0.1 && tmux send-keys -t %26 Enter & \
 wait
 ```
 
@@ -159,6 +159,7 @@ tmux send-keys -t %22 '[pane3] エラーが発生しました：詳細内容' &&
 
 **実行タイミングの判断基準**:
 
+- 役割の変更時（新しい役割に集中させるため）
 - タスク完了時（新しいタスクに集中させるため）
 - トークン使用量が高くなった時（cldusageで確認）
 - エラーが頻発している時（コンテキストをリセット）

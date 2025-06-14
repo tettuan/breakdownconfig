@@ -1,6 +1,6 @@
 import { BreakdownConfig } from "@tettuan/breakdownconfig";
-import { join } from "path";
-import { readFile } from "fs/promises";
+import { join } from "node:path";
+import { readFile } from "node:fs/promises";
 
 export class PromptManager {
   private config: BreakdownConfig;
@@ -20,7 +20,7 @@ export class PromptManager {
 
     try {
       return await readFile(promptPath, "utf-8");
-    } catch (error) {
+    } catch (_error) {
       throw new Error(`Failed to read prompt file: ${name}`);
     }
   }
@@ -37,7 +37,7 @@ export class PromptManager {
     try {
       const content = await readFile(schemaPath, "utf-8");
       return JSON.parse(content);
-    } catch (error) {
+    } catch (_error) {
       throw new Error(`Failed to read schema file: ${name}`);
     }
   }

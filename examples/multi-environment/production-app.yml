@@ -1,0 +1,39 @@
+working_dir: "."
+
+app_prompt:
+  base_dir: "prompts/production"
+  prompt_patterns:
+    - "**/*.md"
+    - "**/*.txt"
+  ignore_patterns:
+    - "**/temp/**"
+    - "**/cache/**"
+
+app_schema:
+  base_dir: "schemas/production"
+  schema_patterns:
+    - "**/*.json"
+    - "**/*.yaml"
+  ignore_patterns:
+    - "**/draft/**"
+
+cache:
+  enable: true
+  ttl: 3600
+  cleanup_interval: 86400
+
+logging:
+  level: "error"
+  output: "file"
+  file_path: "/var/log/app/production.log"
+
+database:
+  host: "prod-db.example.com"
+  port: 5432
+  pool_size: 20
+  timeout: 30000
+
+api:
+  rate_limit: 1000
+  timeout: 5000
+  retry_attempts: 3

@@ -7,11 +7,16 @@ import { DefaultPaths } from "../types/app_config.ts";
 /**
  * Loads and validates the application configuration from a fixed location.
  * The application configuration is required and must be located at
- * `.agent/breakdown/config/app.yml` relative to the base directory.
+ * `.agent/breakdown/config/app.yml` or `.agent/breakdown/config/{configSetName}-app.yml`
+ * relative to the base directory.
  *
  * @example
  * ```typescript
  * const loader = new AppConfigLoader();
+ * const config = await loader.load();
+ *
+ * // With config set name
+ * const loader = new AppConfigLoader("", "production");
  * const config = await loader.load();
  * ```
  */
@@ -20,8 +25,12 @@ export class AppConfigLoader {
    * Creates a new instance of AppConfigLoader.
    *
    * @param baseDir - Optional base directory for configuration files
+   * @param configSetName - Optional configuration set name (e.g., "production", "development")
    */
-  constructor(private readonly baseDir: string = "") {}
+  constructor(
+    private readonly baseDir: string = "",
+    private readonly configSetName?: string,
+  ) {}
 
   /**
    * Loads and validates the application configuration.
@@ -31,9 +40,12 @@ export class AppConfigLoader {
    */
   async load(): Promise<AppConfig> {
     try {
+      // Generate config file name based on configSetName
+      const configFileName = this.configSetName ? `${this.configSetName}-app.yml` : "app.yml";
+
       const configPath = this.baseDir
-        ? join(this.baseDir, DefaultPaths.WORKING_DIR, "config", "app.yml")
-        : join(DefaultPaths.WORKING_DIR, "config", "app.yml");
+        ? join(this.baseDir, DefaultPaths.WORKING_DIR, "config", configFileName)
+        : join(DefaultPaths.WORKING_DIR, "config", configFileName);
 
       let text: string;
       try {

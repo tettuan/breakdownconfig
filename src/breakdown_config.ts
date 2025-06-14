@@ -20,18 +20,36 @@ import { ErrorCode, ErrorManager } from "./error_manager.ts";
 export class BreakdownConfig {
   private configManager: ConfigManager;
   private baseDir: string;
+  private configSetName?: string;
   private isConfigLoaded = false;
 
   /**
    * Creates a new instance of BreakdownConfig.
    * Initializes the configuration manager with the specified base directory.
    *
-   * @param baseDir - Optional base directory for configuration files
+   * @param baseDir - Optional base directory for configuration files or configuration set name
+   * @param configSetName - Optional configuration set name (e.g., "production", "development")
    */
-  constructor(baseDir: string = "") {
-    this.baseDir = baseDir;
-    const appConfigLoader = new AppConfigLoader(baseDir);
-    const userConfigLoader = new UserConfigLoader(baseDir);
+  constructor(baseDir: string = "", configSetName?: string) {
+    // Handle backward compatibility: if only one argument and it looks like a config set name
+    if (!configSetName && baseDir && /^[a-zA-Z0-9-]+$/.test(baseDir) && !baseDir.includes("/")) {
+      this.configSetName = baseDir;
+      this.baseDir = "";
+    } else {
+      this.baseDir = baseDir;
+      this.configSetName = configSetName;
+    }
+
+    // Validate config set name if provided
+    if (this.configSetName && !/^[a-zA-Z0-9-]+$/.test(this.configSetName)) {
+      ErrorManager.throwError(
+        ErrorCode.INVALID_CONFIG_SET_NAME,
+        `Invalid config set name: ${this.configSetName}. Only alphanumeric characters and hyphens are allowed.`,
+      );
+    }
+
+    const appConfigLoader = new AppConfigLoader(this.baseDir, this.configSetName);
+    const userConfigLoader = new UserConfigLoader(this.baseDir, this.configSetName);
     this.configManager = new ConfigManager(appConfigLoader, userConfigLoader);
   }
 
