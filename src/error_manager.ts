@@ -1,5 +1,3 @@
-import { BreakdownLogger } from "@tettuan/breakdownlogger";
-
 /**
  * Error codes used throughout the application
  * Organized by category with specific error codes for each type of error
@@ -32,13 +30,16 @@ export enum ErrorCode {
   /** Absolute path is not allowed */
   ABSOLUTE_PATH_NOT_ALLOWED = "ERR1009",
 
+  // 設定セット関連 (4000番台)
+  /** Invalid configuration set name */
+  INVALID_CONFIG_SET_NAME = "ERR4001",
+
   // その他 (9000番台)
   /** Unknown or unexpected error occurred */
   UNKNOWN_ERROR = "ERR9999",
 }
 
 export class ErrorManager {
-  private static logger = new BreakdownLogger();
   private static errorMessages: Map<ErrorCode, string> = new Map([
     [ErrorCode.APP_CONFIG_NOT_FOUND, "Application configuration file not found"],
     [ErrorCode.APP_CONFIG_INVALID, "Invalid application configuration"],
@@ -50,6 +51,7 @@ export class ErrorManager {
     [ErrorCode.INVALID_PATH_FORMAT, "Invalid path format"],
     [ErrorCode.PATH_TRAVERSAL_DETECTED, "Path traversal detected"],
     [ErrorCode.ABSOLUTE_PATH_NOT_ALLOWED, "Absolute path is not allowed"],
+    [ErrorCode.INVALID_CONFIG_SET_NAME, "Invalid configuration set name"],
     [ErrorCode.UNKNOWN_ERROR, "Unknown error occurred"],
   ]);
 
@@ -65,6 +67,6 @@ export class ErrorManager {
 
   static logWarning(code: ErrorCode, details?: string): void {
     const message = this.errorMessages.get(code) || "Unknown warning";
-    this.logger.warn(`${code}: ${message}${details ? ` - ${details}` : ""}`);
+    console.warn(`${code}: ${message}${details ? ` - ${details}` : ""}`);
   }
 }

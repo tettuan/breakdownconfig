@@ -1,0 +1,32 @@
+working_dir: "."
+app_prompt:
+  base_dir: "prompts/development"
+  prompt_patterns:
+    - "**/*.md"
+    - "**/*.txt"
+    - "**/*.draft"
+  ignore_patterns: []
+app_schema:
+  base_dir: "schemas/development"
+  schema_patterns:
+    - "**/*.json"
+    - "**/*.yaml"
+    - "**/*.draft"
+  ignore_patterns: []
+cache:
+  enable: false
+  ttl: 300
+  cleanup_interval: 3600
+logging:
+  level: "debug"
+  output: "console"
+  file_path: "./dev.log"
+database:
+  host: "localhost"
+  port: 5433
+  pool_size: 5
+  timeout: 5000
+api:
+  rate_limit: 100
+  timeout: 30000
+  retry_attempts: 1

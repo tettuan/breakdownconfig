@@ -6,11 +6,15 @@ import type { UserConfig } from "../types/user_config.ts";
 /**
  * Loads and validates the user configuration from a working directory.
  * The user configuration is optional and must be located at
- * `$base_dir/.agent/breakdown/config/user.yml`.
+ * `$base_dir/.agent/breakdown/config/user.yml` or `$base_dir/.agent/breakdown/config/{configSetName}-user.yml`.
  *
  * @example
  * ```typescript
  * const loader = new UserConfigLoader();
+ * const config = await loader.load();
+ *
+ * // With config set name
+ * const loader = new UserConfigLoader("", "production");
  * const config = await loader.load();
  * ```
  */
@@ -19,8 +23,12 @@ export class UserConfigLoader {
    * Creates a new instance of UserConfigLoader.
    *
    * @param baseDir - Optional base directory for configuration files
+   * @param configSetName - Optional configuration set name (e.g., "production", "development")
    */
-  constructor(private readonly baseDir: string = "") {}
+  constructor(
+    private readonly baseDir: string = "",
+    private readonly configSetName?: string,
+  ) {}
 
   /**
    * Loads and validates the user configuration.
@@ -31,9 +39,11 @@ export class UserConfigLoader {
    */
   async load(): Promise<UserConfig> {
     try {
+      const fileName = this.configSetName ? `${this.configSetName}-user.yml` : "user.yml";
+
       const configPath = this.baseDir
-        ? join(this.baseDir, ".agent", "breakdown", "config", "user.yml")
-        : join(".agent", "breakdown", "config", "user.yml");
+        ? join(this.baseDir, ".agent", "breakdown", "config", fileName)
+        : join(".agent", "breakdown", "config", fileName);
 
       let text: string;
       try {
