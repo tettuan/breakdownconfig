@@ -14,17 +14,100 @@
  * - Centralized error management
  *
  * @module
- * @example
+ * @example Basic configuration loading
  * ```typescript
- * // Basic usage
+ * // Initialize and load default configuration
  * const config = new BreakdownConfig();
  * await config.loadConfig();
- * const settings = await config.getConfig();
  *
- * // With custom base directory
- * const config = new BreakdownConfig("./custom/path");
+ * // Access merged configuration (app + user overrides)
+ * const settings = await config.getConfig();
+ * console.log("Working directory:", settings.working_dir);
+ * console.log("Prompt base directory:", settings.app_prompt.base_dir);
+ * console.log("Schema base directory:", settings.app_schema.base_dir);
+ * ```
+ *
+ * @example Custom base directory setup
+ * ```typescript
+ * // Use specific project directory
+ * const config = new BreakdownConfig("/path/to/my/project");
  * await config.loadConfig();
+ *
+ * // Get absolute paths for directory operations
  * const workingDir = await config.getWorkingDir();
+ * const promptDir = await config.getPromptDir();
+ * const schemaDir = await config.getSchemaDir();
+ *
+ * console.log("Resolved paths:");
+ * console.log("- Working:", workingDir);
+ * console.log("- Prompts:", promptDir);
+ * console.log("- Schemas:", schemaDir);
+ * ```
+ *
+ * @example Environment-specific configuration
+ * ```typescript
+ * // Load production-specific configuration
+ * const prodConfig = new BreakdownConfig("/opt/app", "production");
+ * await prodConfig.loadConfig();
+ *
+ * // Load development configuration
+ * const devConfig = new BreakdownConfig("/home/dev/app", "development");
+ * await devConfig.loadConfig();
+ *
+ * // Each environment can have different settings
+ * const prodSettings = await prodConfig.getConfig();
+ * const devSettings = await devConfig.getConfig();
+ *
+ * console.log("Production working dir:", prodSettings.working_dir);
+ * console.log("Development working dir:", devSettings.working_dir);
+ * ```
+ *
+ * @example Error handling and validation
+ * ```typescript
+ * import { BreakdownConfig } from "@tettuan/breakdownconfig";
+ *
+ * async function setupConfig() {
+ *   const config = new BreakdownConfig("/my/project");
+ *
+ *   try {
+ *     await config.loadConfig();
+ *
+ *     // Configuration is now guaranteed to be valid
+ *     const settings = await config.getConfig();
+ *     return settings;
+ *
+ *   } catch (error) {
+ *     if (error.message.includes("ERR1001")) {
+ *       console.error("App configuration file not found");
+ *       console.log("Please create .agent/breakdown/config/app.yml");
+ *     } else if (error.message.includes("ERR1002")) {
+ *       console.error("Invalid configuration format");
+ *       console.log("Check YAML syntax and required fields");
+ *     }
+ *     throw error;
+ *   }
+ * }
+ * ```
+ *
+ * @example Working with TypeScript types
+ * ```typescript
+ * import { BreakdownConfig, type MergedConfig } from "@tettuan/breakdownconfig";
+ *
+ * // Type-safe configuration handling
+ * async function processConfig(): Promise<MergedConfig> {
+ *   const config = new BreakdownConfig();
+ *   await config.loadConfig();
+ *
+ *   // TypeScript knows the exact shape of the returned config
+ *   const settings: MergedConfig = await config.getConfig();
+ *
+ *   // All fields are guaranteed to exist and be the correct type
+ *   const workingDir: string = settings.working_dir;
+ *   const promptBaseDir: string = settings.app_prompt.base_dir;
+ *   const schemaBaseDir: string = settings.app_schema.base_dir;
+ *
+ *   return settings;
+ * }
  * ```
  */
 
@@ -37,10 +120,8 @@
 export { BreakdownConfig } from "./src/breakdown_config.ts";
 
 /**
- * Type definitions for configuration management
+ * Configuration type for the merged result
  *
- * @typedef {AppConfig} Application-level configuration with required settings
- * @typedef {MergedConfig} Combined configuration that merges app and user settings
- * @typedef {UserConfig} User-level configuration with optional overrides
+ * @typedef {MergedConfig} Final configuration combining application defaults and user overrides
  */
-export type { AppConfig, MergedConfig, UserConfig } from "./src/types.ts";
+export type { MergedConfig } from "./src/types.ts";

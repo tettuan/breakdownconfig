@@ -4,26 +4,90 @@ import { ErrorCode, ErrorManager } from "../error_manager.ts";
 import type { UserConfig } from "../types/user_config.ts";
 
 /**
- * Loads and validates the user configuration from a working directory.
- * The user configuration is optional and must be located at
- * `$base_dir/.agent/breakdown/config/user.yml` or `$base_dir/.agent/breakdown/config/{configSetName}-user.yml`.
+ * Loads and validates optional user configuration files for personalization and overrides
  *
- * @example
+ * UserConfigLoader handles the loading of user-specific configuration files that can
+ * override application defaults. Unlike AppConfigLoader, user configurations are entirely
+ * optional and the system gracefully handles missing files by returning empty configurations.
+ *
+ * ## File Location Strategy
+ * The loader searches for configuration files in this priority order:
+ * 1. With configSetName: `{baseDir}/.agent/breakdown/config/{configSetName}-user.yml`
+ * 2. Default: `{baseDir}/.agent/breakdown/config/user.yml`
+ *
+ * ## Error Handling
+ * - Missing files: Returns empty UserConfig (graceful degradation)
+ * - Invalid YAML: Throws error with ErrorCode.USER_CONFIG_INVALID
+ * - Invalid structure: Throws error with validation details
+ *
+ * @example Basic usage without environment-specific configs
  * ```typescript
- * const loader = new UserConfigLoader();
- * const config = await loader.load();
+ * const loader = new UserConfigLoader("/path/to/project");
+ * const userConfig = await loader.load();
  *
- * // With config set name
- * const loader = new UserConfigLoader("", "production");
- * const config = await loader.load();
+ * // userConfig will be {} if no user.yml exists
+ * // or contain user overrides if file exists
+ * console.log(userConfig.working_dir || "Using app default");
+ * ```
+ *
+ * @example Environment-specific user configurations
+ * ```typescript
+ * // Development environment user config
+ * const devLoader = new UserConfigLoader("/project", "development");
+ * const devConfig = await devLoader.load();
+ *
+ * // Production environment user config
+ * const prodLoader = new UserConfigLoader("/project", "production");
+ * const prodConfig = await prodLoader.load();
+ *
+ * // Each can have different user overrides
+ * ```
+ *
+ * @example Error handling for invalid user configs
+ * ```typescript
+ * try {
+ *   const loader = new UserConfigLoader("/project");
+ *   const config = await loader.load();
+ *   console.log("User config loaded:", config);
+ * } catch (error) {
+ *   if (error.message.includes("ERR1004")) {
+ *     console.error("User config exists but is invalid:", error.message);
+ *     // Could fall back to defaults or prompt user to fix
+ *   }
+ * }
  * ```
  */
 export class UserConfigLoader {
   /**
-   * Creates a new instance of UserConfigLoader.
+   * Creates a new UserConfigLoader instance for loading optional user configurations
    *
-   * @param baseDir - Optional base directory for configuration files
-   * @param configSetName - Optional configuration set name (e.g., "production", "development")
+   * The loader is designed to handle user-specific overrides that can customize
+   * application behavior on a per-user or per-environment basis.
+   *
+   * @param baseDir - Base directory to search for configuration files. If empty string,
+   *                  searches relative to current working directory. Should be absolute
+   *                  path for predictable behavior.
+   * @param configSetName - Environment or deployment-specific configuration identifier.
+   *                        Must match pattern /^[a-zA-Z0-9-]+$/ if provided.
+   *                        Examples: "development", "production", "staging", "local"
+   *
+   * @example Standard project setup
+   * ```typescript
+   * // Search in current directory structure
+   * const loader = new UserConfigLoader();
+   *
+   * // Search in specific project directory
+   * const loader = new UserConfigLoader("/home/user/myproject");
+   * ```
+   *
+   * @example Multi-environment deployment
+   * ```typescript
+   * // Different user configs per environment
+   * const devLoader = new UserConfigLoader("/app", "development");
+   * const prodLoader = new UserConfigLoader("/app", "production");
+   *
+   * // This allows users to have different overrides per environment
+   * ```
    */
   constructor(
     private readonly baseDir: string = "",
@@ -31,11 +95,58 @@ export class UserConfigLoader {
   ) {}
 
   /**
-   * Loads and validates the user configuration.
-   * If the configuration file is not found, returns an empty configuration.
+   * Loads and validates user configuration with graceful error handling
    *
-   * @returns {Promise<UserConfig>} The loaded and validated user configuration
-   * @throws {Error} If the configuration file exists but is invalid
+   * This method implements a forgiving loading strategy where missing files are treated
+   * as acceptable (returning empty config) while invalid existing files trigger errors.
+   * This design allows user configurations to be completely optional while ensuring
+   * that existing configs are valid.
+   *
+   * ## Loading Process
+   * 1. Determine config file path based on configSetName
+   * 2. Attempt to read file from filesystem
+   * 3. If file missing: return {} (graceful degradation)
+   * 4. If file exists: parse YAML and validate structure
+   * 5. Return validated UserConfig object
+   *
+   * ## File Path Resolution
+   * - With configSetName: `{baseDir}/.agent/breakdown/config/{configSetName}-user.yml`
+   * - Without configSetName: `{baseDir}/.agent/breakdown/config/user.yml`
+   *
+   * @returns {Promise<UserConfig>} Validated user configuration object.
+   *          Returns empty object {} if file doesn't exist.
+   *          Returns populated object with user overrides if file exists and is valid.
+   *
+   * @throws {Error} With ErrorCode.USER_CONFIG_INVALID if file exists but contains
+   *                invalid YAML syntax or doesn't match expected UserConfig structure
+   *
+   * @example Handling optional user config
+   * ```typescript
+   * const loader = new UserConfigLoader("/project", "development");
+   * const userConfig = await loader.load();
+   *
+   * // Check if user provided overrides
+   * if (Object.keys(userConfig).length > 0) {
+   *   console.log("User has custom settings:", userConfig);
+   * } else {
+   *   console.log("Using application defaults");
+   * }
+   * ```
+   *
+   * @example Validating user overrides
+   * ```typescript
+   * const userConfig = await loader.load();
+   *
+   * // User can override working directory
+   * if (userConfig.working_dir) {
+   *   console.log("User working dir:", userConfig.working_dir);
+   * }
+   *
+   * // User can override prompt settings
+   * if (userConfig.app_prompt?.base_dir) {
+   *   console.log("User prompt dir:", userConfig.app_prompt.base_dir);
+   * }
+   * ```
    */
   async load(): Promise<UserConfig> {
     try {
