@@ -2,6 +2,7 @@ import { join } from "@std/path";
 import { parse as parseYaml } from "@std/yaml";
 import { ErrorCode, ErrorManager } from "../error_manager.ts";
 import type { UserConfig } from "../types/user_config.ts";
+import { DefaultPaths } from "../types/app_config.ts";
 
 /**
  * Loads and validates optional user configuration files for personalization and overrides
@@ -153,8 +154,8 @@ export class UserConfigLoader {
       const fileName = this.configSetName ? `${this.configSetName}-user.yml` : "user.yml";
 
       const configPath = this.baseDir
-        ? join(this.baseDir, ".agent", "breakdown", "config", fileName)
-        : join(".agent", "breakdown", "config", fileName);
+        ? join(this.baseDir, DefaultPaths.WORKING_DIR, "config", fileName)
+        : join(DefaultPaths.WORKING_DIR, "config", fileName);
 
       let text: string;
       try {
