@@ -5,7 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.0.11] - 2025-04-27
+## [Unreleased]
+
+### Changed
+- **BREAKING CHANGE**: Reordered BreakdownConfig constructor arguments
+  - Constructor signature changed from `(baseDir?: string, configSetName?: string)` to `(configSetName?: string, baseDir?: string)`
+  - `configSetName` is now the first parameter to emphasize environment-specific configurations
+  - `baseDir` is now optional with default empty string
+  - Updated all tests, examples, and documentation to reflect the new parameter order
+  - Common usage patterns remain unchanged: `new BreakdownConfig()` and `new BreakdownConfig("production")` still work
+
+### Added
+- Enhanced documentation with detailed constructor options and usage examples
+- Comprehensive JSDoc examples showing all constructor parameter combinations
+- Updated Japanese documentation (README.ja.md) with new constructor usage patterns
+
+### Fixed
+- UserConfigLoader path consistency using DefaultPaths.WORKING_DIR constant
+
+## [1.1.0] - 2025-06-17
 
 ### Added
 - Custom configuration support with enhanced examples

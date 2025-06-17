@@ -12,9 +12,22 @@ import { ErrorCode, ErrorManager } from "./error_manager.ts";
  *
  * @example
  * ```typescript
+ * // Basic usage
  * const config = new BreakdownConfig();
  * await config.loadConfig();
  * const settings = await config.getConfig();
+ * 
+ * // Environment-specific configuration
+ * const prodConfig = new BreakdownConfig("production");
+ * await prodConfig.loadConfig();
+ * 
+ * // Custom base directory
+ * const customConfig = new BreakdownConfig(undefined, "/path/to/project");
+ * await customConfig.loadConfig();
+ * 
+ * // Environment-specific with custom base directory
+ * const envConfig = new BreakdownConfig("staging", "/path/to/project");
+ * await envConfig.loadConfig();
  * ```
  */
 export class BreakdownConfig {

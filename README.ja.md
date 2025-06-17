@@ -62,17 +62,58 @@ await config.loadConfig();
 const settings = config.getConfig();
 ```
 
-### 環境固有の設定（プレフィックス指定）
+### コンストラクターオプション
+
+`BreakdownConfig` コンストラクターは2つのオプションパラメータを受け取ります：
+
 ```typescript
-// デフォルト設定の使用
+constructor(configSetName?: string, baseDir?: string)
+```
+
+#### パラメータ詳細
+
+- **`configSetName`** (オプション): 環境名または設定セット名
+  - 環境固有の設定ファイルを読み込むために使用
+  - 例: `"production"`, `"staging"`, `"development"`
+  - 指定した場合、`{configSetName}-app.yml` と `{configSetName}-user.yml` を読み込み
+
+- **`baseDir`** (オプション): 設定ファイルのベースディレクトリ
+  - デフォルトは現在の作業ディレクトリ (`""`)
+  - 設定ファイルは `{baseDir}/.agent/breakdown/config/` から読み込み
+
+#### 使用例
+
+```typescript
+// デフォルト使用 - カレントディレクトリからapp.ymlとuser.ymlを読み込み
 const config = new BreakdownConfig();
 
-// 環境固有の設定セットを指定
+// 環境固有の設定
 const prodConfig = new BreakdownConfig("production");
-const devConfig = new BreakdownConfig("development");
+// 読み込み: production-app.yml と production-user.yml
 
-// 特定のベースディレクトリを指定（設定セット名はデフォルト）
-const baseConfig = new BreakdownConfig(undefined, "/path/to/project");
+// デフォルト設定セットでカスタムベースディレクトリ
+const customConfig = new BreakdownConfig(undefined, "/path/to/project");
+// 読み込み: /path/to/project/.agent/breakdown/config/app.yml
+
+// 環境固有 + カスタムベースディレクトリ
+const envConfig = new BreakdownConfig("staging", "/path/to/project");
+// 読み込み: /path/to/project/.agent/breakdown/config/staging-app.yml
+```
+
+#### 破壊的変更のお知らせ (v1.2.0)
+
+⚠️ **v1.2.0でコンストラクターのパラメータ順序が変更されました**
+
+```typescript
+// v1.2.0以前（非推奨）
+new BreakdownConfig("/path/to/project", "production") // ❌ 動作しません
+
+// v1.2.0以降（現在）
+new BreakdownConfig("production", "/path/to/project") // ✅ 正しい
+
+// これらは変更なし（後方互換性あり）
+new BreakdownConfig()                    // ✅ そのまま動作
+new BreakdownConfig("production")        // ✅ そのまま動作
 ```
 
 ### 設定ファイルの読み込み場所

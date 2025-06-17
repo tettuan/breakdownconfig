@@ -29,7 +29,17 @@ breakdownconfig を 第三者アプリケーションが import すると、設�
 ### アプリケーションでの利用例
 
 ```typescript
+// 基本的な使用方法
 let config = new BreakdownConfig();
+
+// 環境固有の設定
+let prodConfig = new BreakdownConfig("production");
+
+// カスタムベースディレクトリ
+let customConfig = new BreakdownConfig(undefined, "/path/to/project");
+
+// 環境固有 + カスタムベースディレクトリ
+let envConfig = new BreakdownConfig("staging", "/path/to/project");
 ```
 
 ### クラス名

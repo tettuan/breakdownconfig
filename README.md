@@ -61,6 +61,60 @@ await config.loadConfig();
 const settings = config.getConfig();
 ```
 
+### Constructor Options
+
+The `BreakdownConfig` constructor accepts two optional parameters:
+
+```typescript
+constructor(configSetName?: string, baseDir?: string)
+```
+
+#### Parameter Details
+
+- **`configSetName`** (optional): Environment or configuration set name
+  - Used to load environment-specific configuration files
+  - Example: `"production"`, `"staging"`, `"development"`
+  - When specified, loads `{configSetName}-app.yml` and `{configSetName}-user.yml`
+
+- **`baseDir`** (optional): Base directory for configuration files
+  - Defaults to current working directory (`""`)
+  - Configuration files are loaded from `{baseDir}/.agent/breakdown/config/`
+
+#### Usage Examples
+
+```typescript
+// Default usage - loads app.yml and user.yml from current directory
+const config = new BreakdownConfig();
+
+// Environment-specific configuration
+const prodConfig = new BreakdownConfig("production");
+// Loads: production-app.yml and production-user.yml
+
+// Custom base directory with default configuration set
+const customConfig = new BreakdownConfig(undefined, "/path/to/project");
+// Loads: /path/to/project/.agent/breakdown/config/app.yml
+
+// Environment-specific with custom base directory
+const envConfig = new BreakdownConfig("staging", "/path/to/project");
+// Loads: /path/to/project/.agent/breakdown/config/staging-app.yml
+```
+
+#### Breaking Change Notice (v1.2.0)
+
+⚠️ **Constructor parameter order changed in v1.2.0**
+
+```typescript
+// Before v1.2.0 (deprecated)
+new BreakdownConfig("/path/to/project", "production") // ❌ Will break
+
+// v1.2.0+ (current)
+new BreakdownConfig("production", "/path/to/project") // ✅ Correct
+
+// These remain unchanged (backward compatible)
+new BreakdownConfig()                    // ✅ Still works
+new BreakdownConfig("production")        // ✅ Still works
+```
+
 ### Configuration Structure
 
 #### Application Configuration (Required)
