@@ -170,30 +170,38 @@ enum ErrorCode {
 
 ## Use Cases
 
-### 1. Multi-Environment Application Configuration
+### 1. Multiple Configuration Sets Management
 
-Deploy the same application across different environments (development, staging, production) with environment-specific settings:
+Manage different configuration sets for various purposes - environments, features, clients, or any categorization that suits your application needs:
 
 ```typescript
-// Development environment
+// Environment-based configurations
 const devConfig = new BreakdownConfig("development");
-await devConfig.loadConfig();
-
-// Production environment  
 const prodConfig = new BreakdownConfig("production");
-await prodConfig.loadConfig();
 
-// Staging environment
-const stagingConfig = new BreakdownConfig("staging");
-await stagingConfig.loadConfig();
+// Feature-based configurations
+const basicConfig = new BreakdownConfig("basic-features");
+const premiumConfig = new BreakdownConfig("premium-features");
+
+// Client-specific configurations
+const clientAConfig = new BreakdownConfig("client-a");
+const clientBConfig = new BreakdownConfig("client-b");
+
+// Role-based configurations
+const adminConfig = new BreakdownConfig("admin");
+const userConfig = new BreakdownConfig("user");
+
+await devConfig.loadConfig();
+await premiumConfig.loadConfig();
+await clientAConfig.loadConfig();
 ```
 
-**Configuration Files:**
-- `development-app.yml` - Dev-specific application settings
-- `production-app.yml` - Production application settings
-- `staging-app.yml` - Staging application settings
-- `development-user.yml` - User overrides for development
-- `production-user.yml` - User overrides for production
+**Configuration Files Examples:**
+- **Environment sets:** `development-app.yml`, `production-app.yml`, `staging-app.yml`
+- **Feature sets:** `basic-features-app.yml`, `premium-features-app.yml`
+- **Client sets:** `client-a-app.yml`, `client-b-app.yml`
+- **Role sets:** `admin-app.yml`, `user-app.yml`
+- **Custom sets:** `experiment-app.yml`, `legacy-app.yml`, `mobile-app.yml`
 
 ### 2. AI Agent Configuration Management
 
