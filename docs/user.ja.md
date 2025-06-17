@@ -1,9 +1,9 @@
 # ユーザー設定の概要
 
-アプリケーション設定ファイルで読み込まれた `working_dir`（`$working_dir`とする） を root ディレクトリに用いる。
+ユーザー設定ファイルは固定パス `.agent/breakdown/config/user.yml` から読み込む。
 
 設定ファイル
-`$working_dir/config/user.yml` 
+`.agent/breakdown/config/user.yml` 
 を読み込む。
 
 # 設定項目

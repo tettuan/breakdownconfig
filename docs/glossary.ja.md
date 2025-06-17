@@ -79,7 +79,7 @@
 
 #### パス解決の違い
 - **base_dir**: `プロジェクトルート + base_dir + ファイル名`
-- **working_dir**: `プロジェクトルート + working_dir + /config/user.yml`
+- **ユーザー設定**: `プロジェクトルート + .agent/breakdown/config/user.yml`（固定パス）
 
 #### 設定例での比較
 ```yaml
@@ -96,7 +96,7 @@ app_schema:
 プロジェクトルート/
 ├── .agent/breakdown/              ← working_dir が指す場所
 │   ├── config/
-│   │   └── user.yml              ← working_dir + "/config/user.yml"
+│   │   └── user.yml              ← 固定パス .agent/breakdown/config/user.yml
 │   ├── prompts/app/              ← app_prompt.base_dir が指す場所
 │   │   └── default.txt
 │   └── schema/app/               ← app_schema.base_dir が指す場所
@@ -150,7 +150,7 @@ app_schema:
 
 ### ユーザー設定
 - **定義**: ユーザーごとのカスタム設定を定義するファイル
-- **場所**: `$working_dir/config/user.yml`
+- **場所**: `.agent/breakdown/config/user.yml`（固定パス）
 - **特徴**: オプショナル。存在しなくても正常処理
 - **制約**: working_dirは設定不可（アプリ設定でのみ設定可能）
 
@@ -171,7 +171,7 @@ app_schema:
 - **スコープ**: システム全体の基準点（すべてのユーザー設定がこの配下に配置）
 - **相対基準**: プロジェクトルート（実行時のカレントディレクトリ）からの相対パス
 - **設定場所**: アプリケーション設定でのみ設定可能（ユーザー設定では変更不可）
-- **用途**: ユーザー設定ファイル（`$working_dir/config/user.yml`）の配置場所を決定
+- **用途**: ユーザー設定ファイル（`.agent/breakdown/config/user.yml`）の配置場所を決定
 - **デフォルト値**: "./.agent/breakdown"
 - **参照**: `$working_dir` として他の設定やシステム内部で使用
 
@@ -192,8 +192,8 @@ app_schema:
 ```
 【概念的な階層】
 プロジェクトルート（実行基準）
-├── working_dir（システム全体の基準点）
-│   └── config/user.yml（ユーザー設定ファイル）
+├── .agent/breakdown/config/（固定パス・ユーザー設定の場所）
+│   └── user.yml（ユーザー設定ファイル）
 ├── base_dir（機能別基準点・複数存在）
 │   ├── app_prompt.base_dir（プロンプト機能）
 │   └── app_schema.base_dir（スキーマ機能）
@@ -207,6 +207,6 @@ app_schema:
 ### パス解決の原則
 
 1. すべてのパスはプロジェクトルートからの相対パス
-2. working_dirはユーザー設定の配置場所のみを決定
+2. ユーザー設定は固定パス（.agent/breakdown/config/user.yml）から読み込み
 3. base_dirは実際のファイル操作時の基準ディレクトリ
 4. ユーザー設定でbase_dirを上書き可能（working_dirは不可）
