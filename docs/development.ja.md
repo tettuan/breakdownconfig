@@ -331,15 +331,8 @@ app_schema:
 
 ### 7.5 利用例
 ```typescript
-// プロンプトマネージャーの初期化
+// 基本的な使用方法
 const config = new BreakdownConfig();
-const promptManager = new PromptManager(config);
-
-// プロンプトの取得
-const prompt = await promptManager.getPrompt("default");
-const userPrompt = await promptManager.getPrompt("custom");
-
-// スキーマの取得
-const schema = await promptManager.getSchema("default");
-const userSchema = await promptManager.getSchema("custom");
+await config.loadConfig();
+const settings = await config.getConfig();
 ``` 

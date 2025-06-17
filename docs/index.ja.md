@@ -23,13 +23,25 @@ breakdownconfig を 第三者アプリケーションが import すると、設�
 - ユーザー設定は、アプリ設定の `working_dir` 項目で設定されたディレクトリに存在する
 
 ### アプリケーションからの読み込み
-`import * as breakdownconfig from "@tettuan/breakdownconfig";
+```typescript
+import { BreakdownConfig } from "@tettuan/breakdownconfig";
+```
 
 
 ### アプリケーションでの利用例
 
 ```typescript
+// 基本的な使用方法
 let config = new BreakdownConfig();
+
+// 環境固有の設定
+let prodConfig = new BreakdownConfig("production");
+
+// カスタムベースディレクトリ
+let customConfig = new BreakdownConfig(undefined, "/path/to/project");
+
+// 環境固有 + カスタムベースディレクトリ
+let envConfig = new BreakdownConfig("staging", "/path/to/project");
 ```
 
 ### クラス名
@@ -42,7 +54,7 @@ BreakdownConfigは以下の順序で設定ファイルの読み込み処理を�
 1. **初期化時の設定識別**: コンストラクタで設定セット名（デフォルト or カスタム）を判定
 2. **アプリ設定ファイルの読み込み**: `{prefix-}app.yml` を必須ファイルとして読み込み
 3. **working_dirの特定**: アプリ設定から `working_dir` の値を取得してユーザー設定の基準パスを決定
-4. **ユーザー設定ファイルの読み込み**: `$working_dir/config/{prefix-}user.yml` をオプションファイルとして読み込み
+4. **ユーザー設定ファイルの読み込み**: `.agent/breakdown/config/{prefix-}user.yml` をオプションファイルとして読み込み
 5. **設定値の統合**: アプリ設定を基準として、ユーザー設定の値で同一キーを上書き統合
 6. **統合結果の提供**: 最終的な設定オブジェクトをアプリケーションに返却
 
@@ -72,24 +84,24 @@ BreakdownConfig は設定セットを指定することで、デフォルト設�
 ```typescript
 // デフォルト設定の読み込み（従来通り）
 let config = new BreakdownConfig();
-// → app.yml と $working_dir/config/user.yml を読み込み
+// → app.yml と .agent/breakdown/config/user.yml を読み込み
 
 // カスタム設定の読み込み
 let devConfig = new BreakdownConfig("development");
-// → development-app.yml と $working_dir/config/development-user.yml を読み込み
+// → development-app.yml と .agent/breakdown/config/development-user.yml を読み込み
 
 let prodConfig = new BreakdownConfig("production");
-// → production-app.yml と $working_dir/config/production-user.yml を読み込み
+// → production-app.yml と .agent/breakdown/config/production-user.yml を読み込み
 ```
 
 #### ファイル命名規則
 
 | 設定セット名 | アプリ設定ファイル | ユーザー設定ファイル |
 |------------|-----------------|-------------------|
-| 未指定（デフォルト） | `app.yml` | `$working_dir/config/user.yml` |
-| "development" | `development-app.yml` | `$working_dir/config/development-user.yml` |
-| "production" | `production-app.yml` | `$working_dir/config/production-user.yml` |
-| "{custom}" | `{custom}-app.yml` | `$working_dir/config/{custom}-user.yml` |
+| 未指定（デフォルト） | `app.yml` | `.agent/breakdown/config/user.yml` |
+| "development" | `development-app.yml` | `.agent/breakdown/config/development-user.yml` |
+| "production" | `production-app.yml` | `.agent/breakdown/config/production-user.yml` |
+| "{custom}" | `{custom}-app.yml` | `.agent/breakdown/config/{custom}-user.yml` |
 
 #### 抽象化レベルでの解釈
 
@@ -128,8 +140,7 @@ let devConfig = new BreakdownConfig("development");
   - 設定ファイルが存在しない場合はエラーで終了する。
   - `working_dir` 設定がユーザー設定の起点ディレクトリとなる。
 2. **ユーザー設定（user.yml）**
-  - アプリ設定の `working_dir` を起点とする(`$working_dir`とする)
-  - `$working_dir/config/user.yml` の存在を確認する。
+  - 固定パス `.agent/breakdown/config/user.yml` から読み込み
   - 存在がなくても正常処理とする。（warning出力を行うのみ）
   - 設定値を読み込み、同一キーのアプリ設定値を上書きする。
     - ユーザー設定は必要な設定のみ記述できる。全ての項目が任意である。
@@ -141,8 +152,7 @@ let devConfig = new BreakdownConfig("development");
   - `working_dir` 設定がユーザー設定の起点ディレクトリとなる。
   - プレフィックスはコンストラクタで指定された設定セット名を使用。
 2. **カスタムユーザー設定（{prefix}-user.yml）**
-  - アプリ設定の `working_dir` を起点とする(`$working_dir`とする)
-  - `$working_dir/config/{prefix}-user.yml` の存在を確認する。
+  - 固定パス `.agent/breakdown/config/{prefix}-user.yml` から読み込み
   - 存在がなくても正常処理とする。（warning出力を行うのみ）
   - 設定値を読み込み、同一キーのアプリ設定値を上書きする。
     - ユーザー設定は必要な設定のみ記述できる。全ての項目が任意である。
