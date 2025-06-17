@@ -41,7 +41,7 @@ describe("Config Validation", () => {
 
     try {
       logger.debug("Creating BreakdownConfig instance");
-      const config = new BreakdownConfig(tempDir);
+      const config = new BreakdownConfig(undefined, tempDir);
 
       logger.debug("Loading configuration");
       await config.loadConfig();
@@ -67,7 +67,7 @@ describe("Config Validation", () => {
 
     try {
       logger.debug("Creating BreakdownConfig instance");
-      const config = new BreakdownConfig(tempDir);
+      const config = new BreakdownConfig(undefined, tempDir);
       logger.debug("Created BreakdownConfig instance", { baseDir: tempDir });
 
       await assertRejects(
@@ -103,7 +103,7 @@ describe("Should validate required fields", () => {
 
     try {
       logger.debug("Creating BreakdownConfig instance");
-      const config = new BreakdownConfig(tempDir);
+      const config = new BreakdownConfig(undefined, tempDir);
 
       logger.debug("Loading configuration");
       await config.loadConfig();
@@ -139,7 +139,7 @@ describe("Should validate JSON structure", () => {
 
     try {
       logger.debug("Creating BreakdownConfig instance");
-      const config = new BreakdownConfig(tempDir);
+      const config = new BreakdownConfig(undefined, tempDir);
 
       logger.debug("Attempting to load invalid YAML configuration");
       await assertRejects(
@@ -165,7 +165,7 @@ describe("Should accept extra configuration fields", () => {
 
     try {
       logger.debug("Creating BreakdownConfig instance");
-      const config = new BreakdownConfig(tempDir);
+      const config = new BreakdownConfig(undefined, tempDir);
 
       logger.debug("Loading configuration");
       await config.loadConfig();
@@ -193,7 +193,7 @@ describe("Should reject empty working directory", () => {
 
     try {
       logger.debug("Creating BreakdownConfig instance");
-      const config = new BreakdownConfig(tempDir);
+      const config = new BreakdownConfig(undefined, tempDir);
 
       logger.debug("Attempting to load configuration with empty working directory");
       await assertRejects(

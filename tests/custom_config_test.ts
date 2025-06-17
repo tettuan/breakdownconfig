@@ -47,7 +47,7 @@ describe("Custom Config Feature Tests", () => {
         await Deno.writeTextFile(userConfigPath, stringify(validUserConfig));
         logger.debug("Config files created", { appConfigPath, userConfigPath });
 
-        const config = new BreakdownConfig(tempDir);
+        const config = new BreakdownConfig(undefined, tempDir);
         await config.loadConfig();
         const loadedConfig = await config.getConfig();
 
@@ -76,7 +76,7 @@ describe("Custom Config Feature Tests", () => {
         await Deno.writeTextFile(appConfigPath, stringify(validAppConfig));
         logger.debug("App config file created", { appConfigPath });
 
-        const config = new BreakdownConfig(tempDir);
+        const config = new BreakdownConfig(undefined, tempDir);
         await config.loadConfig();
         const loadedConfig = await config.getConfig();
 
@@ -120,7 +120,7 @@ describe("Custom Config Feature Tests", () => {
         await Deno.writeTextFile(userConfigPath, stringify(productionUserConfig));
         logger.debug("Prefixed config files created", { appConfigPath, userConfigPath });
 
-        const config = new BreakdownConfig(tempDir, prefix);
+        const config = new BreakdownConfig(prefix, tempDir);
         await config.loadConfig();
         const loadedConfig = await config.getConfig();
 
@@ -160,7 +160,7 @@ describe("Custom Config Feature Tests", () => {
         await Deno.writeTextFile(userConfigPath, stringify(validUserConfig));
         logger.debug("Mixed config files created", { appConfigPath, userConfigPath });
 
-        const config = new BreakdownConfig(tempDir, prefix);
+        const config = new BreakdownConfig(prefix, tempDir);
         await config.loadConfig();
         const loadedConfig = await config.getConfig();
 
@@ -194,7 +194,7 @@ describe("Custom Config Feature Tests", () => {
         await Deno.writeTextFile(appConfigPath, stringify(validAppConfig));
         await Deno.writeTextFile(userConfigPath, stringify(validUserConfig));
 
-        const config = new BreakdownConfig(tempDir, prefix);
+        const config = new BreakdownConfig(prefix, tempDir);
         await config.loadConfig();
         const loadedConfig = await config.getConfig();
 
@@ -229,7 +229,7 @@ describe("Custom Config Feature Tests", () => {
 
         await Deno.writeTextFile(appConfigPath, stringify(featureAppConfig));
 
-        const config = new BreakdownConfig(tempDir, prefix);
+        const config = new BreakdownConfig(prefix, tempDir);
         await config.loadConfig();
         const loadedConfig = await config.getConfig();
 
@@ -254,7 +254,7 @@ describe("Custom Config Feature Tests", () => {
 
       try {
         // Don't create any config files with this prefix
-        const config = new BreakdownConfig(tempDir, prefix);
+        const config = new BreakdownConfig(prefix, tempDir);
 
         await assertRejects(
           async () => {
@@ -289,7 +289,7 @@ describe("Custom Config Feature Tests", () => {
 
         await Deno.writeTextFile(appConfigPath, stringify(invalidConfig));
 
-        const config = new BreakdownConfig(tempDir, prefix);
+        const config = new BreakdownConfig(prefix, tempDir);
 
         await assertRejects(
           async () => {
@@ -339,7 +339,7 @@ describe("Custom Config Feature Tests", () => {
           await Deno.writeTextFile(userConfigPath, stringify(envUserConfig));
           logger.debug(`${env} config files created`, { appConfigPath, userConfigPath });
 
-          const config = new BreakdownConfig(tempDir, env);
+          const config = new BreakdownConfig(env, tempDir);
           await config.loadConfig();
           const loadedConfig = await config.getConfig();
 
@@ -374,7 +374,7 @@ describe("Custom Config Feature Tests", () => {
         await Deno.writeTextFile(userConfigPath, stringify(validUserConfig));
 
         // Try to load with qa prefix (which doesn't exist)
-        const config = new BreakdownConfig(tempDir, env);
+        const config = new BreakdownConfig(env, tempDir);
 
         await assertRejects(
           async () => {

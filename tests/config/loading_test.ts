@@ -29,7 +29,7 @@ describe("Config Loading", () => {
     logger.debug("Test directory setup for merged configs", { tempDir });
 
     try {
-      const config = new BreakdownConfig(tempDir);
+      const config = new BreakdownConfig(undefined, tempDir);
       logger.debug("Created BreakdownConfig instance", { baseDir: tempDir });
 
       await config.loadConfig();
@@ -79,7 +79,7 @@ describe("Config Loading", () => {
     logger.debug("Test directory setup for app-only config", { tempDir });
 
     try {
-      const config = new BreakdownConfig(tempDir);
+      const config = new BreakdownConfig(undefined, tempDir);
       logger.debug("Created BreakdownConfig instance", { baseDir: tempDir });
 
       await config.loadConfig();

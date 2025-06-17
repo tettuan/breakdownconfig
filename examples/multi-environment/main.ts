@@ -12,7 +12,7 @@ async function demonstrateEnvironmentConfig(environment: string) {
 
   try {
     // Create BreakdownConfig instance with environment-specific config set
-    const config = new BreakdownConfig(".", environment);
+    const config = new BreakdownConfig(environment, ".");
 
     // Load the configuration
     await config.loadConfig();
@@ -51,7 +51,7 @@ async function main() {
 
   for (const env of environments) {
     try {
-      const config = new BreakdownConfig(".", env);
+      const config = new BreakdownConfig(env, ".");
       await config.loadConfig();
       const mergedConfig = await config.getConfig();
       configs.set(env, mergedConfig);

@@ -72,7 +72,7 @@ const prodConfig = new BreakdownConfig("production");
 const devConfig = new BreakdownConfig("development");
 
 // 特定のベースディレクトリを指定（設定セット名はデフォルト）
-const baseConfig = new BreakdownConfig("/path/to/project");
+const baseConfig = new BreakdownConfig(undefined, "/path/to/project");
 ```
 
 ### 設定ファイルの読み込み場所
@@ -94,7 +94,7 @@ const config = new BreakdownConfig();
 ベースディレクトリを指定した場合：
 
 ```typescript
-const config = new BreakdownConfig("/path/to/project");
+const config = new BreakdownConfig(undefined, "/path/to/project");
 // → /path/to/project/.agent/breakdown/config/ から読み込み
 ```
 

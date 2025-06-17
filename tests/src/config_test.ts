@@ -50,7 +50,7 @@ app_schema:
   });
 
   it("should load and merge configurations correctly", async () => {
-    const config = new BreakdownConfig(testDir);
+    const config = new BreakdownConfig(undefined, testDir);
     await config.loadConfig();
     const result = await config.getConfig();
 
@@ -60,7 +60,7 @@ app_schema:
   });
 
   it("should use app config when user config is missing", async () => {
-    const config = new BreakdownConfig(testDir);
+    const config = new BreakdownConfig(undefined, testDir);
     await config.loadConfig();
     const result = await config.getConfig();
 
@@ -71,7 +71,7 @@ app_schema:
 
   it("should throw error when app config is missing", async () => {
     await Deno.remove(join(testDir, ".agent", "breakdown", "config", "app.yml"));
-    const config = new BreakdownConfig(testDir);
+    const config = new BreakdownConfig(undefined, testDir);
     logger.debug("Attempting to load config without app config file");
 
     await assertRejects(
@@ -87,7 +87,7 @@ app_schema:
   it("should throw error when app config is invalid YAML", async () => {
     const appConfigPath = join(testDir, ".agent", "breakdown", "config", "app.yml");
     await Deno.writeTextFile(appConfigPath, "invalid: yaml: :");
-    const config = new BreakdownConfig(testDir);
+    const config = new BreakdownConfig(undefined, testDir);
     logger.debug("Attempting to load config with invalid YAML");
 
     await assertRejects(
@@ -101,7 +101,7 @@ app_schema:
   });
 
   it("should throw error when accessing config before loading", async () => {
-    const config = new BreakdownConfig(testDir);
+    const config = new BreakdownConfig(undefined, testDir);
     logger.debug("Attempting to access config before loading");
 
     await assertRejects(
