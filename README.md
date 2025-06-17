@@ -168,6 +168,210 @@ enum ErrorCode {
 }
 ```
 
+## Use Cases
+
+### 1. Multi-Environment Application Configuration
+
+Deploy the same application across different environments (development, staging, production) with environment-specific settings:
+
+```typescript
+// Development environment
+const devConfig = new BreakdownConfig("development");
+await devConfig.loadConfig();
+
+// Production environment  
+const prodConfig = new BreakdownConfig("production");
+await prodConfig.loadConfig();
+
+// Staging environment
+const stagingConfig = new BreakdownConfig("staging");
+await stagingConfig.loadConfig();
+```
+
+**Configuration Files:**
+- `development-app.yml` - Dev-specific application settings
+- `production-app.yml` - Production application settings
+- `staging-app.yml` - Staging application settings
+- `development-user.yml` - User overrides for development
+- `production-user.yml` - User overrides for production
+
+### 2. AI Agent Configuration Management
+
+Manage prompts, schemas, and working directories for AI agents with user customization:
+
+```typescript
+// AI agent with default configuration
+const agentConfig = new BreakdownConfig();
+await agentConfig.loadConfig();
+
+const settings = agentConfig.getConfig();
+// Use settings.app_prompt.base_dir for prompt templates
+// Use settings.app_schema.base_dir for validation schemas
+// Use settings.working_dir for agent workspace
+```
+
+**Application Configuration (app.yml):**
+```yaml
+working_dir: "./.agent/breakdown"
+app_prompt:
+  base_dir: "./.agent/breakdown/prompts/app"
+  templates:
+    - "system.md"
+    - "user.md"
+app_schema:
+  base_dir: "./.agent/breakdown/schema/app"
+  validation_rules:
+    - "input.json"
+    - "output.json"
+```
+
+**User Configuration (user.yml):**
+```yaml
+app_prompt:
+  base_dir: "./custom/prompts"  # Override prompt location
+  custom_templates:
+    - "my_template.md"
+app_schema:
+  strict_validation: false      # Add custom settings
+```
+
+### 3. Multi-Project Configuration
+
+Manage configurations for multiple projects from a single codebase:
+
+```typescript
+// Project A configuration
+const projectA = new BreakdownConfig("project-a", "/workspace/project-a");
+await projectA.loadConfig();
+
+// Project B configuration  
+const projectB = new BreakdownConfig("project-b", "/workspace/project-b");
+await projectB.loadConfig();
+
+// Shared project configuration
+const sharedConfig = new BreakdownConfig("shared", "/workspace/shared");
+await sharedConfig.loadConfig();
+```
+
+### 4. Team-Based Configuration Overrides
+
+Allow team members to customize application behavior without affecting shared settings:
+
+```typescript
+// Base team configuration
+const teamConfig = new BreakdownConfig("team");
+await teamConfig.loadConfig();
+
+// Individual team member can override with user.yml:
+// - Custom working directories
+// - Personal prompt preferences  
+// - Development-specific settings
+```
+
+**Team Configuration (team-app.yml):**
+```yaml
+working_dir: "./team-workspace"
+app_prompt:
+  base_dir: "./shared-prompts"
+  style: "formal"
+app_schema:
+  base_dir: "./shared-schemas"
+  strict_mode: true
+```
+
+**User Override (team-user.yml):**
+```yaml
+app_prompt:
+  style: "casual"              # Personal preference
+  custom_dir: "./my-prompts"   # Additional prompts
+app_schema:
+  strict_mode: false           # Relaxed validation for development
+```
+
+### 5. Configuration Testing and Validation
+
+Test different configuration scenarios in automated testing:
+
+```typescript
+// Test with minimal configuration
+const minimalConfig = new BreakdownConfig();
+await minimalConfig.loadConfig();
+
+// Test with full feature configuration
+const fullConfig = new BreakdownConfig("full-features");
+await fullConfig.loadConfig();
+
+// Test with custom paths
+const testConfig = new BreakdownConfig("test", "./test-fixtures");
+await testConfig.loadConfig();
+
+// Validate configuration structure
+const settings = testConfig.getConfig();
+assert(settings.working_dir);
+assert(settings.app_prompt.base_dir);
+assert(settings.app_schema.base_dir);
+```
+
+### 6. Dynamic Configuration Loading
+
+Load different configurations based on runtime conditions:
+
+```typescript
+// Load configuration based on environment variable
+const env = Deno.env.get("APP_ENV") || "development";
+const config = new BreakdownConfig(env);
+await config.loadConfig();
+
+// Load configuration based on command line arguments
+const configSet = Deno.args[0] || "default";
+const baseDir = Deno.args[1] || "";
+const dynamicConfig = new BreakdownConfig(configSet, baseDir);
+await dynamicConfig.loadConfig();
+
+// Load configuration based on deployment context
+const isProduction = Deno.env.get("DENO_DEPLOYMENT_ID") !== undefined;
+const deployConfig = new BreakdownConfig(isProduction ? "production" : "development");
+await deployConfig.loadConfig();
+```
+
+### 7. Configuration Inheritance and Layering
+
+Create configuration hierarchies with inheritance:
+
+```typescript
+// Base configuration
+const baseConfig = new BreakdownConfig("base");
+await baseConfig.loadConfig();
+
+// Feature-specific configuration that extends base
+const featureConfig = new BreakdownConfig("feature-x");
+await featureConfig.loadConfig();
+// feature-x-app.yml can reference base settings
+// feature-x-user.yml provides user customizations
+```
+
+**Base Configuration (base-app.yml):**
+```yaml
+working_dir: "./.agent/breakdown"
+app_prompt:
+  base_dir: "./.agent/breakdown/prompts/base"
+  common_templates:
+    - "header.md"
+    - "footer.md"
+```
+
+**Feature Configuration (feature-x-app.yml):**
+```yaml
+working_dir: "./.agent/breakdown"  # Inherited
+app_prompt:
+  base_dir: "./.agent/breakdown/prompts/feature-x"  # Override
+  common_templates:                # Inherited from base
+    - "header.md"
+    - "footer.md"
+  feature_templates:               # Additional templates
+    - "feature-x-prompt.md"
+```
+
 ## Examples
 
 This repository includes two examples demonstrating the library's usage:
