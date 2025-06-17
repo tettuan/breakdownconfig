@@ -30,7 +30,7 @@
  * @example Custom base directory setup
  * ```typescript
  * // Use specific project directory
- * const config = new BreakdownConfig("/path/to/my/project");
+ * const config = new BreakdownConfig(undefined, "/path/to/my/project");
  * await config.loadConfig();
  *
  * // Get absolute paths for directory operations
@@ -67,7 +67,7 @@
  * import { BreakdownConfig } from "@tettuan/breakdownconfig";
  *
  * async function setupConfig() {
- *   const config = new BreakdownConfig("/my/project");
+ *   const config = new BreakdownConfig(undefined, "/my/project");
  *
  *   try {
  *     await config.loadConfig();
