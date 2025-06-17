@@ -47,11 +47,11 @@
  * @example Environment-specific configuration
  * ```typescript
  * // Load production-specific configuration
- * const prodConfig = new BreakdownConfig("/opt/app", "production");
+ * const prodConfig = new BreakdownConfig("production", "/opt/app");
  * await prodConfig.loadConfig();
  *
  * // Load development configuration
- * const devConfig = new BreakdownConfig("/home/dev/app", "development");
+ * const devConfig = new BreakdownConfig("development", "/home/dev/app");
  * await devConfig.loadConfig();
  *
  * // Each environment can have different settings
