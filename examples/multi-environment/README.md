@@ -39,11 +39,11 @@ examples/multi-environment/
 import { BreakdownConfig } from "../../src/breakdown_config.ts";
 
 // Load production config
-const prodConfig = new BreakdownConfig(".", "production");
+const prodConfig = new BreakdownConfig("production", ".");
 await prodConfig.loadConfig();
 
 // Load development config
-const devConfig = new BreakdownConfig(".", "development");
+const devConfig = new BreakdownConfig("development", ".");
 await devConfig.loadConfig();
 ```
 

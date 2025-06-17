@@ -1,0 +1,1 @@
+breakdownconfig には、customconfig を実装しない

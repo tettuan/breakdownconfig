@@ -23,7 +23,7 @@ describe("Error Handling", () => {
   it("should handle missing working directory", async () => {
     const tempDir = await setupInvalidConfig(invalidAppConfigs.missingWorkingDir);
     try {
-      const config = new BreakdownConfig(tempDir);
+      const config = new BreakdownConfig(undefined, tempDir);
       await assertRejects(
         async () => {
           await config.loadConfig();
@@ -39,7 +39,7 @@ describe("Error Handling", () => {
   it("should handle missing app prompt", async () => {
     const tempDir = await setupInvalidConfig(invalidAppConfigs.missingPrompt);
     try {
-      const config = new BreakdownConfig(tempDir);
+      const config = new BreakdownConfig(undefined, tempDir);
       await assertRejects(
         async () => {
           await config.loadConfig();
@@ -55,7 +55,7 @@ describe("Error Handling", () => {
   it("should handle missing app schema", async () => {
     const tempDir = await setupInvalidConfig(invalidAppConfigs.missingSchema);
     try {
-      const config = new BreakdownConfig(tempDir);
+      const config = new BreakdownConfig(undefined, tempDir);
       await assertRejects(
         async () => {
           await config.loadConfig();
@@ -71,7 +71,7 @@ describe("Error Handling", () => {
   it("should handle invalid types", async () => {
     const tempDir = await setupInvalidConfig(invalidAppConfigs.invalidTypes);
     try {
-      const config = new BreakdownConfig(tempDir);
+      const config = new BreakdownConfig(undefined, tempDir);
       await assertRejects(
         async () => {
           await config.loadConfig();

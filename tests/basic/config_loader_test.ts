@@ -33,7 +33,7 @@ describe("Config Loading", () => {
     logger.debug("Test directory setup for merged configs", { tempDir });
 
     try {
-      const config = new BreakdownConfig(tempDir);
+      const config = new BreakdownConfig(undefined, tempDir);
       logger.debug("Created BreakdownConfig instance", { baseDir: tempDir });
 
       await config.loadConfig();
@@ -83,7 +83,7 @@ describe("Config Loading", () => {
     logger.debug("Test directory setup for app-only config", { tempDir });
 
     try {
-      const config = new BreakdownConfig(tempDir);
+      const config = new BreakdownConfig(undefined, tempDir);
       logger.debug("Created BreakdownConfig instance", { baseDir: tempDir });
 
       await config.loadConfig();
@@ -143,7 +143,7 @@ Deno.test("Basic Config Loading - App Config", async () => {
     );
     logger.debug("Created app config file", { configDir, config: TEST_APP_CONFIG });
 
-    const config = new BreakdownConfig(testDir);
+    const config = new BreakdownConfig(undefined, testDir);
     await config.loadConfig();
     const result = await config.getConfig();
     logger.debug("Loaded configuration", { result });
@@ -183,7 +183,7 @@ Deno.test("Basic Config Loading - Missing App Config", async () => {
     await Deno.mkdir(configDir, { recursive: true });
     logger.debug("Created config directory without app config file", { configDir });
 
-    const config = new BreakdownConfig(testDir);
+    const config = new BreakdownConfig(undefined, testDir);
     logger.debug("Attempting to load config without app config file");
     await expect(config.loadConfig()).rejects.toThrow("ERR1001");
     logger.debug("Successfully caught expected error");
@@ -226,7 +226,7 @@ Deno.test("Basic Config Loading - User Config Integration", async () => {
       userConfig: TEST_USER_CONFIG,
     });
 
-    const config = new BreakdownConfig(testDir);
+    const config = new BreakdownConfig(undefined, testDir);
     await config.loadConfig();
     const result = await config.getConfig();
     logger.debug("Loaded merged configuration", { result });

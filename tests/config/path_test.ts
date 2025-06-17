@@ -32,7 +32,7 @@ describe("Config Path Resolution", () => {
     logger.debug("Test directory setup for path resolution", { tempDir });
 
     try {
-      const config = new BreakdownConfig(tempDir);
+      const config = new BreakdownConfig(undefined, tempDir);
       logger.debug("Created BreakdownConfig instance", { baseDir: tempDir });
 
       await config.loadConfig();
@@ -77,7 +77,7 @@ describe("Config Path Resolution", () => {
     logger.debug("Test directory setup for relative paths", { tempDir });
 
     try {
-      const config = new BreakdownConfig(tempDir);
+      const config = new BreakdownConfig(undefined, tempDir);
       logger.debug("Created BreakdownConfig instance", { baseDir: tempDir });
 
       await config.loadConfig();
@@ -125,7 +125,7 @@ describe("Config Path Resolution", () => {
     logger.debug("Test directory setup for base directory", { tempDir });
 
     try {
-      const config = new BreakdownConfig(tempDir);
+      const config = new BreakdownConfig(undefined, tempDir);
       logger.debug("Created BreakdownConfig instance", { baseDir: tempDir });
 
       await config.loadConfig();
@@ -161,7 +161,7 @@ describe("Config Path Resolution", () => {
     logger.debug("Test directory setup for file verification", { tempDir });
 
     try {
-      const config = new BreakdownConfig(tempDir);
+      const config = new BreakdownConfig(undefined, tempDir);
       logger.debug("Created initial BreakdownConfig instance", { baseDir: tempDir });
 
       await config.loadConfig();
@@ -173,7 +173,7 @@ describe("Config Path Resolution", () => {
       // Try to access the config after cleanup
       await assertRejects(
         async () => {
-          const newConfig = new BreakdownConfig(tempDir);
+          const newConfig = new BreakdownConfig(undefined, tempDir);
           logger.debug("Created new BreakdownConfig instance after cleanup", { baseDir: tempDir });
           await newConfig.loadConfig();
         },

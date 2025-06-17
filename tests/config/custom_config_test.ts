@@ -26,7 +26,7 @@ describe("Custom Configuration Sets", () => {
     logger.debug("Test directory setup for custom config set", { tempDir, prefix: "production" });
 
     try {
-      const config = new BreakdownConfig(tempDir, "production");
+      const config = new BreakdownConfig("production", tempDir);
       logger.debug("Created BreakdownConfig instance with custom prefix", {
         baseDir: tempDir,
         prefix: "production",
@@ -76,7 +76,7 @@ describe("Custom Configuration Sets", () => {
       for (const invalidName of invalidNames) {
         await assertRejects(
           async () => {
-            const config = new BreakdownConfig(tempDir, invalidName);
+            const config = new BreakdownConfig(invalidName, tempDir);
             await config.loadConfig();
           },
           Error,
@@ -114,7 +114,7 @@ describe("Custom Configuration Sets", () => {
     const tempDir = await Deno.makeTempDir();
 
     try {
-      const config = new BreakdownConfig(tempDir, "nonexistent");
+      const config = new BreakdownConfig("nonexistent", tempDir);
 
       await assertRejects(
         async () => {

@@ -25,20 +25,14 @@ export class BreakdownConfig {
 
   /**
    * Creates a new instance of BreakdownConfig.
-   * Initializes the configuration manager with the specified base directory.
+   * Initializes the configuration manager with the specified configuration set and base directory.
    *
-   * @param baseDir - Optional base directory for configuration files or configuration set name
    * @param configSetName - Optional configuration set name (e.g., "production", "development")
+   * @param baseDir - Optional base directory for configuration files. Defaults to current directory if not specified.
    */
-  constructor(baseDir: string = "", configSetName?: string) {
-    // Handle backward compatibility: if only one argument and it looks like a config set name
-    if (!configSetName && baseDir && /^[a-zA-Z0-9-]+$/.test(baseDir) && !baseDir.includes("/")) {
-      this.configSetName = baseDir;
-      this.baseDir = "";
-    } else {
-      this.baseDir = baseDir;
-      this.configSetName = configSetName;
-    }
+  constructor(configSetName?: string, baseDir?: string) {
+    this.configSetName = configSetName;
+    this.baseDir = baseDir ?? "";
 
     // Validate config set name if provided
     if (this.configSetName && !/^[a-zA-Z0-9-]+$/.test(this.configSetName)) {
