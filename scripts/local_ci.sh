@@ -253,6 +253,105 @@ For more details:
     exit 1
 }
 
+# Function to run enhanced type checking
+run_enhanced_type_check() {
+    local file=$1
+    local error_output
+    local has_errors=false
+
+    echo "Enhanced type checking: $file"
+    
+    # Run type check and capture output
+    if ! error_output=$(deno check "$file" 2>&1); then
+        echo "
+===============================================================================
+>>> ENHANCED TYPE CHECK FAILED: $file <<<
+==============================================================================="
+        
+        # Check for specific error patterns
+        if echo "$error_output" | grep -q "is of type 'unknown'"; then
+            echo "🔍 DETECTED: 'unknown' type errors
+Common causes:
+- Missing type guards in catch blocks
+- Untyped external API responses
+- Missing type assertions for dynamic properties
+
+Suggested fixes:
+- Use 'error instanceof Error' checks in catch blocks
+- Add proper type assertions: 'as SomeType'
+- Use type guards for dynamic property access
+"
+        fi
+        
+        if echo "$error_output" | grep -q "Property .* does not exist on type"; then
+            echo "🔍 DETECTED: Missing property errors
+Common causes:
+- Accessing properties on union types
+- Missing optional chaining
+- Incorrect type definitions
+
+Suggested fixes:
+- Use optional chaining: 'obj?.property'
+- Add type assertions: 'obj as SpecificType'
+- Use type guards to narrow types
+"
+        fi
+        
+        if echo "$error_output" | grep -q "Cannot read properties of undefined"; then
+            echo "🔍 DETECTED: Undefined property access
+Common causes:
+- Missing null/undefined checks
+- Async race conditions
+- Uninitialized variables
+
+Suggested fixes:
+- Add null checks: 'if (obj) { ... }'
+- Use optional chaining: 'obj?.property'
+- Initialize variables properly
+"
+        fi
+        
+        echo "Full error output:
+$error_output
+==============================================================================="
+        has_errors=true
+    fi
+    
+    # Additional strict checks
+    if grep -n "any" "$file" 2>/dev/null; then
+        echo "⚠️  WARNING: Found 'any' types in $file"
+        echo "Consider using more specific types for better type safety"
+        echo "Lines with 'any':"
+        grep -n "any" "$file" | head -5
+        echo ""
+    fi
+    
+    # Check for unsafe type assertions
+    if grep -n "as any" "$file" 2>/dev/null; then
+        echo "🚨 CRITICAL: Found 'as any' assertions in $file"
+        echo "These bypass TypeScript's type checking completely"
+        echo "Lines with 'as any':"
+        grep -n "as any" "$file" | head -5
+        echo ""
+        has_errors=true
+    fi
+    
+    # Check for common error-prone patterns
+    if grep -n "error\.message" "$file" 2>/dev/null && ! grep -n "error instanceof Error" "$file" 2>/dev/null; then
+        echo "⚠️  WARNING: Potential 'unknown' error access in $file"
+        echo "Consider adding 'error instanceof Error' checks"
+        echo "Lines accessing error.message:"
+        grep -n "error\.message" "$file" | head -3
+        echo ""
+    fi
+    
+    if [ "$has_errors" = "true" ]; then
+        return 1
+    fi
+    
+    return 0
+}
+
 # Handle DEBUG environment variable
 if [ "${DEBUG:-false}" = "true" ]; then
     echo "
@@ -276,21 +375,37 @@ fi
 # Comprehensive type checking
 echo "Running comprehensive type checks..."
 
-# Check main entry points
+# Check main entry points with enhanced checking
 echo "Checking entry points..."
 for entry_point in mod.ts cli.ts main.ts; do
     if [ -f "$entry_point" ]; then
-        if ! deno check "$entry_point"; then
-            handle_error "$entry_point" "Type check failed" "false"
+        if ! run_enhanced_type_check "$entry_point"; then
+            handle_error "$entry_point" "Enhanced type check failed" "false"
         fi
     fi
 done
 
-# Check all TypeScript files in lib directory
+# Check all TypeScript files in src directory with enhanced checking
+echo "Checking source files..."
+find src -name "*.ts" -not -name "*.test.ts" 2>/dev/null | while read -r file; do
+    if ! run_enhanced_type_check "$file"; then
+        handle_error "$file" "Enhanced type check failed" "false"
+    fi
+done
+
+# Check example files for type safety
+echo "Checking example files..."
+find examples -name "*.ts" -not -name "*.test.ts" 2>/dev/null | while read -r file; do
+    if ! run_enhanced_type_check "$file"; then
+        handle_error "$file" "Enhanced type check failed" "false"
+    fi
+done
+
+# Check all TypeScript files in lib directory (if exists)
 echo "Checking library files..."
-find lib -name "*.ts" -not -name "*.test.ts" | while read -r file; do
-    if ! deno check "$file"; then
-        handle_error "$file" "Type check failed" "false"
+find lib -name "*.ts" -not -name "*.test.ts" 2>/dev/null | while read -r file; do
+    if ! run_enhanced_type_check "$file"; then
+        handle_error "$file" "Enhanced type check failed" "false"
     fi
 done
 
@@ -305,6 +420,13 @@ run_single_test() {
     local test_file=$1
     local is_debug=${2:-false}
     local error_output
+    
+    # First, run enhanced type check on the test file
+    echo "Type checking test file: $test_file"
+    if ! run_enhanced_type_check "$test_file"; then
+        handle_error "$test_file" "Test file type check failed" "$is_debug"
+        return 1
+    fi
     
     if [ "$is_debug" = "true" ]; then
         echo "
@@ -435,5 +557,47 @@ echo "Running lint..."
 if ! deno lint; then
     handle_lint_error "$(deno lint 2>&1)"
 fi
+
+echo "
+===============================================================================
+>>> TYPE SAFETY SUMMARY <<<
+==============================================================================="
+
+# Final type safety summary
+echo "🔍 Performing final type safety scan..."
+
+type_issues_found=false
+
+# Check for any remaining unsafe patterns across all TypeScript files
+echo "Scanning for type safety issues..."
+
+# Count files with potential issues
+any_count=$(find . -name "*.ts" -not -path "./node_modules/*" -not -path "./.git/*" -exec grep -l "\bany\b" {} \; 2>/dev/null | wc -l | tr -d ' ')
+as_any_count=$(find . -name "*.ts" -not -path "./node_modules/*" -not -path "./.git/*" -exec grep -l "as any" {} \; 2>/dev/null | wc -l | tr -d ' ')
+unknown_count=$(find . -name "*.ts" -not -path "./node_modules/*" -not -path "./.git/*" -exec grep -l "error\.message" {} \; 2>/dev/null | wc -l | tr -d ' ')
+
+echo "📊 Type Safety Metrics:"
+echo "  - Files with 'any' type: $any_count"
+echo "  - Files with 'as any': $as_any_count"
+echo "  - Files with potential error.message: $unknown_count"
+
+if [ "$as_any_count" -gt 0 ]; then
+    echo "🚨 CRITICAL: Found 'as any' type assertions!"
+    find . -name "*.ts" -not -path "./node_modules/*" -not -path "./.git/*" -exec grep -l "as any" {} \; 2>/dev/null | head -3
+    type_issues_found=true
+fi
+
+if [ "$any_count" -gt 3 ]; then
+    echo "⚠️  WARNING: High number of 'any' types found"
+    echo "   Consider adding more specific type definitions"
+fi
+
+if [ "$type_issues_found" = "false" ]; then
+    echo "✅ No critical type safety issues detected"
+else
+    echo "❌ Type safety issues found - consider addressing before production"
+fi
+
+echo "==============================================================================="
 
 echo "✓ Local checks completed successfully." 

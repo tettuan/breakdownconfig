@@ -24,12 +24,20 @@ async function demonstrateEnvironmentConfig(environment: string) {
     console.log(`Working Directory: ${await config.getWorkingDir()}`);
     console.log(`Prompt Directory: ${await config.getPromptDir()}`);
     console.log(`Schema Directory: ${await config.getSchemaDir()}`);
-    console.log(`Logging Level: ${mergedConfig.logging?.level || "not set"}`);
-    console.log(`Cache Enabled: ${mergedConfig.cache?.enable || false}`);
-    console.log(`Database Host: ${mergedConfig.database?.host || "not set"}`);
-    console.log(`API Rate Limit: ${mergedConfig.api?.rate_limit || "not set"}`);
+
+    // Type-safe access to optional configuration properties
+    const logging = mergedConfig.logging as { level?: string } | undefined;
+    const cache = mergedConfig.cache as { enable?: boolean; ttl?: number } | undefined;
+    const database = mergedConfig.database as { host?: string; pool_size?: number } | undefined;
+    const api = mergedConfig.api as { rate_limit?: number } | undefined;
+
+    console.log(`Logging Level: ${logging?.level || "not set"}`);
+    console.log(`Cache Enabled: ${cache?.enable || false}`);
+    console.log(`Database Host: ${database?.host || "not set"}`);
+    console.log(`API Rate Limit: ${api?.rate_limit || "not set"}`);
   } catch (error) {
-    console.error(`Error loading ${environment} config:`, error.message);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error(`Error loading ${environment} config:`, errorMessage);
   }
 }
 
@@ -56,33 +64,33 @@ async function main() {
       const mergedConfig = await config.getConfig();
       configs.set(env, mergedConfig);
     } catch (error) {
-      console.error(`Failed to load ${env} config:`, error.message);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.error(`Failed to load ${env} config:`, errorMessage);
     }
   }
 
   // Compare logging levels
   console.log("\nLogging Levels:");
   for (const [env, config] of configs) {
-    console.log(`  ${env}: ${config.logging?.level || "not set"}`);
+    const logging = config.logging as { level?: string } | undefined;
+    console.log(`  ${env}: ${logging?.level || "not set"}`);
   }
 
   // Compare cache settings
   console.log("\nCache Settings:");
   for (const [env, config] of configs) {
+    const cache = config.cache as { enable?: boolean; ttl?: number } | undefined;
     console.log(
-      `  ${env}: ${config.cache?.enable ? "enabled" : "disabled"} (TTL: ${
-        config.cache?.ttl || "not set"
-      })`,
+      `  ${env}: ${cache?.enable ? "enabled" : "disabled"} (TTL: ${cache?.ttl || "not set"})`,
     );
   }
 
   // Compare database settings
   console.log("\nDatabase Hosts:");
   for (const [env, config] of configs) {
+    const database = config.database as { host?: string; pool_size?: number } | undefined;
     console.log(
-      `  ${env}: ${config.database?.host || "not set"} (pool: ${
-        config.database?.pool_size || "not set"
-      })`,
+      `  ${env}: ${database?.host || "not set"} (pool: ${database?.pool_size || "not set"})`,
     );
   }
 }

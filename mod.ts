@@ -77,10 +77,11 @@
  *     return settings;
  *
  *   } catch (error) {
- *     if (error.message.includes("ERR1001")) {
+ *     const errorMessage = error instanceof Error ? error.message : String(error);
+ *     if (errorMessage.includes("ERR1001")) {
  *       console.error("App configuration file not found");
  *       console.log("Please create .agent/breakdown/config/app.yml");
- *     } else if (error.message.includes("ERR1002")) {
+ *     } else if (errorMessage.includes("ERR1002")) {
  *       console.error("Invalid configuration format");
  *       console.log("Check YAML syntax and required fields");
  *     }
