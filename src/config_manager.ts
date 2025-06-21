@@ -137,7 +137,7 @@ export class ConfigManager {
       },
     };
 
-    // If userConfig exists, merge any additional fields
+    // If userConfig exists, merge additional fields
     if (userConfig) {
       for (const [key, value] of Object.entries(userConfig)) {
         if (!(key in mergedConfig)) {

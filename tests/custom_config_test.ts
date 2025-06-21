@@ -253,7 +253,7 @@ describe("Custom Config Feature Tests", () => {
       logger.debug("Test directory created for non-existent prefix", { tempDir, prefix });
 
       try {
-        // Don't create any config files with this prefix
+        // Don't create config files with this prefix
         const config = new BreakdownConfig(prefix, tempDir);
 
         await assertRejects(

@@ -102,7 +102,7 @@ export class BreakdownConfig {
    *
    * @throws {Error} ERR9999 - Unknown error
    *   - Thrown for unexpected errors during configuration loading
-   *   - Wraps any non-Error exceptions
+   * - Wraps non-Error exceptions of unknown type
    *
    * @example
    * ```typescript
@@ -152,7 +152,7 @@ export class BreakdownConfig {
    * - `app_schema.base_dir: string` - Base directory for schema files
    *
    * **Additional Fields:**
-   * - `[key: string]: any` - Custom fields from user configuration that extend the base config
+   * - `[key: string]: unknown` - Custom fields from user configuration that extend the base config
    *
    * The returned MergedConfig represents the final configuration state where:
    * 1. Application defaults are loaded from `app_config.toml`
