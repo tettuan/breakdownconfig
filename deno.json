@@ -15,7 +15,9 @@
     "exclude": [
       "tests/",
       "tmp/",
-      "docs/"
+      "docs/",
+      "src/**/*_test.ts",
+      "src/**/*.test.ts"
     ]
   },
   "compilerOptions": {
