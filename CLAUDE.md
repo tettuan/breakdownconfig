@@ -64,6 +64,9 @@ alwaysApply: false
 - run `scripts/bump_version.sh` when ordered.
   - do not speculate if it will release.
 
+# `Start Company`
+「tmuxを使った相互通信によるClaude Code Company管理方法」の「基本セットアップ」を行う。
+まずは既存のpaneがあるか調べる。
 
 
 # tmuxを使った相互通信によるClaude Code Company管理方法

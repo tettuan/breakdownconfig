@@ -37,7 +37,7 @@ import { DefaultPaths } from "../types/app_config.ts";
  * @example Basic application configuration loading
  * ```typescript
  * // Load default app configuration
- * const loader = new AppConfigLoader("/path/to/project");
+ * const loader = new AppConfigLoader(undefined, "/path/to/project");
  *
  * try {
  *   const config = await loader.load();
@@ -52,11 +52,11 @@ import { DefaultPaths } from "../types/app_config.ts";
  * @example Environment-specific configuration loading
  * ```typescript
  * // Load production-specific configuration
- * const prodLoader = new AppConfigLoader("/app", "production");
+ * const prodLoader = new AppConfigLoader("production", "/app");
  * const prodConfig = await prodLoader.load();
  *
  * // Load development-specific configuration
- * const devLoader = new AppConfigLoader("/app", "development");
+ * const devLoader = new AppConfigLoader("development", "/app");
  * const devConfig = await devLoader.load();
  *
  * // Each environment can have different working directories,
@@ -92,35 +92,35 @@ export class AppConfigLoader {
    * The loader is designed to handle environment-specific application configurations
    * that define core system behavior and directory structures.
    *
-   * @param baseDir - Base directory to search for configuration files. If empty string,
-   *                  searches relative to current working directory. Recommended to use
-   *                  absolute paths for production deployments to ensure predictable behavior.
    * @param configSetName - Environment or deployment-specific configuration identifier.
    *                        Must match pattern /^[a-zA-Z0-9-]+$/ if provided.
    *                        Common values: "development", "production", "staging", "test".
    *                        If omitted, loads the default "app.yml" configuration.
+   * @param baseDir - Base directory to search for configuration files. If empty string,
+   *                  searches relative to current working directory. Recommended to use
+   *                  absolute paths for production deployments to ensure predictable behavior.
    *
    * @example Single environment setup
    * ```typescript
    * // Use default app.yml configuration
-   * const loader = new AppConfigLoader("/usr/local/app");
+   * const loader = new AppConfigLoader(undefined, "/usr/local/app");
    * ```
    *
    * @example Multi-environment deployment
    * ```typescript
    * // Production environment with specific config
-   * const prodLoader = new AppConfigLoader("/opt/app", "production");
+   * const prodLoader = new AppConfigLoader("production", "/opt/app");
    *
    * // Development environment with different settings
-   * const devLoader = new AppConfigLoader("/home/dev/app", "development");
+   * const devLoader = new AppConfigLoader("development", "/home/dev/app");
    *
    * // Test environment for CI/CD
-   * const testLoader = new AppConfigLoader("/tmp/test-app", "test");
+   * const testLoader = new AppConfigLoader("test", "/tmp/test-app");
    * ```
    */
   constructor(
-    private readonly baseDir: string = "",
     private readonly configSetName?: string,
+    private readonly baseDir: string = "",
   ) {}
 
   /**
@@ -140,7 +140,7 @@ export class AppConfigLoader {
    *
    * @example
    * ```typescript
-   * const loader = new AppConfigLoader("/path/to/project", "production");
+   * const loader = new AppConfigLoader("production", "/path/to/project");
    * try {
    *   const config = await loader.load();
    *   console.log(config.working_dir);

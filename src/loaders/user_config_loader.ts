@@ -23,7 +23,7 @@ import { DefaultPaths } from "../types/app_config.ts";
  *
  * @example Basic usage without environment-specific configs
  * ```typescript
- * const loader = new UserConfigLoader("/path/to/project");
+ * const loader = new UserConfigLoader(undefined, "/path/to/project");
  * const userConfig = await loader.load();
  *
  * // userConfig will be {} if no user.yml exists
@@ -34,11 +34,11 @@ import { DefaultPaths } from "../types/app_config.ts";
  * @example Environment-specific user configurations
  * ```typescript
  * // Development environment user config
- * const devLoader = new UserConfigLoader("/project", "development");
+ * const devLoader = new UserConfigLoader("development", "/project");
  * const devConfig = await devLoader.load();
  *
  * // Production environment user config
- * const prodLoader = new UserConfigLoader("/project", "production");
+ * const prodLoader = new UserConfigLoader("production", "/project");
  * const prodConfig = await prodLoader.load();
  *
  * // Each can have different user overrides
@@ -47,7 +47,7 @@ import { DefaultPaths } from "../types/app_config.ts";
  * @example Error handling for invalid user configs
  * ```typescript
  * try {
- *   const loader = new UserConfigLoader("/project");
+ *   const loader = new UserConfigLoader(undefined, "/project");
  *   const config = await loader.load();
  *   console.log("User config loaded:", config);
  * } catch (error) {
@@ -65,12 +65,12 @@ export class UserConfigLoader {
    * The loader is designed to handle user-specific overrides that can customize
    * application behavior on a per-user or per-environment basis.
    *
-   * @param baseDir - Base directory to search for configuration files. If empty string,
-   *                  searches relative to current working directory. Should be absolute
-   *                  path for predictable behavior.
    * @param configSetName - Environment or deployment-specific configuration identifier.
    *                        Must match pattern /^[a-zA-Z0-9-]+$/ if provided.
    *                        Examples: "development", "production", "staging", "local"
+   * @param baseDir - Base directory to search for configuration files. If empty string,
+   *                  searches relative to current working directory. Should be absolute
+   *                  path for predictable behavior.
    *
    * @example Standard project setup
    * ```typescript
@@ -78,21 +78,21 @@ export class UserConfigLoader {
    * const loader = new UserConfigLoader();
    *
    * // Search in specific project directory
-   * const loader = new UserConfigLoader("/home/user/myproject");
+   * const loader = new UserConfigLoader(undefined, "/home/user/myproject");
    * ```
    *
    * @example Multi-environment deployment
    * ```typescript
    * // Different user configs per environment
-   * const devLoader = new UserConfigLoader("/app", "development");
-   * const prodLoader = new UserConfigLoader("/app", "production");
+   * const devLoader = new UserConfigLoader("development", "/app");
+   * const prodLoader = new UserConfigLoader("production", "/app");
    *
    * // This allows users to have different overrides per environment
    * ```
    */
   constructor(
-    private readonly baseDir: string = "",
     private readonly configSetName?: string,
+    private readonly baseDir: string = "",
   ) {}
 
   /**
@@ -123,7 +123,7 @@ export class UserConfigLoader {
    *
    * @example Handling optional user config
    * ```typescript
-   * const loader = new UserConfigLoader("/project", "development");
+   * const loader = new UserConfigLoader("development", "/project");
    * const userConfig = await loader.load();
    *
    * // Check if user provided overrides
