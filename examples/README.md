@@ -24,17 +24,34 @@
 
 詳細は [prompt-manager/README.md](./prompt-manager/README.md) を参照してください。
 
+### multi-environment
+複数環境（PRODUCTION、STAGING、DEVELOPMENT）の設定管理を示すサンプルです。
+- カスタム設定セット（prefix）による環境別設定
+- 環境ごとの設定値の管理
+- 環境間の設定比較機能
+- 動的な環境切り替え
+
+詳細は [multi-environment/README.md](./multi-environment/README.md) を参照してください。
+
 ## 実行方法
 
 各サンプルは以下のコマンドで実行できます：
 
 ```bash
-# config-example
-deno run --allow-read --allow-env --allow-write examples/config-example/main.ts
+# config-example（必ずexamples/config-exampleディレクトリから実行）
+cd examples/config-example
+deno run --allow-read --allow-env --allow-write main.ts
 
-# prompt-manager
-deno run --allow-read --allow-env --allow-write examples/prompt-manager/main.ts
+# prompt-manager（必ずexamples/prompt-managerディレクトリから実行）
+cd examples/prompt-manager
+deno run --allow-read --allow-env --allow-write main.ts
+
+# multi-environment（必ずexamples/multi-environmentディレクトリから実行）
+cd examples/multi-environment
+deno run --allow-read --allow-env --allow-write main.ts
 ```
+
+**重要**: 各exampleは必ず該当ディレクトリに移動してから実行してください。プロジェクトルートから実行するとERR1001エラーが発生します。
 
 ## 共通の機能
 
@@ -59,3 +76,8 @@ deno run --allow-read --allow-env --allow-write examples/prompt-manager/main.ts
    - 構造化ログの出力
    - ログレベルの制御
    - 環境変数による設定 
+
+## 学習ポイント
+1. 各exampleは必ず該当ディレクトリから実行する必要がある
+2. ユーザー設定がアプリケーション設定を適切に上書きすることを確認
+3. 環境別設定（multi-environment）でprefixによる設定切り替えが正常動作
