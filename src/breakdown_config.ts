@@ -55,8 +55,8 @@ export class BreakdownConfig {
       );
     }
 
-    const appConfigLoader = new AppConfigLoader(this.baseDir, this.configSetName);
-    const userConfigLoader = new UserConfigLoader(this.baseDir, this.configSetName);
+    const appConfigLoader = new AppConfigLoader(this.configSetName, this.baseDir);
+    const userConfigLoader = new UserConfigLoader(this.configSetName, this.baseDir);
     this.configManager = new ConfigManager(appConfigLoader, userConfigLoader);
   }
 
