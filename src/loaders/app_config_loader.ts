@@ -1,8 +1,9 @@
 import { join } from "@std/path";
-import { parse as parseYaml } from "@std/yaml";
-import { ErrorCode, ErrorManager } from "../error_manager.ts";
 import type { AppConfig } from "../types/app_config.ts";
 import { DefaultPaths } from "../types/app_config.ts";
+import { ConfigResult, ConfigError, Result } from "../types/config_result.ts";
+import { SafeConfigLoader } from "./safe_config_loader.ts";
+import { ConfigValidator } from "../validators/config_validator.ts";
 
 /**
  * Loads and validates required application configuration files for system initialization
@@ -150,98 +151,63 @@ export class AppConfigLoader {
    * ```
    */
   async load(): Promise<AppConfig> {
-    try {
-      // Generate config file name based on configSetName
-      const configFileName = this.configSetName ? `${this.configSetName}-app.yml` : "app.yml";
-
-      const configPath = this.baseDir
-        ? join(this.baseDir, DefaultPaths.WORKING_DIR, "config", configFileName)
-        : join(DefaultPaths.WORKING_DIR, "config", configFileName);
-
-      let text: string;
-      try {
-        text = await Deno.readTextFile(configPath);
-      } catch (error) {
-        if (error instanceof Deno.errors.NotFound) {
-          ErrorManager.throwError(
-            ErrorCode.APP_CONFIG_NOT_FOUND,
-            `Application configuration file not found at: ${configPath}`,
-          );
-        }
-        throw error;
+    const result = await this.loadSafe();
+    if (!result.success) {
+      // For backward compatibility, convert errors to exceptions
+      const error = result.error;
+      if (error.kind === "fileNotFound") {
+        throw new Error(`[ERR1001] ${error.message}`);
+      } else if (error.kind === "parseError") {
+        throw new Error(`[ERR1002] Invalid application configuration - ${error.message}`);
+      } else if (error.kind === "validationError") {
+        const messages = error.errors.map(e => e.message || `${e.field}: ${e.expectedType}`).join(", ");
+        throw new Error(`[ERR1002] Invalid application configuration - ${messages}`);
+      } else {
+        throw new Error(`[ERR1002] Invalid application configuration`);
       }
-
-      let config: unknown;
-      try {
-        config = parseYaml(text);
-      } catch (_error) {
-        ErrorManager.throwError(
-          ErrorCode.APP_CONFIG_INVALID,
-          "Invalid application configuration",
-        );
-      }
-
-      if (!this.validateConfig(config)) {
-        ErrorManager.throwError(
-          ErrorCode.APP_CONFIG_INVALID,
-          "Invalid application configuration",
-        );
-      }
-
-      return config as AppConfig;
-    } catch (error) {
-      if (error instanceof Error) {
-        throw error;
-      }
-      ErrorManager.throwError(
-        ErrorCode.APP_CONFIG_INVALID,
-        "Invalid application configuration - Failed to load configuration",
-      );
     }
+    return result.data;
   }
 
   /**
-   * Validates that the configuration object has all required fields
-   * and that they are of the correct type.
+   * Loads and validates the application configuration from filesystem (Result-based API)
    *
-   * @param config - The configuration object to validate
-   * @returns {boolean} True if the configuration is valid
+   * @returns {Promise<ConfigResult<AppConfig, ConfigError>>} The loaded and validated application configuration or error
    */
-  private validateConfig(config: unknown): config is AppConfig {
-    if (!config || typeof config !== "object") {
-      return false;
+  async loadSafe(): Promise<ConfigResult<AppConfig, ConfigError>> {
+    // Generate config file name based on configSetName
+    const configFileName = this.configSetName ? `${this.configSetName}-app.yml` : "app.yml";
+
+    const configPath = this.baseDir
+      ? join(this.baseDir, DefaultPaths.WORKING_DIR, "config", configFileName)
+      : join(DefaultPaths.WORKING_DIR, "config", configFileName);
+
+    // Use SafeConfigLoader to load the file
+    const loader = new SafeConfigLoader(configPath);
+    
+    // Read file
+    const fileResult = await loader.readFile();
+    if (!fileResult.success) {
+      return fileResult;
     }
 
-    const { working_dir, app_prompt, app_schema } = config as Partial<AppConfig>;
+    // Parse YAML
+    const parseResult = loader.parseYaml(fileResult.data);
+    if (!parseResult.success) {
+      return parseResult;
+    }
 
-    return typeof working_dir === "string" &&
-      this.isValidPromptConfig(app_prompt) &&
-      this.isValidSchemaConfig(app_schema);
+    // Validate configuration using ConfigValidator
+    const validationResult = ConfigValidator.validateAppConfig(parseResult.data);
+    if (!validationResult.success) {
+      return Result.err({
+        kind: "validationError",
+        errors: validationResult.error,
+        path: configPath
+      });
+    }
+
+    return validationResult;
   }
 
-  /**
-   * Type guard for prompt configuration
-   *
-   * @param config - The configuration object to check
-   * @returns {boolean} True if the configuration is valid
-   */
-  private isValidPromptConfig(config: unknown): config is { base_dir: string } {
-    return typeof config === "object" &&
-      config !== null &&
-      "base_dir" in config &&
-      typeof (config as { base_dir: unknown }).base_dir === "string";
-  }
-
-  /**
-   * Type guard for schema configuration
-   *
-   * @param config - The configuration object to check
-   * @returns {boolean} True if the configuration is valid
-   */
-  private isValidSchemaConfig(config: unknown): config is { base_dir: string } {
-    return typeof config === "object" &&
-      config !== null &&
-      "base_dir" in config &&
-      typeof (config as { base_dir: unknown }).base_dir === "string";
-  }
 }

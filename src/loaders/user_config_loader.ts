@@ -3,6 +3,7 @@ import { parse as parseYaml } from "@std/yaml";
 import { ErrorCode, ErrorManager } from "../error_manager.ts";
 import type { UserConfig } from "../types/user_config.ts";
 import { DefaultPaths } from "../types/app_config.ts";
+import { ConfigResult, FileNotFoundError, ParseError, ValidationError, UnknownError, Result } from "../types/config_result.ts";
 
 /**
  * Loads and validates optional user configuration files for personalization and overrides
@@ -99,14 +100,14 @@ export class UserConfigLoader {
    * Loads and validates user configuration with graceful error handling
    *
    * This method implements a forgiving loading strategy where missing files are treated
-   * as acceptable (returning empty config) while invalid existing files trigger errors.
+   * as acceptable (returning null) while invalid existing files trigger errors.
    * This design allows user configurations to be completely optional while ensuring
    * that existing configs are valid.
    *
    * ## Loading Process
    * 1. Determine config file path based on configSetName
    * 2. Attempt to read file from filesystem
-   * 3. If file missing: return {} (graceful degradation)
+   * 3. If file missing: return null (graceful degradation)
    * 4. If file exists: parse YAML and validate structure
    * 5. Return validated UserConfig object
    *
@@ -114,87 +115,95 @@ export class UserConfigLoader {
    * - With configSetName: `{baseDir}/.agent/breakdown/config/{configSetName}-user.yml`
    * - Without configSetName: `{baseDir}/.agent/breakdown/config/user.yml`
    *
-   * @returns {Promise<UserConfig>} Validated user configuration object.
-   *          Returns empty object {} if file doesn't exist.
-   *          Returns populated object with user overrides if file exists and is valid.
-   *
-   * @throws {Error} With ErrorCode.USER_CONFIG_INVALID if file exists but contains
-   *                invalid YAML syntax or doesn't match expected UserConfig structure
+   * @returns {Promise<ConfigResult<UserConfig | null>>} Result containing:
+   *          - null if file doesn't exist (this is a success case)
+   *          - UserConfig object if file exists and is valid
+   *          - Error in Result if file exists but is invalid
    *
    * @example Handling optional user config
    * ```typescript
    * const loader = new UserConfigLoader("development", "/project");
-   * const userConfig = await loader.load();
+   * const result = await loader.load();
    *
-   * // Check if user provided overrides
-   * if (Object.keys(userConfig).length > 0) {
-   *   console.log("User has custom settings:", userConfig);
+   * if (Result.isOk(result)) {
+   *   const userConfig = result.data;
+   *   if (userConfig === null) {
+   *     console.log("No user config, using defaults");
+   *   } else {
+   *     console.log("User has custom settings:", userConfig);
+   *   }
    * } else {
-   *   console.log("Using application defaults");
+   *   console.error("Config error:", result.error);
    * }
    * ```
    *
    * @example Validating user overrides
    * ```typescript
-   * const userConfig = await loader.load();
+   * const result = await loader.load();
    *
-   * // User can override working directory
-   * if (userConfig.working_dir) {
-   *   console.log("User working dir:", userConfig.working_dir);
-   * }
+   * if (Result.isOk(result) && result.data !== null) {
+   *   const userConfig = result.data;
+   *   // User can override working directory
+   *   if (userConfig.working_dir) {
+   *     console.log("User working dir:", userConfig.working_dir);
+   *   }
    *
-   * // User can override prompt settings
-   * if (userConfig.app_prompt?.base_dir) {
-   *   console.log("User prompt dir:", userConfig.app_prompt.base_dir);
+   *   // User can override prompt settings
+   *   if (userConfig.app_prompt?.base_dir) {
+   *     console.log("User prompt dir:", userConfig.app_prompt.base_dir);
+   *   }
    * }
    * ```
    */
-  async load(): Promise<UserConfig> {
+  async load(): Promise<ConfigResult<UserConfig | null>> {
+    const fileName = this.configSetName ? `${this.configSetName}-user.yml` : "user.yml";
+
+    const configPath = this.baseDir
+      ? join(this.baseDir, DefaultPaths.WORKING_DIR, "config", fileName)
+      : join(DefaultPaths.WORKING_DIR, "config", fileName);
+
+    let text: string;
     try {
-      const fileName = this.configSetName ? `${this.configSetName}-user.yml` : "user.yml";
-
-      const configPath = this.baseDir
-        ? join(this.baseDir, DefaultPaths.WORKING_DIR, "config", fileName)
-        : join(DefaultPaths.WORKING_DIR, "config", fileName);
-
-      let text: string;
-      try {
-        text = await Deno.readTextFile(configPath);
-      } catch (error) {
-        if (error instanceof Deno.errors.NotFound) {
-          // User config is optional, so we just return an empty config
-          return {};
-        }
-        throw error;
-      }
-
-      let config: unknown;
-      try {
-        config = parseYaml(text);
-      } catch (_e) {
-        ErrorManager.throwError(
-          ErrorCode.USER_CONFIG_INVALID,
-          "Invalid user configuration - Invalid YAML format",
-        );
-      }
-
-      if (!this.validateConfig(config)) {
-        ErrorManager.throwError(
-          ErrorCode.USER_CONFIG_INVALID,
-          "Invalid user configuration - Invalid structure",
-        );
-      }
-
-      return config as UserConfig;
+      text = await Deno.readTextFile(configPath);
     } catch (error) {
-      if (error instanceof Error) {
-        throw error;
+      if (error instanceof Deno.errors.NotFound) {
+        // User config is optional, so we return null (not an error)
+        return Result.ok(null);
       }
-      ErrorManager.throwError(
-        ErrorCode.USER_CONFIG_INVALID,
-        "Invalid user configuration - Failed to load configuration",
-      );
+      // Other file system errors
+      return Result.err<UnknownError>({
+        kind: "unknownError",
+        message: `Failed to read user config file: ${configPath}`,
+        originalError: error
+      });
     }
+
+    let config: unknown;
+    try {
+      config = parseYaml(text);
+    } catch (parseError) {
+      // YAML parse error - this is a real error since the file exists
+      return Result.err<ParseError>({
+        kind: "parseError",
+        path: configPath,
+        line: 0, // YAML parser doesn't provide line numbers
+        column: 0,
+        message: "Invalid YAML format in user configuration file"
+      });
+    }
+
+    if (!this.validateConfig(config)) {
+      // Validation error - the file exists but has invalid structure
+      return Result.err<ValidationError>({
+        kind: "validationError",
+        field: "root",
+        value: config,
+        expectedType: "UserConfig",
+        message: "Invalid user configuration structure"
+      });
+    }
+
+    return Result.ok(config as UserConfig);
   }
 
   /**
