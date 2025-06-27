@@ -38,6 +38,7 @@ import {
   EnhancedI18nManager,
   ErrorMessageUtils,
   MessageContext,
+  MessageParams,
   SupportedLanguage,
 } from "./enhanced_i18n_system.ts";
 

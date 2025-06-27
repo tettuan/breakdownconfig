@@ -9,7 +9,7 @@
  */
 
 import { ConfigError, PathErrorReason, ValidationError } from "../types/config_result.ts";
-import type { ValidationViolation } from "./unified_errors.ts";
+import type { ValidationViolation, ConfigValidationError as UnifiedConfigValidationError } from "./unified_errors.ts";
 import configErrorMessages from "./config_error_messages.json" with { type: "json" };
 import errorCodeMessages from "./messages.json" with { type: "json" };
 
@@ -99,7 +99,7 @@ export class UnifiedErrorI18n {
   /**
    * ValidationErrorのメッセージを生成
    */
-  private getValidationErrorMessage(error: ConfigValidationError, lang: SupportedLanguage): string {
+  private getValidationErrorMessage(error: UnifiedConfigValidationError, lang: SupportedLanguage): string {
     const baseMessage = this.formatMessage(
       configErrorMessages.configError.configValidationError[lang],
       { path: error.path },

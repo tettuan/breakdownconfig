@@ -94,7 +94,6 @@ export { convertLegacyError, ErrorCodeMapping, isErrorCode } from "./error_code_
 // Import ErrorFactories for use in utility functions
 import { ErrorFactories } from "./unified_errors.ts";
 import { BaseErrorInterface, ErrorCategory, ErrorSeverity, StandardErrorCode, ErrorConfiguration } from "./unified_error_interface.ts";
-import { unifiedErrorManager } from "./unified_error_implementation.ts";
 
 // Helper function to convert any error to unified error
 function toUnifiedError(error: unknown, context?: string): BaseErrorInterface {
