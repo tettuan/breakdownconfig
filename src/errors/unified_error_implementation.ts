@@ -626,39 +626,7 @@ export const ErrorUtils = {
   },
 };
 
-/**
- * Export all components for external use
- */
-export {
-  // Polymorphic system
-  AbstractError,
-  // Interfaces
-  BaseErrorInterface,
-  BasicErrorValidator,
-  CompleteUnifiedErrorManager,
-  ConsoleErrorReporter,
-  createError,
-  enhancedI18n,
-  // I18n system
-  EnhancedI18nManager,
-  ErrorCategory,
-  ErrorChainBuilder,
-  // Error codes
-  ErrorCodeRegistry,
-  ErrorCodeUtils,
-  ErrorMessageUtils,
-  ErrorSeverity,
-  JsonErrorSerializer,
-  makeErrorVisitable,
-  MemoryErrorMetrics,
-  MessageContext,
-  PolymorphicErrorFactoryRegistry,
-  PolymorphicErrorHandlerRegistry,
-  // Core implementations
-  ProductionErrorAggregator,
-  StandardErrorCode,
-  SupportedLanguage,
-};
+// Note: Classes are exported individually above, no need for re-export block
 
 // Export specific error types for backward compatibility
 export type ConfigurationError = UnifiedError & {

@@ -78,7 +78,14 @@ export class UnifiedErrorI18n {
         );
 
       case "configValidationError":
-        return this.getValidationErrorMessage(error, lang);
+        // Handle type compatibility between different ConfigValidationError types
+        if ('violations' in error) {
+          return this.getValidationErrorMessage(error as unknown as UnifiedConfigValidationError, lang);
+        }
+        return this.formatMessage(
+          configErrorMessages.configError.configValidationError[lang],
+          { path: error.path }
+        );
 
       case "pathError":
         return this.getPathErrorMessage(error, lang);
