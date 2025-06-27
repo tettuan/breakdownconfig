@@ -43,6 +43,7 @@ import {
 } from "./enhanced_i18n_system.ts";
 
 import { ErrorCodeRegistry, ErrorCodeUtils } from "./standardized_error_codes.ts";
+import { UnifiedError } from "./unified_errors.ts";
 
 /**
  * Production-ready error aggregator implementation

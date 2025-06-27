@@ -80,7 +80,7 @@ export class ProfileConfigLoader {
     const appConfigPath = this.getAppConfigPath();
 
     // Then, attempt to load user configuration
-    const userResult = await this.userLoader.loadSafe();
+    const userResult = await this.userLoader.load();
     
     // Check if user config exists and is valid
     if (userResult.success && Object.keys(userResult.data).length > 0) {
