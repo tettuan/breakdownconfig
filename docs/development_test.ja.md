@@ -3,12 +3,14 @@
 ## 1. テスト戦略
 
 ### 1.1 テスト目標
+
 - 機能の完全性の保証
 - エッジケースの網羅
 - 実環境での動作保証
 - 高いテストカバレッジの維持
 
 ### 1.2 テストレベル
+
 1. 単体テスト
    - 各クラスの独立した機能テスト
    - モック/スタブを使用した依存性の分離
@@ -47,6 +49,7 @@ graph TD
 ### 2.2 テストケース詳細
 
 #### 基本機能テスト
+
 1. 設定ファイル読み込み
    - アプリ設定の読み込み
    - ユーザー設定の読み込み
@@ -64,6 +67,7 @@ graph TD
    - 空値による項目の削除
 
 #### 主要機能テスト
+
 1. 実環境設定テスト
    - 実際のディレクトリ構造での動作
    - 実際の設定ファイルでの動作
@@ -74,6 +78,7 @@ graph TD
    - 複数階層の設定統合
 
 #### エッジケーステスト
+
 1. 特殊文字パス
    - 日本語パス
    - 空白を含むパス
@@ -85,6 +90,7 @@ graph TD
    - 大量の設定項目
 
 #### エラーケーステスト
+
 1. 不正設定
    - 不正なYAML形式
    - 必須項目の欠落
@@ -98,14 +104,15 @@ graph TD
 ## 3. CI/CD設定
 
 ### 3.1 GitHub Actions設定
+
 ```yaml
 name: Test
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   test:
@@ -115,37 +122,39 @@ jobs:
         deno-version: [1.x]
 
     steps:
-    - uses: actions/checkout@v2
-    
-    - name: Setup Deno
-      uses: denoland/setup-deno@v1
-      with:
-        deno-version: ${{ matrix.deno-version }}
-    
-    - name: Verify formatting
-      run: deno fmt --check
-    
-    - name: Run linter
-      run: deno lint
-    
-    - name: Run tests
-      run: deno test --allow-read --allow-write --coverage=coverage
-    
-    - name: Generate coverage report
-      run: deno coverage coverage --lcov > coverage.lcov
-    
-    - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v3
-      with:
-        file: ./coverage.lcov
+      - uses: actions/checkout@v2
+
+      - name: Setup Deno
+        uses: denoland/setup-deno@v1
+        with:
+          deno-version: ${{ matrix.deno-version }}
+
+      - name: Verify formatting
+        run: deno fmt --check
+
+      - name: Run linter
+        run: deno lint
+
+      - name: Run tests
+        run: deno test --allow-read --allow-write --coverage=coverage
+
+      - name: Generate coverage report
+        run: deno coverage coverage --lcov > coverage.lcov
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./coverage.lcov
 ```
 
 ### 3.2 テストカバレッジ要件
+
 - ステートメントカバレッジ: 90%以上
 - 分岐カバレッジ: 85%以上
 - 関数カバレッジ: 95%以上
 
 ### 3.3 テスト環境
+
 - OS: Ubuntu Latest (CI), macOS, Windows
 - Denoバージョン: 1.x
 - テストフレームワーク: Deno.test
@@ -153,11 +162,13 @@ jobs:
 ## 4. テストデータ管理
 
 ### 4.1 テストフィクスチャ
+
 - 実際のアプリケーション構成に基づくテストデータ
 - 各テストケース用の専用設定ファイル
 - エッジケース用の特殊データ
 
 ### 4.2 ディレクトリ構造
+
 ```
 tests/
 ├── fixtures/
@@ -175,6 +186,7 @@ tests/
 ## 5. 品質メトリクス
 
 ### 5.1 測定項目
+
 - テストカバレッジ
 - テスト実行時間
 - 失敗したテストの数
@@ -182,8 +194,9 @@ tests/
 - 技術的負債
 
 ### 5.2 品質目標
+
 - すべてのテストが通過
 - カバレッジ目標の達成
 - テスト実行時間が3分以内
 - コードスメルの検出なし
-- 技術的負債の最小化 
+- 技術的負債の最小化
