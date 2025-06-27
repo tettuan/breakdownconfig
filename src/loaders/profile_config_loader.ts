@@ -83,7 +83,7 @@ export class ProfileConfigLoader {
     const userResult = await this.userLoader.load();
     
     // Check if user config exists and is valid
-    if (userResult.success && Object.keys(userResult.data).length > 0) {
+    if (userResult.success && userResult.data !== null && Object.keys(userResult.data).length > 0) {
       // User config exists and loaded successfully - return MergedProfile
       const mergedProfile: MergedProfile = {
         kind: "merged",
@@ -93,7 +93,7 @@ export class ProfileConfigLoader {
           userConfigPath: this.getUserConfigPath(),
           userConfigExists: true,
         },
-        config: this.mergeConfigs(appConfig, userResult.data),
+        config: this.mergeConfigs(appConfig, userResult.data!),
       };
       return UnifiedResult.ok(mergedProfile);
     } else {
