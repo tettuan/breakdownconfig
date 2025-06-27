@@ -1,0 +1,60 @@
+{
+  "configError": {
+    "fileNotFound": {
+      "en": "Configuration file not found: {path}",
+      "ja": "設定ファイルが見つかりません: {path}"
+    },
+    "parseError": {
+      "en": "Failed to parse configuration file at {path} (line {line}, column {column}): {message}",
+      "ja": "設定ファイルの解析に失敗しました {path} ({line}行{column}列): {message}"
+    },
+    "configValidationError": {
+      "en": "Configuration validation failed at {path}",
+      "ja": "設定の検証に失敗しました: {path}",
+      "fieldError": {
+        "en": "Field '{field}' has invalid value: expected {expectedType} but got {actualType}",
+        "ja": "フィールド '{field}' の値が無効です: {expectedType}型が期待されますが{actualType}型が指定されました"
+      }
+    },
+    "pathError": {
+      "pathTraversal": {
+        "en": "Path traversal detected in '{path}'. Only relative paths within the configuration directory are allowed.",
+        "ja": "'{path}' でパストラバーサルが検出されました。設定ディレクトリ内の相対パスのみ許可されています。"
+      },
+      "absoluteNotAllowed": {
+        "en": "Absolute path '{path}' is not allowed. Please use a relative path.",
+        "ja": "絶対パス '{path}' は許可されていません。相対パスを使用してください。"
+      },
+      "invalidCharacters": {
+        "en": "Path '{path}' contains invalid characters.",
+        "ja": "パス '{path}' に無効な文字が含まれています。"
+      },
+      "tooLong": {
+        "en": "Path '{path}' is too long. Maximum length is 255 characters.",
+        "ja": "パス '{path}' が長すぎます。最大255文字まで指定できます。"
+      },
+      "empty": {
+        "en": "Path cannot be empty.",
+        "ja": "パスを空にすることはできません。"
+      }
+    },
+    "unknownError": {
+      "en": "An unexpected error occurred: {message}",
+      "ja": "予期しないエラーが発生しました: {message}"
+    }
+  },
+  "configManager": {
+    "appConfigRequired": {
+      "en": "Application configuration is required but not found",
+      "ja": "アプリケーション設定が必要ですが見つかりません"
+    },
+    "mergeConflict": {
+      "en": "Configuration merge conflict: field '{field}' has incompatible types",
+      "ja": "設定のマージで競合が発生しました: フィールド '{field}' の型に互換性がありません"
+    },
+    "notLoaded": {
+      "en": "Configuration must be loaded before accessing. Call getConfig() or getConfigSafe() first.",
+      "ja": "設定にアクセスする前に読み込む必要があります。最初にgetConfig()またはgetConfigSafe()を呼び出してください。"
+    }
+  }
+}

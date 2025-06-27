@@ -7,6 +7,7 @@ This document provides concrete examples of how current tests would be converted
 ## 1. Basic Config Loading Test
 
 ### Current Implementation
+
 ```typescript
 // From tests/basic/config_loader_test.ts
 it("should load and merge configurations correctly", async () => {
@@ -15,7 +16,7 @@ it("should load and merge configurations correctly", async () => {
     const config = new BreakdownConfig(undefined, tempDir);
     await config.loadConfig();
     const result = await config.getConfig();
-    
+
     assertEquals(result.working_dir, DefaultPaths.WORKING_DIR);
     assertEquals(result.app_prompt.base_dir, "custom/prompts");
     assertEquals(result.app_schema.base_dir, DefaultPaths.SCHEMA_BASE_DIR);
@@ -29,19 +30,20 @@ it("should load and merge configurations correctly", async () => {
 ```
 
 ### Result Type Implementation
+
 ```typescript
 it("should load and merge configurations correctly", async () => {
   const tempDir = await setupMergeConfigs();
   try {
     const config = new BreakdownConfig(undefined, tempDir);
     const loadResult = await config.loadConfig();
-    
+
     // Assert successful loading
     assertOk(loadResult);
-    
+
     const configResult = await config.getConfig();
     assertOk(configResult);
-    
+
     // Access data through Result type
     const result = configResult.data;
     assertEquals(result.working_dir, DefaultPaths.WORKING_DIR);
@@ -56,6 +58,7 @@ it("should load and merge configurations correctly", async () => {
 ## 2. Error Handling Test
 
 ### Current Implementation
+
 ```typescript
 // From tests/config/error_test.ts
 it("should handle missing working directory", async () => {
@@ -76,13 +79,14 @@ it("should handle missing working directory", async () => {
 ```
 
 ### Result Type Implementation
+
 ```typescript
 it("should handle missing working directory", async () => {
   const tempDir = await setupInvalidConfig(invalidAppConfigs.missingWorkingDir);
   try {
     const config = new BreakdownConfig(undefined, tempDir);
     const result = await config.loadConfig();
-    
+
     // Assert failure with specific error type
     assertErr(result);
     assertEquals(result.error.kind, "validationError");
@@ -97,6 +101,7 @@ it("should handle missing working directory", async () => {
 ## 3. File Not Found Test
 
 ### Current Implementation
+
 ```typescript
 // From tests/basic/config_loader_test.ts
 Deno.test("Basic Config Loading - Missing App Config", async () => {
@@ -104,7 +109,7 @@ Deno.test("Basic Config Loading - Missing App Config", async () => {
   try {
     const configDir = `${testDir}/${DefaultPaths.WORKING_DIR}/config`;
     await Deno.mkdir(configDir, { recursive: true });
-    
+
     const config = new BreakdownConfig(undefined, testDir);
     await expect(config.loadConfig()).rejects.toThrow("ERR1001");
   } finally {
@@ -114,16 +119,17 @@ Deno.test("Basic Config Loading - Missing App Config", async () => {
 ```
 
 ### Result Type Implementation
+
 ```typescript
 Deno.test("Basic Config Loading - Missing App Config", async () => {
   const testDir = await Deno.makeTempDir();
   try {
     const configDir = `${testDir}/${DefaultPaths.WORKING_DIR}/config`;
     await Deno.mkdir(configDir, { recursive: true });
-    
+
     const config = new BreakdownConfig(undefined, testDir);
     const result = await config.loadConfig();
-    
+
     assertErr(result);
     assertEquals(result.error.kind, "fileNotFound");
     assertEquals(result.error.path, `${configDir}/app.yml`);
@@ -137,11 +143,12 @@ Deno.test("Basic Config Loading - Missing App Config", async () => {
 ## 4. YAML Parse Error Test
 
 ### Current Implementation
+
 ```typescript
 // From tests/err1002/invalid_yaml_test.ts
 Deno.test("ERR1002 Invalid YAML Test - malformed YAML syntax", async () => {
   await Deno.mkdir(".agent/breakdown/config", { recursive: true });
-  
+
   const invalidYaml = `
 working_dir: "./.agent/breakdown"
 app_prompt:
@@ -150,10 +157,10 @@ app_prompt:
 app_schema:
   base_dir: "./.agent/breakdown/schema/app"
 `;
-  
+
   await Deno.writeTextFile(".agent/breakdown/config/yaml-test-app.yml", invalidYaml);
   const config = new BreakdownConfig("yaml-test");
-  
+
   await assertRejects(
     async () => {
       await config.loadConfig();
@@ -165,10 +172,11 @@ app_schema:
 ```
 
 ### Result Type Implementation
+
 ```typescript
 Deno.test("ERR1002 Invalid YAML Test - malformed YAML syntax", async () => {
   await Deno.mkdir(".agent/breakdown/config", { recursive: true });
-  
+
   const invalidYaml = `
 working_dir: "./.agent/breakdown"
 app_prompt:
@@ -177,12 +185,12 @@ app_prompt:
 app_schema:
   base_dir: "./.agent/breakdown/schema/app"
 `;
-  
+
   await Deno.writeTextFile(".agent/breakdown/config/yaml-test-app.yml", invalidYaml);
   const config = new BreakdownConfig("yaml-test");
-  
+
   const result = await config.loadConfig();
-  
+
   assertErr(result);
   assertEquals(result.error.kind, "parseError");
   assertEquals(result.error.path, ".agent/breakdown/config/yaml-test-app.yml");
@@ -194,6 +202,7 @@ app_schema:
 ## 5. Validation Chain Test
 
 ### Current Implementation
+
 ```typescript
 // From tests/config/validation_test.ts
 it("should validate required fields", async () => {
@@ -202,9 +211,9 @@ it("should validate required fields", async () => {
     const config = new BreakdownConfig(undefined, tempDir);
     await config.loadConfig();
     const result = await config.getConfig();
-    
+
     ConfigValidator.validateAppConfig(result);
-    
+
     assertEquals(result.working_dir, DefaultPaths.WORKING_DIR);
     assertEquals(result.app_prompt.base_dir, DefaultPaths.PROMPT_BASE_DIR);
     assertEquals(result.app_schema.base_dir, DefaultPaths.SCHEMA_BASE_DIR);
@@ -215,22 +224,23 @@ it("should validate required fields", async () => {
 ```
 
 ### Result Type Implementation
+
 ```typescript
 it("should validate required fields", async () => {
   const tempDir = await setupAppConfigOnly();
   try {
     const config = new BreakdownConfig(undefined, tempDir);
-    
+
     // Chain operations with Result types
     const result = await config.loadConfig()
-      .then(loadResult => Result.flatMap(loadResult, () => config.getConfig()))
-      .then(configResult => Result.flatMap(configResult, cfg => 
-        ConfigValidator.validateAppConfig(cfg)
-      ));
-    
+      .then((loadResult) => Result.flatMap(loadResult, () => config.getConfig()))
+      .then((configResult) =>
+        Result.flatMap(configResult, (cfg) => ConfigValidator.validateAppConfig(cfg))
+      );
+
     assertOk(result);
     const validatedConfig = result.data;
-    
+
     assertEquals(validatedConfig.working_dir, DefaultPaths.WORKING_DIR);
     assertEquals(validatedConfig.app_prompt.base_dir, DefaultPaths.PROMPT_BASE_DIR);
     assertEquals(validatedConfig.app_schema.base_dir, DefaultPaths.SCHEMA_BASE_DIR);
@@ -243,31 +253,32 @@ it("should validate required fields", async () => {
 ## Test Helper Utilities
 
 ### Assertion Helpers
+
 ```typescript
 // test_utils.ts additions
 export function assertOk<T, E>(
-  result: ConfigResult<T, E>
+  result: ConfigResult<T, E>,
 ): asserts result is Success<T> {
   if (!result.success) {
     throw new AssertionError(
-      `Expected success result, got error: ${JSON.stringify(result.error)}`
+      `Expected success result, got error: ${JSON.stringify(result.error)}`,
     );
   }
 }
 
 export function assertErr<T, E>(
-  result: ConfigResult<T, E>
+  result: ConfigResult<T, E>,
 ): asserts result is Failure<E> {
   if (result.success) {
     throw new AssertionError(
-      `Expected error result, got success: ${JSON.stringify(result.data)}`
+      `Expected error result, got success: ${JSON.stringify(result.data)}`,
     );
   }
 }
 
 export function assertErrorKind<T>(
   result: ConfigResult<T, ConfigError>,
-  expectedKind: ConfigError["kind"]
+  expectedKind: ConfigError["kind"],
 ): void {
   assertErr(result);
   assertEquals(result.error.kind, expectedKind);
@@ -275,13 +286,14 @@ export function assertErrorKind<T>(
 ```
 
 ### Pattern Matching Helper
+
 ```typescript
 export function matchResult<T, E, R>(
   result: ConfigResult<T, E>,
   patterns: {
     ok: (data: T) => R;
     err: (error: E) => R;
-  }
+  },
 ): R {
   if (result.success) {
     return patterns.ok(result.data);
@@ -292,7 +304,7 @@ export function matchResult<T, E, R>(
 // Usage in tests
 const testOutcome = matchResult(await config.loadConfig(), {
   ok: () => "Config loaded successfully",
-  err: (error) => `Failed with ${error.kind}: ${error.message}`
+  err: (error) => `Failed with ${error.kind}: ${error.message}`,
 });
 ```
 

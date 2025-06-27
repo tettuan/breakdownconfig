@@ -1,0 +1,106 @@
+{
+  "configFileNotFound": {
+    "en": "Configuration file not found: {path} (type: {configType})",
+    "ja": "設定ファイルが見つかりません: {path} (種類: {configType})"
+  },
+  "configParseError": {
+    "en": "Failed to parse configuration file '{path}' at line {line}, column {column}: {message}",
+    "ja": "設定ファイル '{path}' の解析に失敗しました ({line}行{column}列): {message}"
+  },
+  "configValidationError": {
+    "en": "Configuration validation failed for '{path}': {violations}",
+    "ja": "設定の検証に失敗しました '{path}': {violations}"
+  },
+  "requiredFieldMissing": {
+    "en": "Required field '{field}' is missing",
+    "ja": "必須フィールド '{field}' がありません"
+  },
+  "invalidFieldType": {
+    "en": "Field '{field}' has invalid type: expected {expectedType} but got {actualType}",
+    "ja": "フィールド '{field}' の型が無効です: {expectedType}型が期待されますが{actualType}型が指定されました"
+  },
+  "pathTraversal": {
+    "en": "Path traversal detected in '{path}'. Only relative paths within the configuration directory are allowed.",
+    "ja": "'{path}' でパストラバーサルが検出されました。設定ディレクトリ内の相対パスのみ許可されています。"
+  },
+  "absolutePath": {
+    "en": "Absolute path '{path}' is not allowed. Please use a relative path.",
+    "ja": "絶対パス '{path}' は許可されていません。相対パスを使用してください。"
+  },
+  "invalidPath": {
+    "en": "Invalid path format: {path}",
+    "ja": "無効なパス形式です: {path}"
+  },
+  "unknown": {
+    "en": "An unexpected error occurred during {operation}: {message}",
+    "ja": "{operation}中に予期しないエラーが発生しました: {message}"
+  },
+  "validationViolation": {
+    "en": "Field '{field}': expected {expectedType}, got {actualType} {constraint}",
+    "ja": "フィールド '{field}': {expectedType}型が期待されますが{actualType}型です {constraint}"
+  },
+  "userConfigErrors": {
+    "parseError": {
+      "en": "User configuration file has invalid format: {message}",
+      "ja": "ユーザー設定ファイルの形式が無効です: {message}"
+    },
+    "configValidationError": {
+      "en": "User configuration validation failed: {message}",
+      "ja": "ユーザー設定の検証に失敗しました: {message}"
+    },
+    "unknownError": {
+      "en": "Unknown error occurred while loading user configuration: {message}",
+      "ja": "ユーザー設定の読み込み中に不明なエラーが発生しました: {message}"
+    }
+  },
+  "errorManagerLegacy": {
+    "APP_CONFIG_NOT_FOUND": {
+      "en": "Application configuration file not found",
+      "ja": "アプリケーション設定ファイルが見つかりません"
+    },
+    "APP_CONFIG_INVALID": {
+      "en": "Invalid application configuration format or content",
+      "ja": "アプリケーション設定の形式または内容が無効です"
+    },
+    "USER_CONFIG_NOT_FOUND": {
+      "en": "User configuration file not found",
+      "ja": "ユーザー設定ファイルが見つかりません"
+    },
+    "USER_CONFIG_INVALID": {
+      "en": "Invalid user configuration format or content",
+      "ja": "ユーザー設定の形式または内容が無効です"
+    },
+    "CONFIG_NOT_LOADED": {
+      "en": "Configuration not loaded before attempting to access",
+      "ja": "設定にアクセスする前に読み込みが完了していません"
+    },
+    "REQUIRED_FIELD_MISSING": {
+      "en": "Required field is missing in configuration",
+      "ja": "設定に必須フィールドがありません"
+    },
+    "INVALID_FIELD_TYPE": {
+      "en": "Field type does not match expected type",
+      "ja": "フィールドの型が期待値と一致しません"
+    },
+    "INVALID_PATH_FORMAT": {
+      "en": "Path format is invalid",
+      "ja": "パスの形式が無効です"
+    },
+    "PATH_TRAVERSAL_DETECTED": {
+      "en": "Path traversal attempt detected",
+      "ja": "パストラバーサルの試行が検出されました"
+    },
+    "ABSOLUTE_PATH_NOT_ALLOWED": {
+      "en": "Absolute path is not allowed",
+      "ja": "絶対パスは許可されていません"
+    },
+    "INVALID_CONFIG_SET_NAME": {
+      "en": "Invalid configuration set name",
+      "ja": "設定セット名が無効です"
+    },
+    "UNKNOWN_ERROR": {
+      "en": "Unknown or unexpected error occurred",
+      "ja": "不明または予期しないエラーが発生しました"
+    }
+  }
+}

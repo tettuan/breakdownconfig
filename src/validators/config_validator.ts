@@ -1,6 +1,6 @@
 import type { AppConfig } from "../types/app_config.ts";
 import type { UserConfig } from "../types/user_config.ts";
-import { ConfigResult, ValidationError, Result } from "../types/config_result.ts";
+import { ConfigResult, Result, ValidationError } from "../types/config_result.ts";
 
 export class ConfigValidator {
   static validateAppConfig(config: unknown): ConfigResult<AppConfig, ValidationError[]> {
@@ -11,7 +11,7 @@ export class ConfigValidator {
         field: "root",
         value: config,
         expectedType: "object",
-        message: "Configuration must be an object"
+        message: "Configuration must be an object",
       });
       return Result.err(errors);
     }
@@ -23,7 +23,7 @@ export class ConfigValidator {
         field: "working_dir",
         value: working_dir,
         expectedType: "string",
-        message: "working_dir is required and must be a string"
+        message: "working_dir is required and must be a string",
       });
     }
 
@@ -32,14 +32,14 @@ export class ConfigValidator {
         field: "app_prompt",
         value: app_prompt,
         expectedType: "object",
-        message: "app_prompt is required and must be an object"
+        message: "app_prompt is required and must be an object",
       });
     } else if (!app_prompt.base_dir || typeof app_prompt.base_dir !== "string") {
       errors.push({
         field: "app_prompt.base_dir",
         value: app_prompt.base_dir,
         expectedType: "string",
-        message: "app_prompt.base_dir is required and must be a string"
+        message: "app_prompt.base_dir is required and must be a string",
       });
     }
 
@@ -48,14 +48,14 @@ export class ConfigValidator {
         field: "app_schema",
         value: app_schema,
         expectedType: "object",
-        message: "app_schema is required and must be an object"
+        message: "app_schema is required and must be an object",
       });
     } else if (!app_schema.base_dir || typeof app_schema.base_dir !== "string") {
       errors.push({
         field: "app_schema.base_dir",
         value: app_schema.base_dir,
         expectedType: "string",
-        message: "app_schema.base_dir is required and must be a string"
+        message: "app_schema.base_dir is required and must be a string",
       });
     }
 
@@ -96,7 +96,7 @@ export class ConfigValidator {
         field: "root",
         value: config,
         expectedType: "object",
-        message: "Configuration must be an object"
+        message: "Configuration must be an object",
       });
       return Result.err(errors);
     }
@@ -109,7 +109,7 @@ export class ConfigValidator {
           field: "app_prompt",
           value: userConfig.app_prompt,
           expectedType: "object",
-          message: "app_prompt must be an object"
+          message: "app_prompt must be an object",
         });
       } else if (userConfig.app_prompt.base_dir) {
         if (typeof userConfig.app_prompt.base_dir !== "string") {
@@ -117,10 +117,13 @@ export class ConfigValidator {
             field: "app_prompt.base_dir",
             value: userConfig.app_prompt.base_dir,
             expectedType: "string",
-            message: "app_prompt.base_dir must be a string"
+            message: "app_prompt.base_dir must be a string",
           });
         } else {
-          const pathResult = this.validatePath(userConfig.app_prompt.base_dir, "app_prompt.base_dir");
+          const pathResult = this.validatePath(
+            userConfig.app_prompt.base_dir,
+            "app_prompt.base_dir",
+          );
           if (!pathResult.success) {
             errors.push(...pathResult.error);
           }
@@ -134,7 +137,7 @@ export class ConfigValidator {
           field: "app_schema",
           value: userConfig.app_schema,
           expectedType: "object",
-          message: "app_schema must be an object"
+          message: "app_schema must be an object",
         });
       } else if (userConfig.app_schema.base_dir) {
         if (typeof userConfig.app_schema.base_dir !== "string") {
@@ -142,10 +145,13 @@ export class ConfigValidator {
             field: "app_schema.base_dir",
             value: userConfig.app_schema.base_dir,
             expectedType: "string",
-            message: "app_schema.base_dir must be a string"
+            message: "app_schema.base_dir must be a string",
           });
         } else {
-          const pathResult = this.validatePath(userConfig.app_schema.base_dir, "app_schema.base_dir");
+          const pathResult = this.validatePath(
+            userConfig.app_schema.base_dir,
+            "app_schema.base_dir",
+          );
           if (!pathResult.success) {
             errors.push(...pathResult.error);
           }
@@ -160,7 +166,10 @@ export class ConfigValidator {
     return Result.ok(userConfig);
   }
 
-  private static validatePath(path: string, fieldName: string): ConfigResult<void, ValidationError[]> {
+  private static validatePath(
+    path: string,
+    fieldName: string,
+  ): ConfigResult<void, ValidationError[]> {
     const errors: ValidationError[] = [];
 
     // パスが空の場合
@@ -169,7 +178,7 @@ export class ConfigValidator {
         field: fieldName,
         value: path,
         expectedType: "non-empty string",
-        message: "Path must not be empty"
+        message: "Path must not be empty",
       });
       return Result.err(errors);
     }
@@ -181,7 +190,7 @@ export class ConfigValidator {
         field: fieldName,
         value: path,
         expectedType: "valid path characters",
-        message: `Path contains invalid characters: ${path}`
+        message: `Path contains invalid characters: ${path}`,
       });
     }
 
@@ -191,7 +200,7 @@ export class ConfigValidator {
         field: fieldName,
         value: path,
         expectedType: "path without traversal",
-        message: `Path traversal detected in: ${path}`
+        message: `Path traversal detected in: ${path}`,
       });
     }
 
@@ -201,7 +210,7 @@ export class ConfigValidator {
         field: fieldName,
         value: path,
         expectedType: "relative path",
-        message: `Absolute path not allowed: ${path}`
+        message: `Absolute path not allowed: ${path}`,
       });
     }
 
@@ -211,5 +220,4 @@ export class ConfigValidator {
 
     return Result.ok(undefined);
   }
-
 }

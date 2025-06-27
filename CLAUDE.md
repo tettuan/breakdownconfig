@@ -1,8 +1,9 @@
 ---
-description: 
-globs: 
+description:
+globs:
 alwaysApply: false
 ---
+
 - Project: Deno, JSR publish
 - use `LOG_LEVEL=debug deno test --allow-env --allow-write --allow-read` to debug, or other log level.
 - publish JSR with CI. see `https://jsr.io/@tettuan/breakdownprompt/publish`
@@ -11,24 +12,29 @@ alwaysApply: false
 - tests and fixtures must be in `tests/`.
 
 # Type safety:
+
 - Enable strict: true
 - Use explicit type definitions
 
 # Lint and Format
+
 - use `deno fmt` and `deno lint` to check
 - Adopt the format used by `deno fmt` when writing code
 - read `deno.json` for settings
 
 # Git push
+
 - DO NOT push untile `scripts/local_ci.sh` pass all.
-- run  `DEBUG=true scripts/local_ci.sh` if error.
+- run `DEBUG=true scripts/local_ci.sh` if error.
 
 # Run Tests
+
 - run `scripts/local_ci.sh` first. catch outlines of errors.
 - if errors, run `DEBUG=true scripts/local_ci.sh` for details.
 - then, run each `*_test.ts` for more details.
 
 ## Order to fix errors
+
 - Fixing in a step by step manner
   - Choose one error to fix.
   - First, fix one test and the corresponding application code.
@@ -44,10 +50,12 @@ alwaysApply: false
   - Edge case
 
 ## Debug output to standard output
+
 - use `BreakdownLogger`, import from `https://jsr.io/@tettuan/breakdownlogger`
 - Prohibit the use of `BreakdownLogger` for anything other than test files.
 
 # Inconsistencies in specifications
+
 - The following cases
   - Inconsistencies between test code and implementation loop endlessly.
   - Conflicts between specification and specification
@@ -58,13 +66,16 @@ alwaysApply: false
   - Where are the unknown priorities?
 
 # Comments
+
 - Write Comments when only test passes.
 
 # release new version
+
 - run `scripts/bump_version.sh` when ordered.
   - do not speculate if it will release.
 
 # Claude Code Compay
+
 `start company`: 「tmuxを使った相互通信によるClaude Code Company管理方法」の「基本セットアップ」を実施する。
 `pane clear`: pane一覧を取得し、各paneへ`/clear`を送信する
 `pane exit`: pane一覧を取得し、各paneへ`/exit`を送信する
@@ -89,7 +100,7 @@ tmux list-panes -F "#{pane_index}: #{pane_id} #{pane_current_command} #{pane_act
 
 - node の場合は Claude Code と判定する。
 - zsh はClaude Codeではない。
-- Claude Code 存在確認:  "C-["を0.2秒毎に3回送る。その後、返信を求めるメッセージを送る。
+- Claude Code 存在確認: "C-["を0.2秒毎に3回送る。その後、返信を求めるメッセージを送る。
 
 ### 1. tmux pane構成作成
 
@@ -140,6 +151,7 @@ tmux list-panes -F "pane#{pane_index}(#{pane_id}): #{pane_current_command}"  # �
 ```
 
 **レイアウト結果**：
+
 ```
 ┌─────────────────────┬────────┬────────┬────────┐
 │      メイン         │ pane1  │ pane2  │ pane3  │
@@ -193,7 +205,8 @@ wait
 tmux send-keys -t %27 "cd 'ワーキングディレクトリ' && あなたはpane1です。タスク内容。エラー時は[pane1]でtmux send-keys -t %22でメイン報告。" && sleep 0.1 && tmux send-keys -t %27 Enter
 ```
 
-**NG例**: 
+**NG例**:
+
 ```
 tmux send-keys -t %27 "cd 'ワーキングディレクトリ' && あなたはpane1です。タスク内容。エラー時は[pane1]でtmux send-keys -t %22でメイン報告。 Enter"
 ```

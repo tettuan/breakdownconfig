@@ -9,3 +9,4 @@
 
 export { AppConfigLoader } from "./app_config_loader.ts";
 export { UserConfigLoader } from "./user_config_loader.ts";
+export { ProfileConfigLoader } from "./profile_config_loader.ts";

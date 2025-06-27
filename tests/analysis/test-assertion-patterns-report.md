@@ -8,16 +8,17 @@ This report analyzes all test files in the `/tests/` directory to identify asser
 
 ### 1. Assertion Types Used
 
-| Assertion Type | Count | Usage Pattern |
-|----------------|-------|---------------|
-| `assertEquals` | 114 | Value equality checks for config properties |
-| `assertRejects` | 41 | Error throwing validation |
-| `expect().rejects.toThrow()` | 1 | BDD-style error assertion |
-| `expect` | 1 | General BDD import |
+| Assertion Type               | Count | Usage Pattern                               |
+| ---------------------------- | ----- | ------------------------------------------- |
+| `assertEquals`               | 114   | Value equality checks for config properties |
+| `assertRejects`              | 41    | Error throwing validation                   |
+| `expect().rejects.toThrow()` | 1     | BDD-style error assertion                   |
+| `expect`                     | 1     | General BDD import                          |
 
 ### 2. Error Handling Patterns
 
 #### Current Pattern: Exception-based
+
 ```typescript
 // Common pattern across all test files
 await assertRejects(
@@ -25,11 +26,12 @@ await assertRejects(
     await config.loadConfig();
   },
   Error,
-  "ERR1001: Application configuration file not found"
+  "ERR1001: Application configuration file not found",
 );
 ```
 
 #### Proposed Pattern: Result-based
+
 ```typescript
 // How it would look with Result types
 const result = await config.loadConfig();
@@ -42,30 +44,32 @@ assertEquals(result.error.path, expectedPath);
 
 ### 1. Core Configuration Functions
 
-| Function | Current Return | Proposed Return | Error Cases |
-|----------|----------------|-----------------|-------------|
-| `loadConfig()` | `Promise<void>` | `Promise<ConfigResult<void>>` | ERR1001, ERR1002, ERR4001 |
-| `getConfig()` | `Promise<AppConfig>` | `Promise<ConfigResult<AppConfig>>` | Config not loaded |
-| `validateAppConfig()` | `void` | `ConfigResult<ValidatedAppConfig>` | Missing fields, invalid types |
-| `validateUserConfig()` | `void` | `ConfigResult<ValidatedUserConfig>` | Missing fields, invalid types |
+| Function               | Current Return       | Proposed Return                     | Error Cases                   |
+| ---------------------- | -------------------- | ----------------------------------- | ----------------------------- |
+| `loadConfig()`         | `Promise<void>`      | `Promise<ConfigResult<void>>`       | ERR1001, ERR1002, ERR4001     |
+| `getConfig()`          | `Promise<AppConfig>` | `Promise<ConfigResult<AppConfig>>`  | Config not loaded             |
+| `validateAppConfig()`  | `void`               | `ConfigResult<ValidatedAppConfig>`  | Missing fields, invalid types |
+| `validateUserConfig()` | `void`               | `ConfigResult<ValidatedUserConfig>` | Missing fields, invalid types |
 
 ### 2. File Operations
 
-| Function | Current Behavior | Result Type Benefit |
-|----------|------------------|---------------------|
-| Config file reading | Throws on missing file | Return `FileNotFoundError` |
-| YAML parsing | Throws on invalid syntax | Return `ParseError` with line/column |
-| Path validation | Throws on invalid path | Return `PathError` with reason |
+| Function            | Current Behavior         | Result Type Benefit                  |
+| ------------------- | ------------------------ | ------------------------------------ |
+| Config file reading | Throws on missing file   | Return `FileNotFoundError`           |
+| YAML parsing        | Throws on invalid syntax | Return `ParseError` with line/column |
+| Path validation     | Throws on invalid path   | Return `PathError` with reason       |
 
 ## Test File Analysis
 
 ### 1. Basic Tests (`/tests/basic/`)
-- **config_loader_test.ts**: 
+
+- **config_loader_test.ts**:
   - 12 assertEquals for successful config loading
   - 1 expect().rejects.toThrow() for missing app config
   - Heavy use of try-catch for error logging
 
 ### 2. Config Tests (`/tests/config/`)
+
 - **custom_config_test.ts**:
   - 6 assertEquals for config values
   - 4 assertRejects for invalid config names
@@ -81,12 +85,14 @@ assertEquals(result.error.path, expectedPath);
   - 3 assertRejects for invalid configs
 
 ### 3. Error Tests (`/tests/err1002/`)
+
 - All files focus on assertRejects patterns
 - 16 total assertRejects across error test files
 - Testing specific error codes (ERR1001, ERR1002)
 
 ### 4. Other Tests
-- **custom_config_test.ts**: 
+
+- **custom_config_test.ts**:
   - 30 assertEquals
   - 5 assertRejects
   - Comprehensive environment testing
@@ -112,7 +118,7 @@ assertEquals(result.error.path, expectedPath);
    function assertOk<T>(result: ConfigResult<T>): asserts result is Success<T> {
      assertEquals(result.success, true);
    }
-   
+
    function assertErr<E>(result: ConfigResult<unknown, E>): asserts result is Failure<E> {
      assertEquals(result.success, false);
    }
@@ -142,6 +148,7 @@ assertEquals(result.error.path, expectedPath);
 ## Conclusion
 
 The codebase shows a consistent pattern of exception-based error handling with 41 assertRejects calls across test files. Converting to Result types would:
+
 - Eliminate 100% of try-catch blocks in application code
 - Make all error cases explicit at compile time
 - Improve testability with more precise error assertions

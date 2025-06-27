@@ -1,169 +1,414 @@
 import type { AppConfig } from "./app_config.ts";
+import type { UserConfig } from "./user_config.ts";
+import type { ValidPath } from "../utils/valid_path.ts";
+import { Result } from "./unified_result.ts";
+import type { UnifiedError, ValidationViolation } from "../errors/unified_errors.ts";
+import { ErrorFactories } from "../errors/unified_errors.ts";
 
 /**
- * Merged configuration that combines application and user settings.
- *
- * This interface extends AppConfig to include all base configuration properties
- * while allowing for user overrides and additional custom fields. It represents
- * the final, resolved configuration after merging application defaults with
- * user-specific settings.
- *
- * @interface MergedConfig
- * @extends {AppConfig}
- *
- * @example
- * ```typescript
- * const config: MergedConfig = {
- *   // Inherited from AppConfig
- *   app_name: "MyApp",
- *   app_version: "1.0.0",
- *
- *   // MergedConfig specific fields
- *   working_dir: "/home/user/projects/myapp",
- *   app_prompt: {
- *     base_dir: "/home/user/projects/myapp/prompts"
- *   },
- *   app_schema: {
- *     base_dir: "/home/user/projects/myapp/schemas"
- *   },
- *
- *   // Custom fields
- *   debugMode: true,
- *   maxRetries: 3,
- *   apiConfig: {
- *     endpoint: "https://api.example.com",
- *     timeout: 5000
- *   }
- * };
- * ```
+ * Result type for configuration loading operations
+ * Represents all possible outcomes when loading a configuration
  */
-export interface MergedConfig extends AppConfig {
+export type ConfigLoadResult = Result<ValidatedConfig, UnifiedError>;
+
+/**
+ * Validated configuration with all paths validated
+ * This ensures type safety and prevents runtime errors from invalid paths
+ */
+export interface ValidatedConfig {
   /**
-   * The working directory for the application.
-   *
-   * This directory serves as the base path for all relative file operations
-   * and resource resolution. It should be an absolute path to ensure
-   * consistent behavior across different execution contexts.
-   *
-   * @type {string}
-   * @required
-   *
-   * @example
-   * ```typescript
-   * working_dir: "/home/user/projects/myapp"
-   * // or on Windows
-   * working_dir: "C:\\Users\\user\\projects\\myapp"
-   * ```
+   * The validated working directory for the application
    */
-  working_dir: string;
+  working_dir: ValidPath;
 
   /**
-   * Configuration settings for prompt-related functionality.
-   *
-   * This object contains settings that control how the application
-   * handles prompt files, templates, and related resources.
-   *
-   * @type {Object}
-   * @required
+   * Configuration settings for prompt-related functionality with validated paths
    */
   app_prompt: {
     /**
-     * Base directory for prompt files.
-     *
-     * All prompt-related files will be resolved relative to this directory.
-     * This allows for organized storage of prompt templates, fragments,
-     * and other prompt-related resources.
-     *
-     * @type {string}
-     * @required
-     *
-     * @example
-     * ```typescript
-     * app_prompt: {
-     *   base_dir: "/home/user/projects/myapp/prompts"
-     * }
-     * ```
+     * Validated base directory for prompt files
      */
-    base_dir: string;
+    base_dir: ValidPath;
   };
 
   /**
-   * Configuration settings for schema-related functionality.
-   *
-   * This object contains settings that control how the application
-   * handles schema files, validation rules, and related resources.
-   *
-   * @type {Object}
-   * @required
+   * Configuration settings for schema-related functionality with validated paths
    */
   app_schema: {
     /**
-     * Base directory for schema files.
-     *
-     * All schema-related files will be resolved relative to this directory.
-     * This includes JSON schemas, validation rules, type definitions,
-     * and other schema-related resources.
-     *
-     * @type {string}
-     * @required
-     *
-     * @example
-     * ```typescript
-     * app_schema: {
-     *   base_dir: "/home/user/projects/myapp/schemas"
-     * }
-     * ```
+     * Validated base directory for schema files
      */
-    base_dir: string;
+    base_dir: ValidPath;
   };
 
   /**
-   * Index signature for additional custom configuration fields.
-   *
-   * This allows the MergedConfig to be extended with arbitrary additional
-   * properties at runtime, providing flexibility for application-specific
-   * configurations without modifying the type definition.
-   *
-   * Supported value types:
-   * - string: For text-based configuration values
-   * - number: For numeric configuration values
-   * - boolean: For boolean flags and switches
-   * - null/undefined: For optional or unset values
-   * - nested objects: For complex configuration structures
-   *
-   * @type {string | number | boolean | null | undefined | { [key: string]: unknown }}
-   *
-   * @example
-   * ```typescript
-   * // Adding custom fields to MergedConfig
-   * const config: MergedConfig = {
-   *   // ... required fields ...
-   *
-   *   // Custom string field
-   *   environment: "production",
-   *
-   *   // Custom number field
-   *   maxConnections: 100,
-   *
-   *   // Custom boolean field
-   *   enableDebugMode: false,
-   *
-   *   // Custom nested object
-   *   database: {
-   *     host: "localhost",
-   *     port: 5432,
-   *     credentials: {
-   *       username: "admin",
-   *       passwordFile: "/etc/secrets/db-pass"
-   *     }
-   *   },
-   *
-   *   // Custom array (through object wrapper)
-   *   allowedOrigins: {
-   *     list: ["https://example.com", "https://app.example.com"]
-   *   }
-   * };
-   * ```
+   * Optional fields from AppConfig that may be present
    */
+  app_name?: string;
+  app_version?: string;
+
+  /**
+   * Additional validated custom fields
+   */
+  [key: string]: string | number | boolean | ValidPath | { [key: string]: unknown } | undefined;
+}
+
+/**
+ * プロファイル統合状態を表すDiscriminated Union
+ * Represents the merged state of application and user configurations
+ */
+export type ConfigProfile = AppOnlyProfile | MergedProfile;
+
+/**
+ * アプリケーション設定のみの状態
+ * State when only application configuration is loaded
+ */
+export interface AppOnlyProfile {
+  readonly kind: "app-only";
+  readonly profileName?: string; // デフォルトプロファイルの場合undefined
+  readonly source: {
+    appConfigPath: string;
+    userConfigAttempted: boolean;
+    userConfigExists: false;
+  };
+  readonly config: {
+    working_dir: string;
+    app_prompt: {
+      base_dir: string;
+    };
+    app_schema: {
+      base_dir: string;
+    };
+  };
+}
+
+/**
+ * アプリケーション設定とユーザー設定が統合された状態
+ * State when both application and user configurations are merged
+ */
+export interface MergedProfile {
+  readonly kind: "merged";
+  readonly profileName?: string; // デフォルトプロファイルの場合undefined
+  readonly source: {
+    appConfigPath: string;
+    userConfigPath: string;
+    userConfigExists: true;
+  };
+  readonly config: {
+    working_dir: string;
+    app_prompt: {
+      base_dir: string;
+      [key: string]: unknown;
+    };
+    app_schema: {
+      base_dir: string;
+      [key: string]: unknown;
+    };
+    [key: string]: unknown; // ユーザー設定からの任意フィールド
+  };
+}
+
+/**
+ * ConfigProfile作成のためのSmart Constructor
+ * Factory for creating type-safe ConfigProfile instances
+ */
+export class ConfigProfileFactory {
+  private constructor() {}
+
+  /**
+   * AppOnlyProfileを作成
+   * Creates an application-only profile
+   */
+  static createAppOnly(
+    appConfig: AppConfig,
+    profileName: string | undefined,
+    appConfigPath: string,
+    userConfigAttempted: boolean,
+  ): Result<AppOnlyProfile, UnifiedError> {
+    // バリデーション
+    const validation = this.validateAppConfig(appConfig, appConfigPath);
+    if (!validation.success) {
+      return validation;
+    }
+
+    return Result.ok({
+      kind: "app-only",
+      profileName,
+      source: {
+        appConfigPath,
+        userConfigAttempted,
+        userConfigExists: false,
+      },
+      config: {
+        working_dir: appConfig.working_dir,
+        app_prompt: {
+          base_dir: appConfig.app_prompt.base_dir,
+        },
+        app_schema: {
+          base_dir: appConfig.app_schema.base_dir,
+        },
+      },
+    });
+  }
+
+  /**
+   * MergedProfileを作成
+   * Creates a merged profile with both application and user configurations
+   */
+  static createMerged(
+    appConfig: AppConfig,
+    userConfig: UserConfig,
+    profileName: string | undefined,
+    appConfigPath: string,
+    userConfigPath: string,
+  ): Result<MergedProfile, UnifiedError> {
+    // バリデーション
+    const appValidation = this.validateAppConfig(appConfig, appConfigPath);
+    if (!appValidation.success) {
+      return appValidation;
+    }
+
+    const userValidation = this.validateUserConfig(userConfig, userConfigPath);
+    if (!userValidation.success) {
+      return userValidation;
+    }
+
+    // 統合処理
+    const mergedConfig = this.mergeConfigs(appConfig, userConfig);
+
+    return Result.ok({
+      kind: "merged",
+      profileName,
+      source: {
+        appConfigPath,
+        userConfigPath,
+        userConfigExists: true,
+      },
+      config: mergedConfig,
+    });
+  }
+
+  private static validateAppConfig(
+    config: AppConfig,
+    path: string,
+  ): Result<void, UnifiedError> {
+    const violations: ValidationViolation[] = [];
+
+    if (!config.working_dir || config.working_dir.trim() === "") {
+      violations.push({
+        field: "working_dir",
+        value: config.working_dir,
+        expectedType: "non-empty string",
+        actualType: "string",
+        constraint: "cannot be empty",
+      });
+    }
+
+    if (!config.app_prompt?.base_dir || config.app_prompt.base_dir.trim() === "") {
+      violations.push({
+        field: "app_prompt.base_dir",
+        value: config.app_prompt?.base_dir,
+        expectedType: "non-empty string",
+        actualType: "string",
+        constraint: "cannot be empty",
+      });
+    }
+
+    if (!config.app_schema?.base_dir || config.app_schema.base_dir.trim() === "") {
+      violations.push({
+        field: "app_schema.base_dir",
+        value: config.app_schema?.base_dir,
+        expectedType: "non-empty string",
+        actualType: "string",
+        constraint: "cannot be empty",
+      });
+    }
+
+    if (violations.length > 0) {
+      return Result.err(ErrorFactories.configValidationError(path, violations));
+    }
+
+    return Result.ok(undefined);
+  }
+
+  private static validateUserConfig(
+    config: UserConfig,
+    path: string,
+  ): Result<void, UnifiedError> {
+    const violations: ValidationViolation[] = [];
+
+    // ユーザー設定は任意フィールドなので、存在する場合のみ検証
+    if (config.app_prompt?.base_dir !== undefined) {
+      if (typeof config.app_prompt.base_dir !== "string" || config.app_prompt.base_dir.trim() === "") {
+        violations.push({
+          field: "app_prompt.base_dir",
+          value: config.app_prompt.base_dir,
+          expectedType: "non-empty string",
+          actualType: typeof config.app_prompt.base_dir,
+          constraint: "must be a non-empty string when provided",
+        });
+      }
+    }
+
+    if (config.app_schema?.base_dir !== undefined) {
+      if (typeof config.app_schema.base_dir !== "string" || config.app_schema.base_dir.trim() === "") {
+        violations.push({
+          field: "app_schema.base_dir",
+          value: config.app_schema.base_dir,
+          expectedType: "non-empty string",
+          actualType: typeof config.app_schema.base_dir,
+          constraint: "must be a non-empty string when provided",
+        });
+      }
+    }
+
+    if (violations.length > 0) {
+      return Result.err(ErrorFactories.configValidationError(path, violations));
+    }
+
+    return Result.ok(undefined);
+  }
+
+  private static mergeConfigs(
+    appConfig: AppConfig,
+    userConfig: UserConfig,
+  ): MergedProfile["config"] {
+    // working_dirは上書き不可
+    const mergedConfig: MergedProfile["config"] = {
+      working_dir: appConfig.working_dir,
+      app_prompt: {
+        base_dir: userConfig.app_prompt?.base_dir ?? appConfig.app_prompt.base_dir,
+        ...userConfig.app_prompt,
+      },
+      app_schema: {
+        base_dir: userConfig.app_schema?.base_dir ?? appConfig.app_schema.base_dir,
+        ...userConfig.app_schema,
+      },
+    };
+
+    // ユーザー設定の任意フィールドを統合
+    for (const [key, value] of Object.entries(userConfig)) {
+      if (key !== "app_prompt" && key !== "app_schema") {
+        mergedConfig[key] = value;
+      }
+    }
+
+    return mergedConfig;
+  }
+}
+
+/**
+ * ConfigProfile型ガード
+ * Type guards for ConfigProfile discrimination
+ */
+export namespace ConfigProfileGuards {
+  export function isAppOnly(profile: ConfigProfile): profile is AppOnlyProfile {
+    return profile.kind === "app-only";
+  }
+
+  export function isMerged(profile: ConfigProfile): profile is MergedProfile {
+    return profile.kind === "merged";
+  }
+
+  export function isDefaultProfile(profile: ConfigProfile): boolean {
+    return profile.profileName === undefined;
+  }
+
+  export function isNamedProfile(profile: ConfigProfile): boolean {
+    return profile.profileName !== undefined;
+  }
+}
+
+/**
+ * ConfigProfileヘルパー関数
+ * Helper functions for working with ConfigProfile
+ */
+export namespace ConfigProfileHelpers {
+  export function getProfileDisplayName(profile: ConfigProfile): string {
+    return profile.profileName ?? "default";
+  }
+
+  export function getWorkingDir(profile: ConfigProfile): string {
+    return profile.config.working_dir;
+  }
+
+  export function getPromptBaseDir(profile: ConfigProfile): string {
+    return profile.config.app_prompt.base_dir;
+  }
+
+  export function getSchemaBaseDir(profile: ConfigProfile): string {
+    return profile.config.app_schema.base_dir;
+  }
+
+  export function hasUserCustomization(profile: ConfigProfile): boolean {
+    return ConfigProfileGuards.isMerged(profile);
+  }
+
+  export function getConfigPath(profile: ConfigProfile): string {
+    return profile.source.appConfigPath;
+  }
+
+  export function getUserConfigPath(profile: ConfigProfile): string | undefined {
+    if (ConfigProfileGuards.isMerged(profile)) {
+      return profile.source.userConfigPath;
+    }
+    return undefined;
+  }
+}
+
+/**
+ * Legacy MergedConfig interface for backward compatibility
+ * @deprecated Use ConfigProfile instead
+ */
+export interface MergedConfig extends AppConfig {
+  working_dir: string;
+  app_prompt: {
+    base_dir: string;
+  };
+  app_schema: {
+    base_dir: string;
+  };
   [key: string]: string | number | boolean | null | undefined | { [key: string]: unknown };
+}
+
+/**
+ * Convert ConfigProfile to legacy MergedConfig format
+ * @deprecated This is for backward compatibility only
+ */
+export function profileToLegacyConfig(profile: ConfigProfile): MergedConfig {
+  const config = profile.config;
+  const result: MergedConfig = {
+    working_dir: config.working_dir,
+    app_prompt: {
+      base_dir: config.app_prompt.base_dir,
+    },
+    app_schema: {
+      base_dir: config.app_schema.base_dir,
+    },
+  };
+
+  // Copy additional fields for merged profiles
+  if (ConfigProfileGuards.isMerged(profile)) {
+    for (const [key, value] of Object.entries(config)) {
+      if (key !== "working_dir" && key !== "app_prompt" && key !== "app_schema") {
+        (result as Record<string, unknown>)[key] = value;
+      }
+    }
+
+    // Copy additional prompt fields
+    for (const [key, value] of Object.entries(config.app_prompt)) {
+      if (key !== "base_dir") {
+        (result.app_prompt as Record<string, unknown>)[key] = value;
+      }
+    }
+
+    // Copy additional schema fields
+    for (const [key, value] of Object.entries(config.app_schema)) {
+      if (key !== "base_dir") {
+        (result.app_schema as Record<string, unknown>)[key] = value;
+      }
+    }
+  }
+
+  return result;
 }

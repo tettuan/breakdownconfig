@@ -1,0 +1,98 @@
+{
+  "ERR1001": {
+    "en": "Application configuration file not found",
+    "ja": "アプリケーション設定ファイルが見つかりません"
+  },
+  "ERR1002": {
+    "en": "Invalid application configuration format or content",
+    "ja": "アプリケーション設定の形式または内容が無効です"
+  },
+  "ERR1003": {
+    "en": "User configuration file not found",
+    "ja": "ユーザー設定ファイルが見つかりません"
+  },
+  "ERR1004": {
+    "en": "Invalid user configuration format or content",
+    "ja": "ユーザー設定の形式または内容が無効です"
+  },
+  "ERR1005": {
+    "en": "Required field is missing in configuration: {field}",
+    "ja": "設定に必須フィールドがありません: {field}"
+  },
+  "ERR1006": {
+    "en": "Field type does not match expected type: {field} (expected: {expected}, got: {actual})",
+    "ja": "フィールドの型が期待値と一致しません: {field} (期待値: {expected}, 実際: {actual})"
+  },
+  "ERR1007": {
+    "en": "Path format is invalid: {path}",
+    "ja": "パスの形式が無効です: {path}"
+  },
+  "ERR1008": {
+    "en": "Path traversal attempt detected: {path}",
+    "ja": "パストラバーサルの試行が検出されました: {path}"
+  },
+  "ERR1009": {
+    "en": "Absolute path is not allowed: {path}",
+    "ja": "絶対パスは許可されていません: {path}"
+  },
+  "ERR1010": {
+    "en": "Configuration not loaded before attempting to access",
+    "ja": "設定にアクセスする前に読み込みが完了していません"
+  },
+  "ERR2001": {
+    "en": "Required field missing: {field}",
+    "ja": "必須フィールドがありません: {field}"
+  },
+  "ERR2002": {
+    "en": "Invalid field type: {field} (expected: {expected}, got: {actual})",
+    "ja": "フィールドの型が無効です: {field} (期待値: {expected}, 実際: {actual})"
+  },
+  "ERR2003": {
+    "en": "Field value out of range: {field} (min: {min}, max: {max}, got: {value})",
+    "ja": "フィールドの値が範囲外です: {field} (最小: {min}, 最大: {max}, 実際: {value})"
+  },
+  "ERR3001": {
+    "en": "Invalid path format: {path}",
+    "ja": "パスの形式が無効です: {path}"
+  },
+  "ERR3002": {
+    "en": "Path does not exist: {path}",
+    "ja": "パスが存在しません: {path}"
+  },
+  "ERR3003": {
+    "en": "Permission denied: {path}",
+    "ja": "アクセス権限がありません: {path}"
+  },
+  "ERR3004": {
+    "en": "Path is not a directory: {path}",
+    "ja": "パスはディレクトリではありません: {path}"
+  },
+  "ERR3005": {
+    "en": "Path is not a file: {path}",
+    "ja": "パスはファイルではありません: {path}"
+  },
+  "ERR4001": {
+    "en": "Configuration set not found: {setName}",
+    "ja": "設定セットが見つかりません: {setName}"
+  },
+  "ERR4002": {
+    "en": "Duplicate configuration set: {setName}",
+    "ja": "設定セットが重複しています: {setName}"
+  },
+  "ERR4003": {
+    "en": "Invalid configuration set format: {setName}",
+    "ja": "設定セットの形式が無効です: {setName}"
+  },
+  "ERR9001": {
+    "en": "Unknown error occurred",
+    "ja": "不明なエラーが発生しました"
+  },
+  "ERR9002": {
+    "en": "Operation not supported",
+    "ja": "サポートされていない操作です"
+  },
+  "ERR9999": {
+    "en": "Internal error: {message}",
+    "ja": "内部エラー: {message}"
+  }
+}

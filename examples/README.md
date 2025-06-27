@@ -5,7 +5,9 @@
 ## サンプルアプリケーション
 
 ### config-example
+
 基本的な設定ファイルの読み込みと使用方法を示すサンプルです。
+
 - アプリケーション設定の読み込み
 - パスの検証と解決
 - エラーハンドリング
@@ -14,8 +16,10 @@
 詳細は [config-example/README.md](./config-example/README.md) を参照してください。
 
 ### prompt-manager
+
 マルチプロンプト管理アプリケーション。
 プロンプトファイルとスキーマファイルを、アプリケーション設定とユーザー設定で管理するサンプルです。
+
 - アプリケーション設定とユーザー設定の統合
 - ディレクトリ構造の自動生成
 - パスの検証と解決
@@ -25,7 +29,9 @@
 詳細は [prompt-manager/README.md](./prompt-manager/README.md) を参照してください。
 
 ### multi-environment
+
 複数環境（PRODUCTION、STAGING、DEVELOPMENT）の設定管理を示すサンプルです。
+
 - カスタム設定セット（prefix）による環境別設定
 - 環境ごとの設定値の管理
 - 環境間の設定比較機能
@@ -75,9 +81,10 @@ deno run --allow-read --allow-env --allow-write main.ts
 4. **ログ出力**
    - 構造化ログの出力
    - ログレベルの制御
-   - 環境変数による設定 
+   - 環境変数による設定
 
 ## 学習ポイント
+
 1. 各exampleは必ず該当ディレクトリから実行する必要がある
 2. ユーザー設定がアプリケーション設定を適切に上書きすることを確認
 3. 環境別設定（multi-environment）でprefixによる設定切り替えが正常動作

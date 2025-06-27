@@ -1,7 +1,7 @@
 import { join } from "@std/path";
 import type { AppConfig } from "../types/app_config.ts";
 import { DefaultPaths } from "../types/app_config.ts";
-import { ConfigResult, ConfigError, Result } from "../types/config_result.ts";
+import { ConfigError, ConfigResult, Result, ValidationError } from "../types/config_result.ts";
 import { SafeConfigLoader } from "./safe_config_loader.ts";
 import { ConfigValidator } from "../validators/config_validator.ts";
 
@@ -19,7 +19,7 @@ import { ConfigValidator } from "../validators/config_validator.ts";
  * - `app_schema.base_dir`: Directory containing schema files
  *
  * ## Multi-Environment Support
- * The loader supports environment-specific configurations through configSetName:
+ * The loader supports profile-specific configurations through profilePrefix:
  * - Development: `development-app.yml`
  * - Production: `production-app.yml`
  * - Staging: `staging-app.yml`
@@ -27,7 +27,7 @@ import { ConfigValidator } from "../validators/config_validator.ts";
  *
  * ## File Location Strategy
  * Configuration files must be located at:
- * - With configSetName: `{baseDir}/.agent/breakdown/config/{configSetName}-app.yml`
+ * - With profilePrefix: `{baseDir}/.agent/breakdown/config/{profilePrefix}-app.yml`
  * - Default: `{baseDir}/.agent/breakdown/config/app.yml`
  *
  * ## Error Handling
@@ -93,7 +93,7 @@ export class AppConfigLoader {
    * The loader is designed to handle environment-specific application configurations
    * that define core system behavior and directory structures.
    *
-   * @param configSetName - Environment or deployment-specific configuration identifier.
+   * @param profilePrefix - Profile-specific configuration identifier.
    *                        Must match pattern /^[a-zA-Z0-9-]+$/ if provided.
    *                        Common values: "development", "production", "staging", "test".
    *                        If omitted, loads the default "app.yml" configuration.
@@ -120,7 +120,7 @@ export class AppConfigLoader {
    * ```
    */
   constructor(
-    private readonly configSetName?: string,
+    private readonly profilePrefix?: string,
     private readonly baseDir: string = "",
   ) {}
 
@@ -132,8 +132,8 @@ export class AppConfigLoader {
    * required fields are present and of the correct type.
    *
    * The configuration file location is determined as follows:
-   * - Without configSetName: `{baseDir}/.agent/breakdown/config/app.yml`
-   * - With configSetName: `{baseDir}/.agent/breakdown/config/{configSetName}-app.yml`
+   * - Without profilePrefix: `{baseDir}/.agent/breakdown/config/app.yml`
+   * - With profilePrefix: `{baseDir}/.agent/breakdown/config/{profilePrefix}-app.yml`
    *
    * @returns {Promise<AppConfig>} The loaded and validated application configuration
    * @throws {Error} With ErrorCode.APP_CONFIG_NOT_FOUND if file doesn't exist
@@ -159,8 +159,10 @@ export class AppConfigLoader {
         throw new Error(`[ERR1001] ${error.message}`);
       } else if (error.kind === "parseError") {
         throw new Error(`[ERR1002] Invalid application configuration - ${error.message}`);
-      } else if (error.kind === "validationError") {
-        const messages = error.errors.map(e => e.message || `${e.field}: ${e.expectedType}`).join(", ");
+      } else if (error.kind === "configValidationError") {
+        const messages = error.errors.map((e: ValidationError) => e.message || `${e.field}: ${e.expectedType}`).join(
+          ", ",
+        );
         throw new Error(`[ERR1002] Invalid application configuration - ${messages}`);
       } else {
         throw new Error(`[ERR1002] Invalid application configuration`);
@@ -175,8 +177,8 @@ export class AppConfigLoader {
    * @returns {Promise<ConfigResult<AppConfig, ConfigError>>} The loaded and validated application configuration or error
    */
   async loadSafe(): Promise<ConfigResult<AppConfig, ConfigError>> {
-    // Generate config file name based on configSetName
-    const configFileName = this.configSetName ? `${this.configSetName}-app.yml` : "app.yml";
+    // Generate config file name based on profilePrefix
+    const configFileName = this.profilePrefix ? `${this.profilePrefix}-app.yml` : "app.yml";
 
     const configPath = this.baseDir
       ? join(this.baseDir, DefaultPaths.WORKING_DIR, "config", configFileName)
@@ -184,7 +186,7 @@ export class AppConfigLoader {
 
     // Use SafeConfigLoader to load the file
     const loader = new SafeConfigLoader(configPath);
-    
+
     // Read file
     const fileResult = await loader.readFile();
     if (!fileResult.success) {
@@ -201,13 +203,12 @@ export class AppConfigLoader {
     const validationResult = ConfigValidator.validateAppConfig(parseResult.data);
     if (!validationResult.success) {
       return Result.err({
-        kind: "validationError",
+        kind: "configValidationError",
         errors: validationResult.error,
-        path: configPath
+        path: configPath,
       });
     }
 
     return validationResult;
   }
-
 }

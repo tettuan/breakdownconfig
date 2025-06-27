@@ -39,32 +39,40 @@ describe("Config Loading", () => {
       await config.loadConfig();
       logger.debug("Config loaded successfully");
 
-      const result = await config.getConfig();
+      const result = await config.getConfigSafe();
       logger.debug("Retrieved merged configuration", {
         result,
-        workingDir: result.working_dir,
-        promptBaseDir: result.app_prompt.base_dir,
-        schemaBaseDir: result.app_schema.base_dir,
+        success: result.success,
+        workingDir: result.success ? result.data.working_dir : undefined,
+        promptBaseDir: result.success ? result.data.app_prompt.base_dir : undefined,
+        schemaBaseDir: result.success ? result.data.app_schema.base_dir : undefined,
       });
+
+      // Assert result is successful
+      expect(result.success).toBe(true);
+      if (!result.success) {
+        throw new Error(`Config loading failed: ${result.error.message}`);
+      }
+      const configData = result.data;
 
       // Verify each field individually for better error reporting
       logger.debug("Verifying working_dir", {
         expected: DefaultPaths.WORKING_DIR,
-        actual: result.working_dir,
+        actual: configData.working_dir,
       });
-      assertEquals(result.working_dir, DefaultPaths.WORKING_DIR);
+      assertEquals(configData.working_dir, DefaultPaths.WORKING_DIR);
 
       logger.debug("Verifying app_prompt.base_dir", {
         expected: "custom/prompts",
-        actual: result.app_prompt.base_dir,
+        actual: configData.app_prompt.base_dir,
       });
-      assertEquals(result.app_prompt.base_dir, "custom/prompts");
+      assertEquals(configData.app_prompt.base_dir, "custom/prompts");
 
       logger.debug("Verifying app_schema.base_dir", {
         expected: DefaultPaths.SCHEMA_BASE_DIR,
-        actual: result.app_schema.base_dir,
+        actual: configData.app_schema.base_dir,
       });
-      assertEquals(result.app_schema.base_dir, DefaultPaths.SCHEMA_BASE_DIR);
+      assertEquals(configData.app_schema.base_dir, DefaultPaths.SCHEMA_BASE_DIR);
     } catch (error) {
       logger.error("Test failed", {
         error,
@@ -89,32 +97,40 @@ describe("Config Loading", () => {
       await config.loadConfig();
       logger.debug("Config loaded successfully");
 
-      const result = await config.getConfig();
+      const result = await config.getConfigSafe();
       logger.debug("Retrieved app-only configuration", {
         result,
-        workingDir: result.working_dir,
-        promptBaseDir: result.app_prompt.base_dir,
-        schemaBaseDir: result.app_schema.base_dir,
+        success: result.success,
+        workingDir: result.success ? result.data.working_dir : undefined,
+        promptBaseDir: result.success ? result.data.app_prompt.base_dir : undefined,
+        schemaBaseDir: result.success ? result.data.app_schema.base_dir : undefined,
       });
+
+      // Assert result is successful
+      expect(result.success).toBe(true);
+      if (!result.success) {
+        throw new Error(`Config loading failed: ${result.error.message}`);
+      }
+      const configData = result.data;
 
       // Verify each field individually for better error reporting
       logger.debug("Verifying working_dir", {
         expected: DefaultPaths.WORKING_DIR,
-        actual: result.working_dir,
+        actual: configData.working_dir,
       });
-      assertEquals(result.working_dir, DefaultPaths.WORKING_DIR);
+      assertEquals(configData.working_dir, DefaultPaths.WORKING_DIR);
 
       logger.debug("Verifying app_prompt.base_dir", {
         expected: DefaultPaths.PROMPT_BASE_DIR,
-        actual: result.app_prompt.base_dir,
+        actual: configData.app_prompt.base_dir,
       });
-      assertEquals(result.app_prompt.base_dir, DefaultPaths.PROMPT_BASE_DIR);
+      assertEquals(configData.app_prompt.base_dir, DefaultPaths.PROMPT_BASE_DIR);
 
       logger.debug("Verifying app_schema.base_dir", {
         expected: DefaultPaths.SCHEMA_BASE_DIR,
-        actual: result.app_schema.base_dir,
+        actual: configData.app_schema.base_dir,
       });
-      assertEquals(result.app_schema.base_dir, DefaultPaths.SCHEMA_BASE_DIR);
+      assertEquals(configData.app_schema.base_dir, DefaultPaths.SCHEMA_BASE_DIR);
     } catch (error) {
       logger.error("Test failed", {
         error,

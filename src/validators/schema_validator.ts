@@ -1,8 +1,4 @@
-import {
-  ConfigResult,
-  Result,
-  ValidationError,
-} from "../types/config_result.ts";
+import { ConfigResult, Result, ValidationError } from "../types/config_result.ts";
 
 /**
  * Schema definition for validating configuration objects
@@ -30,14 +26,14 @@ export interface Schema {
 
 /**
  * Schema-based validator for configuration objects
- * 
+ *
  * Provides flexible schema validation with detailed error reporting
  * using ConfigResult type for safe error handling.
  */
 export class SchemaValidator {
   /**
    * Validates a value against a schema
-   * 
+   *
    * @param value - Value to validate
    * @param schema - Schema to validate against
    * @returns Validation result with detailed error information
@@ -112,7 +108,7 @@ export class SchemaValidator {
 
   /**
    * Validates the type of a value
-   * 
+   *
    * @param value - Value to check
    * @param expectedType - Expected type
    * @param fieldName - Name of the field being validated
@@ -168,7 +164,8 @@ export class SchemaValidator {
                 name: "base_dir",
                 type: "string",
                 required: true,
-                validator: (value) => this.validateNonEmptyString(value as string, "app_prompt.base_dir"),
+                validator: (value) =>
+                  this.validateNonEmptyString(value as string, "app_prompt.base_dir"),
               },
             ],
           },
@@ -183,7 +180,8 @@ export class SchemaValidator {
                 name: "base_dir",
                 type: "string",
                 required: true,
-                validator: (value) => this.validateNonEmptyString(value as string, "app_schema.base_dir"),
+                validator: (value) =>
+                  this.validateNonEmptyString(value as string, "app_schema.base_dir"),
               },
             ],
           },
@@ -214,7 +212,8 @@ export class SchemaValidator {
                 name: "base_dir",
                 type: "string",
                 required: false,
-                validator: (value) => this.validateNonEmptyString(value as string, "app_prompt.base_dir"),
+                validator: (value) =>
+                  this.validateNonEmptyString(value as string, "app_prompt.base_dir"),
               },
             ],
           },
@@ -229,7 +228,8 @@ export class SchemaValidator {
                 name: "base_dir",
                 type: "string",
                 required: false,
-                validator: (value) => this.validateNonEmptyString(value as string, "app_schema.base_dir"),
+                validator: (value) =>
+                  this.validateNonEmptyString(value as string, "app_schema.base_dir"),
               },
             ],
           },

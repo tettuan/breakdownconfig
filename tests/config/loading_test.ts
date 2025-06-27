@@ -15,6 +15,7 @@
  */
 
 import { assertEquals } from "@std/assert/assert_equals";
+import { expect } from "@std/expect";
 import { BreakdownConfig } from "../../src/breakdown_config.ts";
 import { cleanupTestConfigs, setupAppConfigOnly, setupMergeConfigs } from "../test_utils.ts";
 import { describe, it } from "@std/testing/bdd";
@@ -35,18 +36,26 @@ describe("Config Loading", () => {
       await config.loadConfig();
       logger.debug("Config loaded successfully");
 
-      const result = await config.getConfig();
+      const result = await config.getConfigSafe();
       logger.debug("Retrieved merged configuration", {
         result,
-        workingDir: result.working_dir,
-        promptBaseDir: result.app_prompt.base_dir,
-        schemaBaseDir: result.app_schema.base_dir,
+        success: result.success,
+        workingDir: result.success ? result.data.working_dir : undefined,
+        promptBaseDir: result.success ? result.data.app_prompt.base_dir : undefined,
+        schemaBaseDir: result.success ? result.data.app_schema.base_dir : undefined,
       });
+
+      // Assert result is successful
+      expect(result.success).toBe(true);
+      if (!result.success) {
+        throw new Error(`Config loading failed: ${result.error.message}`);
+      }
+      const configData = result.data;
 
       // Verify each field individually for better error reporting
       logger.debug("Verifying working_dir", {
         expected: DefaultPaths.WORKING_DIR,
-        actual: result.working_dir,
+        actual: configData.working_dir,
       });
       assertEquals(result.working_dir, DefaultPaths.WORKING_DIR);
 

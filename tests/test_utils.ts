@@ -63,6 +63,11 @@ export const invalidAppConfigs = {
     app_prompt: { base_dir: DefaultPaths.PROMPT_BASE_DIR },
     app_schema: { base_dir: DefaultPaths.SCHEMA_BASE_DIR },
   },
+  emptyWorkingDir: {
+    working_dir: "",
+    app_prompt: { base_dir: DefaultPaths.PROMPT_BASE_DIR },
+    app_schema: { base_dir: DefaultPaths.SCHEMA_BASE_DIR },
+  },
 };
 
 // Extra field configurations for testing
@@ -145,6 +150,11 @@ export async function setupMergeConfigs(): Promise<string> {
 
   return tempDir;
 }
+
+/**
+ * Alias for setupMergeConfigs for convenience in tests
+ */
+export const setupValidConfig = setupMergeConfigs;
 
 /**
  * Sets up test environment with invalid app config for error testing

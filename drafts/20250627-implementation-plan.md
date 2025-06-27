@@ -14,7 +14,7 @@
 
 ```typescript
 // 全ての操作結果を表現するDiscriminated Union
-export type Result<T, E> = 
+export type Result<T, E> =
   | { success: true; data: T }
   | { success: false; error: E };
 
@@ -30,7 +30,7 @@ export type ConfigResult<T> = Result<T, ConfigError>;
 
 ```typescript
 // エラーをDiscriminated Unionで表現
-export type ConfigError = 
+export type ConfigError =
   | { kind: "fileNotFound"; path: string; message: string }
   | { kind: "parseError"; path: string; details: string }
   | { kind: "validationError"; errors: ValidationError[] }
@@ -47,7 +47,7 @@ export type ConfigError =
 // パスの妥当性を保証するクラス
 export class ValidPath {
   private constructor(private readonly value: string) {}
-  
+
   static create(path: string): Result<ValidPath, PathError> {
     // バリデーションロジック
   }
@@ -63,6 +63,7 @@ export class ValidPath {
 ### 2.1 AppConfigLoaderの改善
 
 **現在の問題**:
+
 ```typescript
 // 例外を投げる部分関数
 async load(): Promise<AppConfig> {
@@ -72,6 +73,7 @@ async load(): Promise<AppConfig> {
 ```
 
 **改善案**:
+
 ```typescript
 // 全ての結果を型で表現する全域関数
 async load(): Promise<ConfigResult<ValidatedAppConfig>> {
@@ -83,6 +85,7 @@ async load(): Promise<ConfigResult<ValidatedAppConfig>> {
 ### 2.2 UserConfigLoaderの改善
 
 **現在の問題**:
+
 ```typescript
 // エラーを隠蔽する危険な実装
 catch (_error) {
@@ -91,6 +94,7 @@ catch (_error) {
 ```
 
 **改善案**:
+
 ```typescript
 // エラーと「設定なし」を明確に区別
 async load(): Promise<ConfigResult<UserConfig | null>> {
@@ -106,14 +110,16 @@ async load(): Promise<ConfigResult<UserConfig | null>> {
 ### 3.1 ConfigManagerの状態表現
 
 **現在の問題**:
+
 ```typescript
 private isLoaded = false; // boolean による曖昧な状態表現
 ```
 
 **改善案**:
+
 ```typescript
 // 設定の状態をDiscriminated Unionで表現
-type ConfigState = 
+type ConfigState =
   | { kind: "notLoaded" }
   | { kind: "loading" }
   | { kind: "loaded"; config: ValidatedConfig }
@@ -123,17 +129,19 @@ type ConfigState =
 ### 3.2 設定マージ処理の改善
 
 **現在の問題**:
+
 ```typescript
 // 暗黙的な型変換と部分的なマージ
 mergedConfig[key] = String(value);
 ```
 
 **改善案**:
+
 ```typescript
 // 型安全な設定マージ
 function mergeConfigs(
-  app: ValidatedAppConfig, 
-  user: ValidatedUserConfig
+  app: ValidatedAppConfig,
+  user: ValidatedUserConfig,
 ): ValidatedMergedConfig {
   // 明示的で型安全なマージ処理
 }
@@ -146,6 +154,7 @@ function mergeConfigs(
 ### 4.1 実行時バリデーションの改善
 
 **現在の問題**:
+
 ```typescript
 // 散在するバリデーションロジック
 private validateConfig(config: unknown): config is AppConfig {
@@ -154,6 +163,7 @@ private validateConfig(config: unknown): config is AppConfig {
 ```
 
 **改善案**:
+
 ```typescript
 // 包括的で再利用可能なバリデーター
 class ConfigValidator {
@@ -166,11 +176,13 @@ class ConfigValidator {
 ### 4.2 カスタム設定の型安全化
 
 **現在の問題**:
+
 ```typescript
 [key: string]: unknown; // 過度に寛容な型定義
 ```
 
 **改善案**:
+
 ```typescript
 // 明確に定義されたカスタム設定型
 type CustomConfig = Record<string, ConfigValue>;
@@ -192,21 +204,25 @@ graph TD
 ```
 
 ### Step 1: 基盤型の作成
+
 1. `Result<T, E>` 型の定義
 2. `ConfigError` 型の定義
 3. `ValidPath` クラスの実装
 
 ### Step 2: ローダーの段階的移行
+
 1. 新しい `SafeAppConfigLoader` の作成
 2. 新しい `SafeUserConfigLoader` の作成
 3. 既存ローダーとの並行稼働期間
 
 ### Step 3: ConfigManagerの改善
+
 1. 新しい状態管理の導入
 2. 型安全なマージ処理の実装
 3. エラーハンドリングの統一
 
 ### Step 4: 既存コードの置き換え
+
 1. 段階的な移行（feature flag使用）
 2. 既存テストの更新
 3. 新しい実装でのテスト追加
@@ -216,22 +232,27 @@ graph TD
 ## 期待される改善効果
 
 ### 1. バグの早期発見
+
 - **現在**: 実行時にエラーが発生
 - **改善後**: コンパイル時に不正状態を検出
 
 ### 2. エラーハンドリングの改善
+
 - **現在**: try-catch に依存、エラー情報が曖昧
 - **改善後**: 型安全なエラーハンドリング、詳細なエラー情報
 
 ### 3. テスタビリティの向上
+
 - **現在**: 例外処理のテストが困難
 - **改善後**: 全てのケースが明示的でテスト容易
 
 ### 4. 保守性の向上
+
 - **現在**: 状態遷移が不明確
 - **改善後**: 型によって状態遷移が明確
 
 ### 5. AI生成コードとの親和性
+
 - **現在**: 型制約が弱く、AIが危険なコード生成の可能性
 - **改善後**: 強い型制約により、AIが安全なコードを生成
 
@@ -240,15 +261,18 @@ graph TD
 ## リスク管理
 
 ### 破壊的変更の最小化
+
 - 既存のpublic APIは段階的に非推奨化
 - 内部実装から徐々に改善
 - feature flagによる安全な移行
 
 ### テストカバレッジの維持
+
 - 改善前後でのテスト結果の同等性確認
 - 新しい型安全性に関するテストの追加
 
 ### パフォーマンスの監視
+
 - バリデーション強化による性能影響の測定
 - 必要に応じたパフォーマンス最適化
 

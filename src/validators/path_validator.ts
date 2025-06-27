@@ -1,11 +1,11 @@
-import { join, normalize, isAbsolute } from "https://deno.land/std@0.224.0/path/mod.ts";
+import { isAbsolute, join, normalize } from "https://deno.land/std@0.224.0/path/mod.ts";
 import { exists } from "https://deno.land/std@0.224.0/fs/exists.ts";
 import { ConfigResult, PathError, Result, UnknownError } from "../types/config_result.ts";
 import { ValidPath } from "../utils/valid_path.ts";
 
 /**
  * PathValidator - Validates and safely manipulates file paths
- * 
+ *
  * This module provides:
  * 1. Complete path validation with Result types
  * 2. Safe path joining without traversal
@@ -43,7 +43,7 @@ export class PathValidator {
     }
 
     // Filter out empty segments
-    const validSegments = segments.filter(seg => seg && seg.trim().length > 0);
+    const validSegments = segments.filter((seg) => seg && seg.trim().length > 0);
 
     // Validate each segment
     for (const segment of validSegments) {
@@ -53,7 +53,7 @@ export class PathValidator {
           kind: "pathError",
           path: segment,
           reason: "pathTraversal",
-          message: `Invalid segment in path join: ${segment}`
+          message: `Invalid segment in path join: ${segment}`,
         });
       }
 
@@ -78,8 +78,8 @@ export class PathValidator {
    * @returns ConfigResult containing boolean (true if exists) or error
    */
   static async checkExists(
-    path: string | ValidPath
-  ): ConfigResult<boolean, PathError | UnknownError> {
+    path: string | ValidPath,
+  ): Promise<ConfigResult<boolean, PathError | UnknownError>> {
     // Extract the path string
     const pathStr = typeof path === "string" ? path : path.getValue();
 
@@ -98,7 +98,7 @@ export class PathValidator {
       return Result.err<UnknownError>({
         kind: "unknownError",
         message: `Failed to check path existence: ${pathStr}`,
-        originalError: error
+        originalError: error,
       });
     }
   }
@@ -109,8 +109,8 @@ export class PathValidator {
    * @returns ConfigResult containing ValidPath if exists, or error
    */
   static async validateExists(
-    path: string | ValidPath
-  ): ConfigResult<ValidPath, PathError | UnknownError> {
+    path: string | ValidPath,
+  ): Promise<ConfigResult<ValidPath, PathError | UnknownError>> {
     // First validate the path format
     let validPath: ValidPath;
     if (typeof path === "string") {
@@ -134,7 +134,7 @@ export class PathValidator {
         kind: "pathError",
         path: validPath.getValue(),
         reason: "pathTraversal", // Using closest available reason
-        message: `Path does not exist: ${validPath.getValue()}`
+        message: `Path does not exist: ${validPath.getValue()}`,
       });
     }
 
@@ -149,7 +149,7 @@ export class PathValidator {
    */
   static ensureWithinBase(
     basePath: string | ValidPath,
-    targetPath: string | ValidPath
+    targetPath: string | ValidPath,
   ): ConfigResult<ValidPath, PathError> {
     // Extract path strings
     const baseStr = typeof basePath === "string" ? basePath : basePath.getValue();
@@ -184,7 +184,7 @@ export class PathValidator {
         kind: "pathError",
         path: targetStr,
         reason: "pathTraversal",
-        message: `Path '${targetStr}' is outside base directory '${baseStr}'`
+        message: `Path '${targetStr}' is outside base directory '${baseStr}'`,
       });
     }
 
@@ -199,7 +199,7 @@ export class PathValidator {
    */
   static getRelativePath(
     basePath: string | ValidPath,
-    targetPath: string | ValidPath
+    targetPath: string | ValidPath,
   ): ConfigResult<ValidPath, PathError> {
     // Extract path strings
     const baseStr = typeof basePath === "string" ? basePath : basePath.getValue();
@@ -230,7 +230,7 @@ export class PathValidator {
         kind: "pathError",
         path: targetStr,
         reason: "pathTraversal",
-        message: `Cannot get relative path: '${targetStr}' is not within '${baseStr}'`
+        message: `Cannot get relative path: '${targetStr}' is not within '${baseStr}'`,
       });
     }
 

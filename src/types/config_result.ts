@@ -1,6 +1,9 @@
 /**
  * Result type for handling success and error cases without exceptions
  * Following the totality principle from docs/totality.md
+ *
+ * Complete implementation with all utility methods for robust error handling
+ * Compatible with JSR publication requirements
  */
 
 /**
@@ -35,7 +38,7 @@ export type ConfigError =
   | UnknownError;
 
 export type ConfigValidationError = {
-  kind: "validationError";
+  kind: "configValidationError";
   errors: ValidationError[];
   path: string;
 };
@@ -118,7 +121,7 @@ export const Result = {
    */
   map<T, U, E>(
     result: ConfigResult<T, E>,
-    fn: (value: T) => U
+    fn: (value: T) => U,
   ): ConfigResult<U, E> {
     if (result.success) {
       return Result.ok(fn(result.data));
@@ -131,7 +134,7 @@ export const Result = {
    */
   mapErr<T, E, F>(
     result: ConfigResult<T, E>,
-    fn: (error: E) => F
+    fn: (error: E) => F,
   ): ConfigResult<T, F> {
     if (!result.success) {
       return Result.err(fn(result.error));
@@ -144,7 +147,7 @@ export const Result = {
    */
   flatMap<T, U, E>(
     result: ConfigResult<T, E>,
-    fn: (value: T) => ConfigResult<U, E>
+    fn: (value: T) => ConfigResult<U, E>,
   ): ConfigResult<U, E> {
     if (result.success) {
       return fn(result.data);
@@ -171,5 +174,143 @@ export const Result = {
       return result.data;
     }
     throw new Error(`Unwrap called on error result: ${JSON.stringify(result.error)}`);
+  },
+
+  /**
+   * Chains error recovery operations that return Result types
+   */
+  flatMapErr<T, E, F>(
+    result: ConfigResult<T, E>,
+    fn: (error: E) => ConfigResult<T, F>,
+  ): ConfigResult<T, F> {
+    if (!result.success) {
+      return fn(result.error);
+    }
+    return result as Success<T>;
+  },
+
+  /**
+   * Unwraps the value or computes a default using a function
+   */
+  unwrapOrElse<T, E>(
+    result: ConfigResult<T, E>,
+    fn: (error: E) => T,
+  ): T {
+    if (result.success) {
+      return result.data;
+    }
+    return fn(result.error);
+  },
+
+  /**
+   * Pattern matching for ConfigResult type
+   */
+  match<T, E, R>(
+    result: ConfigResult<T, E>,
+    onSuccess: (data: T) => R,
+    onError: (error: E) => R,
+  ): R {
+    if (result.success) {
+      return onSuccess(result.data);
+    }
+    return onError(result.error);
+  },
+
+  /**
+   * Provides an alternative Result on error (alias for flatMapErr)
+   */
+  orElse<T, E, F>(
+    result: ConfigResult<T, E>,
+    fn: (error: E) => ConfigResult<T, F>,
+  ): ConfigResult<T, F> {
+    return Result.flatMapErr(result, fn);
+  },
+
+  /**
+   * Alias for flatMap for better readability in some contexts
+   */
+  andThen<T, U, E>(
+    result: ConfigResult<T, E>,
+    fn: (value: T) => ConfigResult<U, E>,
+  ): ConfigResult<U, E> {
+    return Result.flatMap(result, fn);
+  },
+
+  /**
+   * Performs a side effect on success without changing the result
+   */
+  tap<T, E>(
+    result: ConfigResult<T, E>,
+    fn: (data: T) => void,
+  ): ConfigResult<T, E> {
+    if (result.success) {
+      fn(result.data);
+    }
+    return result;
+  },
+
+  /**
+   * Performs a side effect on error without changing the result
+   */
+  tapErr<T, E>(
+    result: ConfigResult<T, E>,
+    fn: (error: E) => void,
+  ): ConfigResult<T, E> {
+    if (!result.success) {
+      fn(result.error);
+    }
+    return result;
+  },
+
+  /**
+   * Unwraps the error or throws if result is success
+   */
+  unwrapErr<T, E>(result: ConfigResult<T, E>): E {
+    if (!result.success) {
+      return result.error;
+    }
+    throw new Error(`UnwrapErr called on success result`);
+  },
+
+  /**
+   * Converts multiple ConfigResults into a single ConfigResult containing an array
+   * Fails fast on first error
+   */
+  all<T, E>(results: ConfigResult<T, E>[]): ConfigResult<T[], E> {
+    const values: T[] = [];
+    for (const result of results) {
+      if (!result.success) {
+        return result;
+      }
+      values.push(result.data);
+    }
+    return Result.ok(values);
+  },
+
+  /**
+   * Returns array of all results, regardless of success/failure
+   */
+  allSettled<T, E>(results: ConfigResult<T, E>[]): ConfigResult<T, E>[] {
+    return results;
+  },
+
+  /**
+   * Converts a Promise to a ConfigResult
+   */
+  async fromPromise<T>(
+    promise: Promise<T>,
+    errorMapper?: (error: unknown) => ConfigError,
+  ): Promise<ConfigResult<T, ConfigError>> {
+    try {
+      const data = await promise;
+      return Result.ok(data);
+    } catch (error) {
+      const mappedError = errorMapper ? errorMapper(error) : {
+        kind: "unknownError" as const,
+        message: error instanceof Error ? error.message : String(error),
+        originalError: error,
+      };
+      return Result.err(mappedError);
+    }
   },
 };

@@ -2,16 +2,16 @@ import { parse as parseYaml } from "@std/yaml";
 import {
   ConfigError,
   ConfigResult,
-  Result,
   type FileNotFoundError,
   type ParseError,
+  Result,
   type UnknownError,
   type ValidationError,
 } from "../types/config_result.ts";
 
 /**
  * Safe configuration loader with error handling
- * 
+ *
  * This loader provides safe methods for loading configuration files
  * with proper error handling and validation. It returns results
  * wrapped in ConfigResult type for explicit error handling.
@@ -19,14 +19,14 @@ import {
 export class SafeConfigLoader {
   /**
    * Creates a new SafeConfigLoader instance
-   * 
+   *
    * @param filePath - Path to the configuration file to load
    */
   constructor(private readonly filePath: string) {}
 
   /**
    * Safely reads a file from the filesystem
-   * 
+   *
    * @returns The file content as string, or an error if reading fails
    */
   async readFile(): Promise<ConfigResult<string, FileNotFoundError | UnknownError>> {
@@ -51,7 +51,7 @@ export class SafeConfigLoader {
 
   /**
    * Safely parses YAML content
-   * 
+   *
    * @param content - YAML content to parse
    * @returns Parsed object or error if parsing fails
    */
@@ -87,7 +87,7 @@ export class SafeConfigLoader {
 
   /**
    * Validates configuration object structure
-   * 
+   *
    * @param config - Configuration object to validate
    * @param validator - Validation function that returns true if valid
    * @returns Validation result
@@ -95,22 +95,25 @@ export class SafeConfigLoader {
   validate<T>(
     config: unknown,
     validator: (config: unknown) => config is T,
-  ): ConfigResult<T, ValidationError> {
+  ): ConfigResult<T, ConfigError> {
     if (validator(config)) {
       return Result.ok(config);
     }
-    return Result.err<ValidationError>({
-      kind: "validationError",
-      field: "root",
-      value: config,
-      expectedType: "valid configuration object",
-      message: "Configuration validation failed",
+    return Result.err<ConfigError>({
+      kind: "configValidationError",
+      errors: [{
+        field: "root",
+        value: config,
+        expectedType: "valid configuration object",
+        message: "Configuration validation failed",
+      }],
+      path: this.filePath,
     });
   }
 
   /**
    * Loads and validates configuration file
-   * 
+   *
    * @param validator - Type guard function for configuration validation
    * @returns Loaded and validated configuration or error
    */

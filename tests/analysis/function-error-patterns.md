@@ -5,12 +5,14 @@
 ### 1. BreakdownConfig Class Methods
 
 #### `constructor(configSetName?: string, baseDir?: string)`
+
 - **Current**: Throws Error for invalid config set names
 - **Error Pattern**: Validation in constructor with regex check
 - **Test Coverage**: 5 tests in `undefined_handling_test.ts`
 - **Result Type Benefit**: Could return a factory function that returns `ConfigResult<BreakdownConfig>`
 
 #### `loadConfig(): Promise<void>`
+
 - **Current**: Throws various errors (ERR1001, ERR1002, ERR4001)
 - **Error Cases**:
   - ERR1001: File not found
@@ -20,6 +22,7 @@
 - **Result Type**: `Promise<ConfigResult<void>>`
 
 #### `getConfig(): Promise<AppConfig>`
+
 - **Current**: Throws if config not loaded
 - **Error Cases**:
   - "Configuration not loaded"
@@ -29,6 +32,7 @@
 ### 2. ConfigValidator Methods
 
 #### `validateAppConfig(config: unknown): void`
+
 - **Current**: Throws ERR1002 for validation failures
 - **Error Cases**:
   - Missing required fields
@@ -38,6 +42,7 @@
 - **Result Type**: `ConfigResult<ValidatedAppConfig>`
 
 #### `validateUserConfig(config: unknown): void`
+
 - **Current**: Throws ERR2001 for validation failures
 - **Error Cases**:
   - Invalid field types
@@ -48,6 +53,7 @@
 ### 3. File Operations (Implicit)
 
 #### YAML Parsing
+
 - **Current**: Throws on invalid syntax
 - **Error Cases**:
   - Malformed YAML syntax
@@ -56,6 +62,7 @@
 - **Result Type Benefit**: Return ParseError with line/column info
 
 #### File Reading
+
 - **Current**: Throws on missing files
 - **Error Cases**:
   - File not found
@@ -65,12 +72,12 @@
 
 ## Error Code Mapping
 
-| Error Code | Current Usage | Result Type Mapping |
-|------------|---------------|---------------------|
-| ERR1001 | App config not found | `FileNotFoundError` |
-| ERR1002 | Invalid app config | `ValidationError` or `ParseError` |
-| ERR2001 | Invalid user config | `ValidationError` |
-| ERR4001 | Invalid config set name | `ValidationError` with specific field |
+| Error Code | Current Usage           | Result Type Mapping                   |
+| ---------- | ----------------------- | ------------------------------------- |
+| ERR1001    | App config not found    | `FileNotFoundError`                   |
+| ERR1002    | Invalid app config      | `ValidationError` or `ParseError`     |
+| ERR2001    | Invalid user config     | `ValidationError`                     |
+| ERR4001    | Invalid config set name | `ValidationError` with specific field |
 
 ## Test Pattern Summary
 
@@ -79,9 +86,11 @@
 1. **Direct assertRejects**
    ```typescript
    await assertRejects(
-     async () => { await config.loadConfig(); },
+     async () => {
+       await config.loadConfig();
+     },
      Error,
-     "ERR1001"
+     "ERR1001",
    );
    ```
    - Used 41 times
@@ -126,27 +135,32 @@
 ## Recommendations for Conversion
 
 ### High Priority (Most Impact)
+
 1. `loadConfig()` - Most tested error function
 2. YAML parsing operations - Need better error details
 3. `validateAppConfig()` - Complex validation rules
 
 ### Medium Priority
+
 1. `getConfig()` - Simple but frequently used
 2. `validateUserConfig()` - Less critical path
 
 ### Low Priority
+
 1. Constructor validation - Works well as-is
 2. Path operations - Limited error cases
 
 ## Test Improvement Opportunities
 
 ### With Result Types
+
 1. **Precise Error Testing**: Test specific error properties, not just messages
 2. **Error Chain Testing**: Test how errors propagate through operations
 3. **Exhaustiveness Checking**: Ensure all error cases are handled
 4. **No String Matching**: Remove brittle error message assertions
 
 ### Example Improvement
+
 ```typescript
 // Current: Brittle string matching
 assertEquals(error.message.includes("ERR1001"), true);

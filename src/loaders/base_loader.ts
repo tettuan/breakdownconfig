@@ -3,23 +3,23 @@ import { join } from "@std/path";
 import {
   ConfigError,
   ConfigResult,
-  Result,
   type FileNotFoundError,
   type ParseError,
+  Result,
   type UnknownError,
   type ValidationError,
 } from "../types/config_result.ts";
 
 /**
  * Common interface for all configuration loaders
- * 
+ *
  * Defines the contract that all configuration loaders must implement.
  * Uses ConfigResult type for consistent error handling across all loaders.
  */
 export interface Loader<T> {
   /**
    * Loads and validates configuration
-   * 
+   *
    * @returns ConfigResult containing either the loaded configuration or an error
    */
   load(): Promise<ConfigResult<T, ConfigError>>;
@@ -27,7 +27,7 @@ export interface Loader<T> {
 
 /**
  * Abstract base class for configuration loaders
- * 
+ *
  * Provides common functionality for all configuration loaders including:
  * - File reading with proper error handling
  * - YAML parsing with detailed error information
@@ -37,7 +37,7 @@ export interface Loader<T> {
 export abstract class BaseLoader<T> implements Loader<T> {
   /**
    * Creates a new BaseLoader instance
-   * 
+   *
    * @param configPath - Path to the configuration file
    * @param baseDir - Optional base directory for resolving relative paths
    */
@@ -48,13 +48,13 @@ export abstract class BaseLoader<T> implements Loader<T> {
 
   /**
    * Loads and validates configuration
-   * 
+   *
    * Template method that orchestrates the loading process:
    * 1. Resolves the configuration file path
    * 2. Reads the file content
    * 3. Parses the YAML content
    * 4. Validates the parsed configuration
-   * 
+   *
    * @returns Loaded and validated configuration or error
    */
   async load(): Promise<ConfigResult<T, ConfigError>> {
@@ -80,18 +80,18 @@ export abstract class BaseLoader<T> implements Loader<T> {
 
   /**
    * Validates the parsed configuration
-   * 
+   *
    * Abstract method that must be implemented by subclasses to provide
    * type-specific validation logic.
-   * 
+   *
    * @param config - Parsed configuration object
    * @returns Validation result
    */
-  protected abstract validate(config: unknown): Promise<ConfigResult<T, ValidationError>>;
+  protected abstract validate(config: unknown): Promise<ConfigResult<T, ConfigError>>;
 
   /**
    * Resolves a configuration file path
-   * 
+   *
    * @param path - Path to resolve
    * @returns Resolved absolute path
    */
@@ -104,11 +104,13 @@ export abstract class BaseLoader<T> implements Loader<T> {
 
   /**
    * Reads a file from the filesystem
-   * 
+   *
    * @param path - Path to the file
    * @returns File content or error
    */
-  protected async readFile(path: string): Promise<ConfigResult<string, FileNotFoundError | UnknownError>> {
+  protected async readFile(
+    path: string,
+  ): Promise<ConfigResult<string, FileNotFoundError | UnknownError>> {
     try {
       const content = await Deno.readTextFile(path);
       return Result.ok(content);
@@ -130,12 +132,15 @@ export abstract class BaseLoader<T> implements Loader<T> {
 
   /**
    * Parses YAML content
-   * 
+   *
    * @param content - YAML string content
    * @param path - File path for error reporting
    * @returns Parsed object or error
    */
-  protected parseYaml(content: string, path: string): ConfigResult<unknown, ParseError | UnknownError> {
+  protected parseYaml(
+    content: string,
+    path: string,
+  ): ConfigResult<unknown, ParseError | UnknownError> {
     try {
       const parsed = parseYaml(content);
       return Result.ok(parsed);
@@ -151,7 +156,7 @@ export abstract class BaseLoader<T> implements Loader<T> {
         // Common YAML error format: "at line X, column Y"
         const lineMatch = error.message.match(/at line (\d+)/);
         const columnMatch = error.message.match(/column (\d+)/);
-        
+
         if (lineMatch) {
           line = parseInt(lineMatch[1], 10);
         }
@@ -172,7 +177,7 @@ export abstract class BaseLoader<T> implements Loader<T> {
 
   /**
    * Helper method to create a validation error
-   * 
+   *
    * @param field - Field that failed validation
    * @param value - Actual value
    * @param expectedType - Expected type

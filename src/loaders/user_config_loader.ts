@@ -3,7 +3,14 @@ import { parse as parseYaml } from "@std/yaml";
 import { ErrorCode, ErrorManager } from "../error_manager.ts";
 import type { UserConfig } from "../types/user_config.ts";
 import { DefaultPaths } from "../types/app_config.ts";
-import { ConfigResult, FileNotFoundError, ParseError, ValidationError, UnknownError, Result } from "../types/config_result.ts";
+import {
+  ConfigResult,
+  FileNotFoundError,
+  ParseError,
+  Result,
+  UnknownError,
+  ValidationError,
+} from "../types/config_result.ts";
 
 /**
  * Loads and validates optional user configuration files for personalization and overrides
@@ -14,7 +21,7 @@ import { ConfigResult, FileNotFoundError, ParseError, ValidationError, UnknownEr
  *
  * ## File Location Strategy
  * The loader searches for configuration files in this priority order:
- * 1. With configSetName: `{baseDir}/.agent/breakdown/config/{configSetName}-user.yml`
+ * 1. With profilePrefix: `{baseDir}/.agent/breakdown/config/{profilePrefix}-user.yml`
  * 2. Default: `{baseDir}/.agent/breakdown/config/user.yml`
  *
  * ## Error Handling
@@ -66,7 +73,7 @@ export class UserConfigLoader {
    * The loader is designed to handle user-specific overrides that can customize
    * application behavior on a per-user or per-environment basis.
    *
-   * @param configSetName - Environment or deployment-specific configuration identifier.
+   * @param profilePrefix - Profile-specific configuration identifier.
    *                        Must match pattern /^[a-zA-Z0-9-]+$/ if provided.
    *                        Examples: "development", "production", "staging", "local"
    * @param baseDir - Base directory to search for configuration files. If empty string,
@@ -92,7 +99,7 @@ export class UserConfigLoader {
    * ```
    */
   constructor(
-    private readonly configSetName?: string,
+    private readonly profilePrefix?: string,
     private readonly baseDir: string = "",
   ) {}
 
@@ -105,15 +112,15 @@ export class UserConfigLoader {
    * that existing configs are valid.
    *
    * ## Loading Process
-   * 1. Determine config file path based on configSetName
+   * 1. Determine config file path based on profilePrefix
    * 2. Attempt to read file from filesystem
    * 3. If file missing: return null (graceful degradation)
    * 4. If file exists: parse YAML and validate structure
    * 5. Return validated UserConfig object
    *
    * ## File Path Resolution
-   * - With configSetName: `{baseDir}/.agent/breakdown/config/{configSetName}-user.yml`
-   * - Without configSetName: `{baseDir}/.agent/breakdown/config/user.yml`
+   * - With profilePrefix: `{baseDir}/.agent/breakdown/config/{profilePrefix}-user.yml`
+   * - Without profilePrefix: `{baseDir}/.agent/breakdown/config/user.yml`
    *
    * @returns {Promise<ConfigResult<UserConfig | null>>} Result containing:
    *          - null if file doesn't exist (this is a success case)
@@ -156,7 +163,7 @@ export class UserConfigLoader {
    * ```
    */
   async load(): Promise<ConfigResult<UserConfig | null>> {
-    const fileName = this.configSetName ? `${this.configSetName}-user.yml` : "user.yml";
+    const fileName = this.profilePrefix ? `${this.profilePrefix}-user.yml` : "user.yml";
 
     const configPath = this.baseDir
       ? join(this.baseDir, DefaultPaths.WORKING_DIR, "config", fileName)
@@ -174,7 +181,7 @@ export class UserConfigLoader {
       return Result.err<UnknownError>({
         kind: "unknownError",
         message: `Failed to read user config file: ${configPath}`,
-        originalError: error
+        originalError: error,
       });
     }
 
@@ -188,18 +195,22 @@ export class UserConfigLoader {
         path: configPath,
         line: 0, // YAML parser doesn't provide line numbers
         column: 0,
-        message: "Invalid YAML format in user configuration file"
+        message: "Invalid YAML format in user configuration file",
       });
     }
 
     if (!this.validateConfig(config)) {
       // Validation error - the file exists but has invalid structure
-      return Result.err<ValidationError>({
-        kind: "validationError",
-        field: "root",
-        value: config,
-        expectedType: "UserConfig",
-        message: "Invalid user configuration structure"
+      return Result.err({
+        kind: "configValidationError",
+        errors: [{
+          kind: "validationError",
+          field: "root",
+          value: config,
+          expectedType: "UserConfig",
+          message: "Invalid user configuration structure",
+        }],
+        path: "user_config",
       });
     }
 

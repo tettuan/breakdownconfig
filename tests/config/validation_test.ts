@@ -18,6 +18,7 @@
  */
 
 import { assertEquals, assertRejects } from "@std/assert";
+import { expect } from "@std/expect";
 import { BreakdownConfig } from "../../src/breakdown_config.ts";
 import {
   cleanupTestConfigs,
@@ -109,19 +110,26 @@ describe("Should validate required fields", () => {
       await config.loadConfig();
 
       logger.debug("Retrieving configuration result");
-      const result = await config.getConfig();
+      const result = await config.getConfigSafe();
+
+      // Assert result is successful
+      expect(result.success).toBe(true);
+      if (!result.success) {
+        throw new Error(`Config loading failed: ${result.error.message}`);
+      }
+      const configData = result.data;
 
       logger.debug("Validating configuration fields");
-      ConfigValidator.validateAppConfig(result);
+      ConfigValidator.validateAppConfig(configData);
 
       logger.debug("Checking working directory");
-      assertEquals(result.working_dir, DefaultPaths.WORKING_DIR);
+      assertEquals(configData.working_dir, DefaultPaths.WORKING_DIR);
 
       logger.debug("Checking app prompt base directory");
-      assertEquals(result.app_prompt.base_dir, DefaultPaths.PROMPT_BASE_DIR);
+      assertEquals(configData.app_prompt.base_dir, DefaultPaths.PROMPT_BASE_DIR);
 
       logger.debug("Checking app schema base directory");
-      assertEquals(result.app_schema.base_dir, DefaultPaths.SCHEMA_BASE_DIR);
+      assertEquals(configData.app_schema.base_dir, DefaultPaths.SCHEMA_BASE_DIR);
 
       logger.debug("All required fields validation passed");
     } finally {

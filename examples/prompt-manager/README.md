@@ -83,4 +83,4 @@ User Schema Base Directory: /path/to/schema/user
 - 設定の読み込み状況
 - パスの検証結果
 - プロンプト/スキーマファイルの読み込み状況
-- エラー情報 
+- エラー情報

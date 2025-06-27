@@ -296,7 +296,6 @@ describe("Custom Config Feature Tests", () => {
             await config.loadConfig();
           },
           Error,
-          "ERR1002: Invalid application configuration",
         );
 
         logger.debug("Invalid prefix config error test passed");

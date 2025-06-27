@@ -3,7 +3,8 @@ import { UserConfigLoader } from "./loaders/user_config_loader.ts";
 import type { AppConfig } from "./types/app_config.ts";
 import type { UserConfig } from "./types/user_config.ts";
 import type { MergedConfig } from "./types/merged_config.ts";
-import { ErrorCode, ErrorManager } from "./error_manager.ts";
+import { Result } from "./types/unified_result.ts";
+import { ErrorFactories, UnifiedError } from "./errors/unified_errors.ts";
 
 /**
  * Manages the loading and merging of application and user configurations.
@@ -48,22 +49,43 @@ export class ConfigManager {
    * @throws {Error} If the application configuration is invalid
    */
   public async getConfig(): Promise<MergedConfig> {
+    const result = await this.getConfigSafe();
+    if (result.success) {
+      return result.data;
+    } else {
+      throw new Error(result.error.message);
+    }
+  }
+
+  /**
+   * Loads and merges the application and user configurations (Result-based API).
+   * If configurations are already loaded, returns the cached result.
+   *
+   * @returns {Promise<Result<MergedConfig, UnifiedError>>} The merged configuration or error
+   */
+  public async getConfigSafe(): Promise<Result<MergedConfig, UnifiedError>> {
     if (this.isLoaded) {
-      return this.config;
+      return Result.ok(this.config);
     }
 
-    try {
-      const appConfig = await this.loadAppConfig();
-      const userConfig = await this.loadUserConfig();
-      this.config = this.mergeConfigs(appConfig, userConfig);
-      this.isLoaded = true;
-      return this.config;
-    } catch (_error) {
-      if (_error instanceof Error) {
-        throw _error;
-      }
-      ErrorManager.throwError(ErrorCode.APP_CONFIG_INVALID, "Invalid application configuration");
+    const appConfigResult = await this.loadAppConfigSafe();
+    if (!appConfigResult.success) {
+      return appConfigResult;
     }
+
+    const userConfigResult = await this.loadUserConfigSafe();
+    if (!userConfigResult.success) {
+      return userConfigResult;
+    }
+
+    const mergeResult = this.mergeConfigs(appConfigResult.data, userConfigResult.data);
+    if (!mergeResult.success) {
+      return mergeResult;
+    }
+
+    this.config = mergeResult.data;
+    this.isLoaded = true;
+    return Result.ok(this.config);
   }
 
   /**
@@ -73,20 +95,45 @@ export class ConfigManager {
    * @throws {Error} If the application configuration is invalid
    */
   private async loadAppConfig(): Promise<AppConfig> {
-    try {
-      this.appConfig = await this.appConfigLoader.load();
-      if (!this.appConfig) {
-        ErrorManager.throwError(
-          ErrorCode.APP_CONFIG_NOT_FOUND,
-          "Application configuration file not found",
-        );
-      }
-      return this.appConfig;
-    } catch (error) {
-      if (error instanceof Error) {
-        throw error;
-      }
-      ErrorManager.throwError(ErrorCode.APP_CONFIG_INVALID, "Invalid application configuration");
+    const result = await this.loadAppConfigSafe();
+    if (result.success) {
+      return result.data;
+    } else {
+      throw new Error(result.error.message);
+    }
+  }
+
+  /**
+   * Loads the application configuration (Result-based API).
+   *
+   * @returns {Promise<Result<AppConfig, UnifiedError>>} The loaded application configuration or error
+   */
+  private async loadAppConfigSafe(): Promise<Result<AppConfig, UnifiedError>> {
+    const result = await this.appConfigLoader.loadSafe();
+    if (result.success) {
+      this.appConfig = result.data;
+      return Result.ok(result.data);
+    }
+
+    // Convert ConfigError to UnifiedError
+    const error = result.error;
+    if (error.kind === "fileNotFound") {
+      return Result.err(ErrorFactories.configFileNotFound(error.path, "app"));
+    } else if (error.kind === "parseError") {
+      return Result.err(
+        ErrorFactories.configParseError(error.path, error.message, error.line, error.column),
+      );
+    } else if (error.kind === "configValidationError") {
+      const violations = error.errors.map((e: any) => ({
+        field: e.field,
+        value: e.value,
+        expectedType: e.expectedType,
+        actualType: typeof e.value,
+        constraint: e.message,
+      }));
+      return Result.err(ErrorFactories.configValidationError(error.path, violations));
+    } else {
+      return Result.err(ErrorFactories.unknown(error, "loadAppConfig"));
     }
   }
 
@@ -97,16 +144,27 @@ export class ConfigManager {
    * @throws {Error} If the user configuration is invalid
    */
   private async loadUserConfig(): Promise<UserConfig> {
-    try {
-      this.userConfig = await this.userConfigLoader.load();
-      if (!this.userConfig) {
-        return {} as UserConfig; // Return empty config if not found
-      }
-      return this.userConfig;
-    } catch (_error) {
-      // User config is optional, so we return empty config on error
+    const result = await this.loadUserConfigSafe();
+    if (result.success) {
+      return result.data;
+    } else {
       return {} as UserConfig;
     }
+  }
+
+  /**
+   * Loads the user configuration (Result-based API).
+   *
+   * @returns {Promise<Result<UserConfig, UnifiedError>>} The loaded user configuration or error
+   */
+  private async loadUserConfigSafe(): Promise<Result<UserConfig, UnifiedError>> {
+    const result = await this.userConfigLoader.load();
+    if (result.success) {
+      this.userConfig = result.data;
+      return Result.ok(result.data || {} as UserConfig);
+    }
+    // User config is optional, so we return empty config on error
+    return Result.ok({} as UserConfig);
   }
 
   /**
@@ -117,35 +175,39 @@ export class ConfigManager {
    *
    * @param appConfig - The application configuration
    * @param userConfig - The user configuration (optional)
-   * @returns {MergedConfig} The merged configuration
+   * @returns {Result<MergedConfig, UnifiedError>} The merged configuration or error
    */
   private mergeConfigs(
     appConfig: AppConfig,
     userConfig: UserConfig | null | undefined,
-  ): MergedConfig {
-    const mergedConfig: MergedConfig = {
-      working_dir: String(userConfig?.working_dir || appConfig.working_dir),
-      app_prompt: {
-        base_dir: userConfig?.app_prompt?.base_dir
-          ? String(userConfig.app_prompt.base_dir)
-          : String(appConfig.app_prompt.base_dir),
-      },
-      app_schema: {
-        base_dir: userConfig?.app_schema?.base_dir
-          ? String(userConfig.app_schema.base_dir)
-          : String(appConfig.app_schema.base_dir),
-      },
-    };
+  ): Result<MergedConfig, UnifiedError> {
+    try {
+      const mergedConfig: MergedConfig = {
+        working_dir: String(userConfig?.working_dir || appConfig.working_dir),
+        app_prompt: {
+          base_dir: userConfig?.app_prompt?.base_dir
+            ? String(userConfig.app_prompt.base_dir)
+            : String(appConfig.app_prompt.base_dir),
+        },
+        app_schema: {
+          base_dir: userConfig?.app_schema?.base_dir
+            ? String(userConfig.app_schema.base_dir)
+            : String(appConfig.app_schema.base_dir),
+        },
+      };
 
-    // If userConfig exists, merge additional fields
-    if (userConfig) {
-      for (const [key, value] of Object.entries(userConfig)) {
-        if (!(key in mergedConfig)) {
-          mergedConfig[key] = String(value);
+      // If userConfig exists, merge additional fields
+      if (userConfig) {
+        for (const [key, value] of Object.entries(userConfig)) {
+          if (!(key in mergedConfig)) {
+            (mergedConfig as any)[key] = String(value);
+          }
         }
       }
-    }
 
-    return mergedConfig;
+      return Result.ok(mergedConfig);
+    } catch (error) {
+      return Result.err(ErrorFactories.configMergeError(error));
+    }
   }
 }

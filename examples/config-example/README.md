@@ -76,4 +76,4 @@ App Schema Base Directory: /path/to/schema/app
 
 - 設定の読み込み状況
 - パスの検証結果
-- エラー情報 
+- エラー情報

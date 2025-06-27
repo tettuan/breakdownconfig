@@ -1,4 +1,5 @@
 # instructions/*.md
+
 この階層は、**READ ONLY**
 CLAUDEへの指示用であり、プロジェクト直下のCLAUDE.mdから呼ばれる。そのため、指示のない変更は禁止。
 
