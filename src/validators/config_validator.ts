@@ -1,5 +1,6 @@
 import type { AppConfig } from "../types/app_config.ts";
 import type { UserConfig } from "../types/user_config.ts";
+import { UserConfigGuards } from "../types/user_config.ts";
 import { ConfigResult, Result, ValidationError } from "../types/config_result.ts";
 
 export class ConfigValidator {
@@ -103,7 +104,7 @@ export class ConfigValidator {
 
     const userConfig = config as UserConfig;
 
-    if (userConfig.app_prompt) {
+    if (UserConfigGuards.hasPromptConfig(userConfig)) {
       if (typeof userConfig.app_prompt !== "object") {
         errors.push({
           field: "app_prompt",
@@ -131,7 +132,7 @@ export class ConfigValidator {
       }
     }
 
-    if (userConfig.app_schema) {
+    if (UserConfigGuards.hasSchemaConfig(userConfig)) {
       if (typeof userConfig.app_schema !== "object") {
         errors.push({
           field: "app_schema",

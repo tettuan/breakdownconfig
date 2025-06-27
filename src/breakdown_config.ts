@@ -15,22 +15,32 @@ import { ValidProfilePrefix } from "./utils/valid_path.ts";
  *
  * @example
  * ```typescript
- * // Basic usage
- * const config = new BreakdownConfig();
- * await config.loadConfig();
- * const settings = await config.getConfig();
+ * // Recommended: Using Smart Constructor (Result-based)
+ * const configResult = BreakdownConfig.create();
+ * if (configResult.success) {
+ *   const config = configResult.data;
+ *   await config.loadConfig();
+ *   const settings = await config.getConfig();
+ * }
  *
- * // Environment-specific configuration
- * const prodConfig = new BreakdownConfig("production");
+ * // Environment-specific configuration with validation
+ * const prodConfigResult = BreakdownConfig.create("production");
+ * if (!prodConfigResult.success) {
+ *   console.error("Invalid profile:", prodConfigResult.error.message);
+ *   return;
+ * }
+ * const prodConfig = prodConfigResult.data;
  * await prodConfig.loadConfig();
  *
  * // Custom base directory
- * const customConfig = new BreakdownConfig(undefined, "/path/to/project");
- * await customConfig.loadConfig();
+ * const customResult = BreakdownConfig.create(undefined, "/path/to/project");
+ * if (customResult.success) {
+ *   await customResult.data.loadConfig();
+ * }
  *
- * // Environment-specific with custom base directory
- * const envConfig = new BreakdownConfig("staging", "/path/to/project");
- * await envConfig.loadConfig();
+ * // Legacy usage (deprecated, will throw on error)
+ * const legacyConfig = BreakdownConfig.createLegacy("staging", "/path/to/project");
+ * await legacyConfig.loadConfig();
  * ```
  */
 export class BreakdownConfig {
@@ -40,8 +50,23 @@ export class BreakdownConfig {
   private isConfigLoaded = false;
 
   /**
-   * Creates a new instance of BreakdownConfig.
-   * Initializes the configuration manager with the specified configuration set and base directory.
+   * Private constructor for Smart Constructor pattern.
+   * Use BreakdownConfig.create() to create new instances safely.
+   */
+  private constructor(
+    configManager: ConfigManager,
+    profilePrefix: string | undefined,
+    baseDir: string,
+  ) {
+    this.configManager = configManager;
+    this.profilePrefix = profilePrefix;
+    this.baseDir = baseDir;
+  }
+
+  /**
+   * Smart Constructor: Creates a new instance of BreakdownConfig with validation.
+   * This is the recommended way to create BreakdownConfig instances as it returns
+   * a Result type instead of throwing exceptions.
    *
    * @param profilePrefix - Optional profile for environment-specific settings.
    *                        Must contain only alphanumeric characters and hyphens (e.g., "production", "development", "staging-v2").
@@ -54,22 +79,52 @@ export class BreakdownConfig {
    *                  All configuration files (app_config.json, user_config.json) are expected to be located
    *                  relative to this directory, and all paths defined within those configurations
    *                  (such as working_dir, app_prompt.base_dir, etc.) are resolved relative to this baseDir.
+   * @returns {Result<BreakdownConfig, UnifiedError>} A Result containing the BreakdownConfig instance or validation error
    */
-  constructor(profilePrefix?: string, baseDir?: string) {
-    this.profilePrefix = profilePrefix;
-    this.baseDir = baseDir ?? "";
-
+  static create(
+    profilePrefix?: string,
+    baseDir?: string,
+  ): Result<BreakdownConfig, UnifiedError> {
     // Validate profile if provided
-    if (this.profilePrefix && !/^[a-zA-Z0-9-]+$/.test(this.profilePrefix)) {
-      ErrorManager.throwError(
-        ErrorCode.INVALID_PROFILE_NAME,
-        `Invalid profile: ${this.profilePrefix}. Only alphanumeric characters and hyphens are allowed.`,
+    if (profilePrefix && !/^[a-zA-Z0-9-]+$/.test(profilePrefix)) {
+      return Result.err(
+        ErrorFactories.configValidationError("profilePrefix", [{
+          field: "profilePrefix",
+          value: profilePrefix,
+          expectedType: "string matching ^[a-zA-Z0-9-]+$",
+          actualType: "string",
+          constraint: "only alphanumeric characters and hyphens are allowed",
+        }]),
       );
     }
 
-    const appConfigLoader = new AppConfigLoader(this.profilePrefix, this.baseDir);
-    const userConfigLoader = new UserConfigLoader(this.profilePrefix, this.baseDir);
-    this.configManager = new ConfigManager(appConfigLoader, userConfigLoader);
+    const normalizedBaseDir = baseDir ?? "";
+    const appConfigLoader = new AppConfigLoader(profilePrefix, normalizedBaseDir);
+    const userConfigLoader = new UserConfigLoader(profilePrefix, normalizedBaseDir);
+    const configManager = new ConfigManager(appConfigLoader, userConfigLoader);
+
+    return Result.ok(
+      new BreakdownConfig(configManager, profilePrefix, normalizedBaseDir),
+    );
+  }
+
+  /**
+   * @deprecated Use BreakdownConfig.create() instead for type-safe construction.
+   * This legacy constructor will be removed in a future version.
+   * 
+   * Creates a new instance of BreakdownConfig.
+   * Initializes the configuration manager with the specified configuration set and base directory.
+   *
+   * @param profilePrefix - Optional profile for environment-specific settings.
+   * @param baseDir - Optional base directory that serves as the reference point for all configuration files.
+   * @throws {Error} If the profilePrefix contains invalid characters
+   */
+  static createLegacy(profilePrefix?: string, baseDir?: string): BreakdownConfig {
+    const result = BreakdownConfig.create(profilePrefix, baseDir);
+    if (!result.success) {
+      throw new Error(result.error.message);
+    }
+    return result.data;
   }
 
   /**

@@ -1,7 +1,8 @@
 import { join } from "@std/path";
 import { parse as parseYaml } from "@std/yaml";
 import { ErrorCode, ErrorManager } from "../error_manager.ts";
-import type { UserConfig } from "../types/user_config.ts";
+import type { LegacyUserConfig, UserConfig } from "../types/user_config.ts";
+import { UserConfigFactory } from "../types/user_config.ts";
 import { DefaultPaths } from "../types/app_config.ts";
 import {
   ConfigResult,
@@ -214,7 +215,10 @@ export class UserConfigLoader {
       });
     }
 
-    return Result.ok(config as UserConfig);
+    // Convert legacy format to new discriminated union format
+    const legacyConfig = config as LegacyUserConfig;
+    const newUserConfig = UserConfigFactory.fromLegacy(legacyConfig);
+    return Result.ok(newUserConfig);
   }
 
   /**
@@ -223,7 +227,7 @@ export class UserConfigLoader {
    * @param config - The configuration object to validate
    * @returns {boolean} True if the configuration is valid
    */
-  private validateConfig(config: unknown): config is UserConfig {
+  private validateConfig(config: unknown): config is LegacyUserConfig {
     if (!config || typeof config !== "object") {
       return false;
     }

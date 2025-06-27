@@ -1,5 +1,10 @@
 import type { AppConfig } from "./app_config.ts";
-import type { UserConfig } from "./user_config.ts";
+import type { UserConfig, LegacyUserConfig } from "./user_config.ts";
+
+// Re-export for test compatibility
+export type { AppConfig };
+export type { UserConfig };
+import { UserConfigGuards, UserConfigHelpers } from "./user_config.ts";
 import type { ValidPath } from "../utils/valid_path.ts";
 import { Result } from "./unified_result.ts";
 import type { UnifiedError, ValidationViolation } from "../errors/unified_errors.ts";
@@ -237,29 +242,67 @@ export class ConfigProfileFactory {
   ): Result<void, UnifiedError> {
     const violations: ValidationViolation[] = [];
 
-    // ユーザー設定は任意フィールドなので、存在する場合のみ検証
-    if (config.app_prompt?.base_dir !== undefined) {
-      if (typeof config.app_prompt.base_dir !== "string" || config.app_prompt.base_dir.trim() === "") {
+    // Discriminated Union による型安全な検証
+    switch (config.kind) {
+      case "empty":
+        // 空の設定は常に有効
+        break;
+      
+      case "prompt-only":
+        if (!config.app_prompt.base_dir || config.app_prompt.base_dir.trim() === "") {
+          violations.push({
+            field: "app_prompt.base_dir",
+            value: config.app_prompt.base_dir,
+            expectedType: "non-empty string",
+            actualType: typeof config.app_prompt.base_dir,
+            constraint: "cannot be empty",
+          });
+        }
+        break;
+      
+      case "schema-only":
+        if (!config.app_schema.base_dir || config.app_schema.base_dir.trim() === "") {
+          violations.push({
+            field: "app_schema.base_dir",
+            value: config.app_schema.base_dir,
+            expectedType: "non-empty string",
+            actualType: typeof config.app_schema.base_dir,
+            constraint: "cannot be empty",
+          });
+        }
+        break;
+      
+      case "complete":
+        if (!config.app_prompt.base_dir || config.app_prompt.base_dir.trim() === "") {
+          violations.push({
+            field: "app_prompt.base_dir",
+            value: config.app_prompt.base_dir,
+            expectedType: "non-empty string",
+            actualType: typeof config.app_prompt.base_dir,
+            constraint: "cannot be empty",
+          });
+        }
+        if (!config.app_schema.base_dir || config.app_schema.base_dir.trim() === "") {
+          violations.push({
+            field: "app_schema.base_dir",
+            value: config.app_schema.base_dir,
+            expectedType: "non-empty string",
+            actualType: typeof config.app_schema.base_dir,
+            constraint: "cannot be empty",
+          });
+        }
+        break;
+      
+      default:
+        // TypeScript exhaustiveness check
+        const _exhaustive: never = config;
         violations.push({
-          field: "app_prompt.base_dir",
-          value: config.app_prompt.base_dir,
-          expectedType: "non-empty string",
-          actualType: typeof config.app_prompt.base_dir,
-          constraint: "must be a non-empty string when provided",
+          field: "kind",
+          value: (_exhaustive as any)?.kind,
+          expectedType: "valid discriminator",
+          actualType: "unknown",
+          constraint: "must be a valid UserConfig variant",
         });
-      }
-    }
-
-    if (config.app_schema?.base_dir !== undefined) {
-      if (typeof config.app_schema.base_dir !== "string" || config.app_schema.base_dir.trim() === "") {
-        violations.push({
-          field: "app_schema.base_dir",
-          value: config.app_schema.base_dir,
-          expectedType: "non-empty string",
-          actualType: typeof config.app_schema.base_dir,
-          constraint: "must be a non-empty string when provided",
-        });
-      }
     }
 
     if (violations.length > 0) {
@@ -277,20 +320,17 @@ export class ConfigProfileFactory {
     const mergedConfig: MergedProfile["config"] = {
       working_dir: appConfig.working_dir,
       app_prompt: {
-        base_dir: userConfig.app_prompt?.base_dir ?? appConfig.app_prompt.base_dir,
-        ...userConfig.app_prompt,
+        base_dir: UserConfigHelpers.getPromptBaseDir(userConfig) ?? appConfig.app_prompt.base_dir,
       },
       app_schema: {
-        base_dir: userConfig.app_schema?.base_dir ?? appConfig.app_schema.base_dir,
-        ...userConfig.app_schema,
+        base_dir: UserConfigHelpers.getSchemaBaseDir(userConfig) ?? appConfig.app_schema.base_dir,
       },
     };
 
-    // ユーザー設定の任意フィールドを統合
-    for (const [key, value] of Object.entries(userConfig)) {
-      if (key !== "app_prompt" && key !== "app_schema") {
-        mergedConfig[key] = value;
-      }
+    // ユーザー設定のカスタムフィールドを統合
+    const customFields = UserConfigHelpers.getCustomFields(userConfig);
+    if (customFields) {
+      Object.assign(mergedConfig, customFields);
     }
 
     return mergedConfig;
