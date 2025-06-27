@@ -47,16 +47,16 @@ import { BreakdownConfig } from "@tettuan/breakdownconfig";
 ### アプリケーションでの利用例
 
 ```typescript
-// 基本的な使用方法
+// デフォルトプロファイルの使用
 let config = new BreakdownConfig();
 
-// 環境固有の設定
+// 名前付きプロファイルの使用
 let prodConfig = new BreakdownConfig("production");
 
-// カスタムベースディレクトリ
+// カスタムベースディレクトリの指定
 let customConfig = new BreakdownConfig(undefined, "/path/to/project");
 
-// 環境固有 + カスタムベースディレクトリ
+// 名前付きプロファイル + カスタムベースディレクトリの組み合わせ
 let envConfig = new BreakdownConfig("staging", "/path/to/project");
 ```
 
@@ -68,89 +68,90 @@ let envConfig = new BreakdownConfig("staging", "/path/to/project");
 
 BreakdownConfigは以下の順序で設定ファイルの読み込み処理を実行する：
 
-1. **初期化時の設定識別**: コンストラクタで設定セット名（デフォルト or カスタム）を判定
-2. **アプリ設定ファイルの読み込み**: `{prefix-}app.yml` を必須ファイルとして読み込み
-3. **working_dirの特定**: アプリ設定から `working_dir` の値を取得してユーザー設定の基準パスを決定
-4. **ユーザー設定ファイルの読み込み**: `.agent/breakdown/config/{prefix-}user.yml` をオプションファイルとして読み込み
-5. **設定値の統合**: アプリ設定を基準として、ユーザー設定の値で同一キーを上書き統合
-6. **統合結果の提供**: 最終的な設定オブジェクトをアプリケーションに返却
+1. **初期化時のプロファイル識別**: コンストラクタで設定プロファイル名（デフォルト or 名前付き）を判定
+2. **ベースディレクトリの決定**: コンストラクタの第2引数で指定されたベースディレクトリ、または現在の作業ディレクトリを特定
+3. **アプリケーション設定ファイルの読み込み**: `{ベースディレクトリ}/.agent/breakdown/config/app.yml` または `{ベースディレクトリ}/.agent/breakdown/config/{プロファイルプレフィックス}-app.yml` を必須ファイルとして読み込み
+4. **working_dirの特定**: アプリケーション設定ファイルから `working_dir` の値を取得してユーザー設定ファイルの基準パスを決定
+5. **ユーザー設定ファイルの読み込み**: `{working_dir}/.agent/breakdown/config/user.yml` または `{working_dir}/.agent/breakdown/config/{プロファイルプレフィックス}-user.yml` をオプションファイルとして読み込み
+6. **設定値の統合**: アプリケーション設定ファイルを基準として、ユーザー設定ファイルの値で同一キーを上書き統合
+7. **統合結果の提供**: 最終的な設定オブジェクトをアプリケーションに返却
 
 ## 設定ファイルの種類
 
 設定ファイルの種類は以下の通りである：
 
-### デフォルト設定
+### デフォルトプロファイル
 
-1. **アプリケーション設定（app.yml）**: アプリ設定
-2. **ユーザー設定（user.yml）**: ユーザー設定
+1. **アプリケーション設定ファイル（app.yml）**: アプリケーションのデフォルト設定
+2. **ユーザー設定ファイル（user.yml）**: ユーザーによるカスタマイズ設定
 
-### カスタム設定
+### 名前付きプロファイル
 
-1. **カスタムアプリケーション設定（{prefix}-app.yml）**: カスタムアプリ設定
-2. **カスタムユーザー設定（{prefix}-user.yml）**: カスタムユーザー設定
+1. **アプリケーション設定ファイル（{プロファイルプレフィックス}-app.yml）**: 名前付きプロファイルのアプリケーション設定
+2. **ユーザー設定ファイル（{プロファイルプレフィックス}-user.yml）**: 名前付きプロファイルのユーザー設定
 
-BreakdownConfig は設定セットを指定することで、デフォルト設定またはカスタム設定の組み合わせを読み込み、統合する。
+BreakdownConfig は指定された設定プロファイル名に基づいて、対応するアプリケーション設定ファイルとユーザー設定ファイルの組み合わせを読み込み、統合する。
 
-### カスタム設定の要件と仕様
+### 名前付きプロファイルの要件と仕様
 
 #### 目的
 
-- 同一アプリケーション内で複数の設定セットを管理
+- 同一アプリケーション内で複数の設定プロファイルを管理
 - 環境別設定（development, staging, production）の実現
 - 機能別設定の分離管理
 
-#### カスタム設定の読み込み方法
+#### 名前付きプロファイルの読み込み方法
 
 **基本的な使用方法**：
 
 ```typescript
-// デフォルト設定の読み込み（従来通り）
+// デフォルトプロファイルの読み込み（従来通り）
 let config = new BreakdownConfig();
-// → app.yml と .agent/breakdown/config/user.yml を読み込み
+// → {ベースディレクトリ}/.agent/breakdown/config/app.yml と {working_dir}/.agent/breakdown/config/user.yml を読み込み
 
-// カスタム設定の読み込み
+// 名前付きプロファイルの読み込み
 let devConfig = new BreakdownConfig("development");
-// → development-app.yml と .agent/breakdown/config/development-user.yml を読み込み
+// → {ベースディレクトリ}/.agent/breakdown/config/development-app.yml と {working_dir}/.agent/breakdown/config/development-user.yml を読み込み
 
 let prodConfig = new BreakdownConfig("production");
-// → production-app.yml と .agent/breakdown/config/production-user.yml を読み込み
+// → {ベースディレクトリ}/.agent/breakdown/config/production-app.yml と {working_dir}/.agent/breakdown/config/production-user.yml を読み込み
 ```
 
 #### ファイル命名規則
 
-| 設定セット名         | アプリ設定ファイル    | ユーザー設定ファイル                           |
+| 設定プロファイル名         | アプリケーション設定ファイル    | ユーザー設定ファイル                           |
 | -------------------- | --------------------- | ---------------------------------------------- |
-| 未指定（デフォルト） | `app.yml`             | `.agent/breakdown/config/user.yml`             |
-| "development"        | `development-app.yml` | `.agent/breakdown/config/development-user.yml` |
-| "production"         | `production-app.yml`  | `.agent/breakdown/config/production-user.yml`  |
-| "{custom}"           | `{custom}-app.yml`    | `.agent/breakdown/config/{custom}-user.yml`    |
+| 未指定（デフォルトプロファイル） | `{ベースディレクトリ}/.agent/breakdown/config/app.yml`             | `{working_dir}/.agent/breakdown/config/user.yml`             |
+| "development"        | `{ベースディレクトリ}/.agent/breakdown/config/development-app.yml` | `{working_dir}/.agent/breakdown/config/development-user.yml` |
+| "production"         | `{ベースディレクトリ}/.agent/breakdown/config/production-app.yml`  | `{working_dir}/.agent/breakdown/config/production-user.yml`  |
+| "{任意の名前}"           | `{ベースディレクトリ}/.agent/breakdown/config/{任意の名前}-app.yml`    | `{working_dir}/.agent/breakdown/config/{任意の名前}-user.yml`    |
 
 #### 抽象化レベルでの解釈
 
-**設定セット識別子の概念**：
+**設定プロファイル識別子の概念**：
 
-- **未指定時**: デフォルト設定セット（プレフィックスなし）として扱う
-- **指定時**: カスタム設定セット（指定文字列をプレフィックス）として扱う
-- **プレフィックス適用ルール**: `{prefix}-{type}.yml` の形式で両ファイルに一貫適用
+- **未指定時**: デフォルトプロファイル（プロファイルプレフィックスなし）として扱う
+- **指定時**: 名前付きプロファイル（指定文字列をプロファイルプレフィックスとする）として扱う
+- **プロファイルプレフィックス適用ルール**: `{プロファイルプレフィックス}-{type}.yml` の形式で両ファイルに一貫適用
 
-この設計により、設定ファイルの命名と読み込みロジックを統一的に管理でき、新しい設定セットの追加が容易になる。
+この設計により、設定ファイルの命名と読み込みロジックを統一的に管理でき、新しい設定プロファイルの追加が容易になる。
 
 BreakdownConfig は2種類の設定ファイルを読み込み、統合する。
 
 例えば、
 
 ```typescript
-// デフォルト設定の場合
+// デフォルトプロファイルの場合
 let config = new BreakdownConfig();
-// → app.yml と user.yml を読み込み
+// → {ベースディレクトリ}/.agent/breakdown/config/app.yml と {working_dir}/.agent/breakdown/config/user.yml を読み込み
 
-// カスタム設定の場合
+// 名前付きプロファイルの場合
 let devConfig = new BreakdownConfig("development");
-// → development-app.yml と development-user.yml を読み込み
+// → {ベースディレクトリ}/.agent/breakdown/config/development-app.yml と {working_dir}/.agent/breakdown/config/development-user.yml を読み込み
 ```
 
-と宣言した config は、指定された設定セットのアプリ設定ファイルを読み込み、その後対応するユーザー設定ファイルを読み込む。
-設定値は、アプリ設定よりもユーザー設定を優先する。（アプリ設定値をユーザー設定値で上書きする）
+と宣言した config は、指定された設定プロファイルのアプリケーション設定ファイルを読み込み、その後対応するユーザー設定ファイルを読み込む。
+設定値は、アプリケーション設定ファイルよりもユーザー設定ファイルを優先する。（アプリケーション設定値をユーザー設定値で上書きする）
 
 ### 設定ごとの仕様説明
 
@@ -161,48 +162,50 @@ let devConfig = new BreakdownConfig("development");
 
 # 設定ファイルの読み込み
 
-## デフォルト設定の読み込み
+## デフォルトプロファイルの読み込み
 
-1. **アプリ設定（app.yml）**
+1. **アプリケーション設定ファイル（app.yml）**
 
+- パス `{ベースディレクトリ}/.agent/breakdown/config/app.yml` から読み込み
 - 必須。省略できない。
 - 設定ファイルが存在しない場合はエラーで終了する。
-- `working_dir` 設定がユーザー設定の起点ディレクトリとなる。
+- `working_dir` 設定がユーザー設定ファイルの起点ディレクトリとなる。
 
-2. **ユーザー設定（user.yml）**
+2. **ユーザー設定ファイル（user.yml）**
 
-- 固定パス `.agent/breakdown/config/user.yml` から読み込み
+- パス `{working_dir}/.agent/breakdown/config/user.yml` から読み込み
 - 存在がなくても正常処理とする。（warning出力を行うのみ）
-- 設定値を読み込み、同一キーのアプリ設定値を上書きする。
-  - ユーザー設定は必要な設定のみ記述できる。全ての項目が任意である。
+- 設定値を読み込み、同一キーのアプリケーション設定値を上書きする。
+  - ユーザー設定ファイルは必要な設定のみ記述できる。全ての項目が任意である。
 
-## カスタム設定の読み込み
+## 名前付きプロファイルの読み込み
 
-1. **カスタムアプリ設定（{prefix}-app.yml）**
+1. **アプリケーション設定ファイル（{プロファイルプレフィックス}-app.yml）**
 
+- パス `{ベースディレクトリ}/.agent/breakdown/config/{プロファイルプレフィックス}-app.yml` から読み込み
 - 必須。省略できない。
 - 設定ファイルが存在しない場合はエラーで終了する。
-- `working_dir` 設定がユーザー設定の起点ディレクトリとなる。
-- プレフィックスはコンストラクタで指定された設定セット名を使用。
+- `working_dir` 設定がユーザー設定ファイルの起点ディレクトリとなる。
+- プロファイルプレフィックスはコンストラクタで指定された設定プロファイル名を使用。
 
-2. **カスタムユーザー設定（{prefix}-user.yml）**
+2. **ユーザー設定ファイル（{プロファイルプレフィックス}-user.yml）**
 
-- 固定パス `.agent/breakdown/config/{prefix}-user.yml` から読み込み
+- パス `{working_dir}/.agent/breakdown/config/{プロファイルプレフィックス}-user.yml` から読み込み
 - 存在がなくても正常処理とする。（warning出力を行うのみ）
-- 設定値を読み込み、同一キーのアプリ設定値を上書きする。
-  - ユーザー設定は必要な設定のみ記述できる。全ての項目が任意である。
+- 設定値を読み込み、同一キーのアプリケーション設定値を上書きする。
+  - ユーザー設定ファイルは必要な設定のみ記述できる。全ての項目が任意である。
 
-## 設定セットの選択ルール
+## 設定プロファイルの選択ルール
 
-- **未指定時**: デフォルト設定セット（app.yml, user.yml）を使用
-- **指定時**: 指定されたプレフィックスを持つカスタム設定セット（{prefix}-app.yml, {prefix}-user.yml）を使用
-- **プレフィックス制約**: 英数字とハイフンのみ使用可能（例：development, prod-v2）
+- **未指定時**: デフォルトプロファイル（{ベースディレクトリ}/.agent/breakdown/config/app.yml, {working_dir}/.agent/breakdown/config/user.yml）を使用
+- **指定時**: 指定されたプロファイルプレフィックスを持つ名前付きプロファイル（{ベースディレクトリ}/.agent/breakdown/config/{プロファイルプレフィックス}-app.yml, {working_dir}/.agent/breakdown/config/{プロファイルプレフィックス}-user.yml）を使用
+- **プロファイルプレフィックス制約**: 英数字とハイフンのみ使用可能（例：development, prod-v2）
 
 ## 設定ファイルの作成責任
 
-- `new BreakdownConfig()` または `new BreakdownConfig("{prefix}")` したアプリケーションが責任を持って初期ファイル作成する。
+- `new BreakdownConfig()` または `new BreakdownConfig("{プロファイル名}")` したアプリケーションが責任を持って初期ファイル作成する。
   - アプリケーションが必要な設定値を知るために、BreakdownConfigはデフォルト値を返すことはできる（ファイルは作成しない）。
-  - カスタム設定の場合も同様に、アプリケーション側で対応する設定ファイルを作成する責任を持つ。
+  - 名前付きプロファイルの場合も同様に、アプリケーション側で対応する設定ファイルを作成する責任を持つ。
 
 ## 設定値の統合責任
 
