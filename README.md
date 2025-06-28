@@ -4,17 +4,19 @@ A Deno library for managing application and user configurations. This library pr
 
 ## Features
 
-- Load and validate application configuration from a fixed location
-- Load optional user configuration from a working directory
-- Validate configuration structure and paths
-- Merge user settings with application defaults with clear override rules
-- Type-safe configuration handling
+- Load and validate application configuration from a fixed location (`./.agent/breakdown/config/`)
+- Load optional user configuration from the same location
+- Support for environment-specific configurations (prefixes)
+- Configuration structure and path validation
+- Merge user configuration with application defaults using clear override rules
+- Type-safe configuration processing
 - Path safety validation
 - Centralized error management
 
 ## Architecture
 
 ### Component Structure
+
 ```mermaid
 graph LR
     subgraph Core
@@ -50,11 +52,12 @@ import { BreakdownConfig } from "https://jsr.io/@tettuan/breakdownconfig";
 ## Usage
 
 ### Basic Usage
+
 ```typescript
 // Create a new configuration instance
 const config = new BreakdownConfig();
 
-// Load both application and user configurations
+// Load application and user configurations
 await config.loadConfig();
 
 // Get the merged configuration
@@ -71,30 +74,30 @@ constructor(configSetName?: string, baseDir?: string)
 
 #### Parameter Details
 
-- **`configSetName`** (optional): Environment or configuration set name
+- **`configSetName`** (optional): Environment name or configuration set name
   - Used to load environment-specific configuration files
-  - Example: `"production"`, `"staging"`, `"development"`
+  - Examples: `"production"`, `"staging"`, `"development"`
   - When specified, loads `{configSetName}-app.yml` and `{configSetName}-user.yml`
 
 - **`baseDir`** (optional): Base directory for configuration files
-  - Defaults to current working directory (`""`)
+  - Defaults to the current working directory (`""`)
   - Configuration files are loaded from `{baseDir}/.agent/breakdown/config/`
 
 #### Usage Examples
 
 ```typescript
-// Default usage - loads app.yml and user.yml from current directory
+// Default usage - load app.yml and user.yml from current directory
 const config = new BreakdownConfig();
 
 // Environment-specific configuration
 const prodConfig = new BreakdownConfig("production");
 // Loads: production-app.yml and production-user.yml
 
-// Custom base directory with default configuration set
+// Default configuration set with custom base directory
 const customConfig = new BreakdownConfig(undefined, "/path/to/project");
 // Loads: /path/to/project/.agent/breakdown/config/app.yml
 
-// Environment-specific with custom base directory
+// Environment-specific + custom base directory
 const envConfig = new BreakdownConfig("staging", "/path/to/project");
 // Loads: /path/to/project/.agent/breakdown/config/staging-app.yml
 ```
@@ -104,21 +107,58 @@ const envConfig = new BreakdownConfig("staging", "/path/to/project");
 ⚠️ **Constructor parameter order changed in v1.2.0**
 
 ```typescript
-// Before v1.2.0 (deprecated)
-new BreakdownConfig("/path/to/project", "production") // ❌ Will break
+// v1.2.0 and earlier (deprecated)
+new BreakdownConfig("/path/to/project", "production"); // ❌ Does not work
 
-// v1.2.0+ (current)
-new BreakdownConfig("production", "/path/to/project") // ✅ Correct
+// v1.2.0 and later (current)
+new BreakdownConfig("production", "/path/to/project"); // ✅ Correct
 
 // These remain unchanged (backward compatible)
-new BreakdownConfig()                    // ✅ Still works
-new BreakdownConfig("production")        // ✅ Still works
+new BreakdownConfig(); // ✅ Still works
+new BreakdownConfig("production"); // ✅ Still works
+```
+
+### Configuration File Loading Locations
+
+#### Default Paths
+
+When no arguments are specified, BreakdownConfig loads configuration files from the following fixed paths:
+
+```typescript
+// With no arguments
+const config = new BreakdownConfig();
+// → Loads from current directory's ./.agent/breakdown/config/
+```
+
+**Files loaded**:
+
+- Application configuration: `./.agent/breakdown/config/app.yml` (required)
+- User configuration: `./.agent/breakdown/config/user.yml` (optional)
+
+#### Custom Base Directory
+
+When a base directory is specified:
+
+```typescript
+const config = new BreakdownConfig(undefined, "/path/to/project");
+// → Loads from /path/to/project/.agent/breakdown/config/
+```
+
+#### Environment-Specific Configuration
+
+When a configuration set name is specified:
+
+```typescript
+const config = new BreakdownConfig("production");
+// → Loads from ./.agent/breakdown/config/production-app.yml and production-user.yml
 ```
 
 ### Configuration Structure
 
 #### Application Configuration (Required)
-Located at `./.agent/breakdown/config/app.yml`:
+
+**Default configuration**: `./.agent/breakdown/config/app.yml`
+**Environment-specific configuration**: `./.agent/breakdown/config/{prefix}-app.yml`
 
 ```yaml
 working_dir: "./.agent/breakdown"
@@ -129,7 +169,9 @@ app_schema:
 ```
 
 #### User Configuration (Optional)
-Located at `$working_dir/config/user.yml`:
+
+**Default configuration**: `./.agent/breakdown/config/user.yml`
+**Environment-specific configuration**: `./.agent/breakdown/config/{prefix}-user.yml`
 
 ```yaml
 app_prompt:
@@ -138,13 +180,45 @@ app_schema:
   base_dir: "./schema/user"
 ```
 
-### Configuration Merging Rules
+**Important**:
 
-1. User settings override application settings
+- Both application and user configurations are placed in the same directory (`./.agent/breakdown/config/`)
+- User configuration is always loaded from the fixed location, regardless of the working_dir setting value
+- If configuration files don't exist, application configuration is required and will cause an error, but user configuration is optional and will work normally
+
+### Configuration Merge Rules
+
+1. User configuration overrides application configuration
 2. For nested configurations:
-   - Override occurs at the highest level of existing user config keys
+   - Override occurs at the top level of existing user configuration keys
    - Lower-level items are preserved unless explicitly overridden
-   - Items are only deleted when explicitly set to null
+   - Items are only removed when explicitly set to null
+
+### Environment-Specific Configuration (Prefixes)
+
+You can manage environment-specific or scenario-specific configurations by specifying a configuration set name (prefix):
+
+```typescript
+// Default configuration: uses app.yml and user.yml
+const defaultConfig = new BreakdownConfig();
+
+// Production environment configuration: uses production-app.yml and production-user.yml
+const prodConfig = new BreakdownConfig("production");
+
+// Development environment configuration: uses development-app.yml and development-user.yml
+const devConfig = new BreakdownConfig("development");
+```
+
+#### File Naming Convention
+
+| Configuration Set Name | App Configuration File | User Configuration File |
+| ---------------------- | ---------------------- | ----------------------- |
+| Unspecified (default)  | `app.yml`              | `user.yml`              |
+| "production"           | `production-app.yml`   | `production-user.yml`   |
+| "development"          | `development-app.yml`  | `development-user.yml`  |
+| "{custom}"             | `{custom}-app.yml`     | `{custom}-user.yml`     |
+
+All files are placed in the `./.agent/breakdown/config/` directory.
 
 ## Error Handling
 
@@ -152,27 +226,27 @@ The library implements comprehensive error handling:
 
 ```typescript
 enum ErrorCode {
-    // Configuration File Errors (1000s)
-    APP_CONFIG_NOT_FOUND = "ERR1001",
-    APP_CONFIG_INVALID = "ERR1002",
-    USER_CONFIG_INVALID = "ERR1003",
-    
-    // Required Field Errors (2000s)
-    REQUIRED_FIELD_MISSING = "ERR2001",
-    INVALID_FIELD_TYPE = "ERR2002",
-    
-    // Path Validation Errors (3000s)
-    INVALID_PATH_FORMAT = "ERR3001",
-    PATH_TRAVERSAL_DETECTED = "ERR3002",
-    ABSOLUTE_PATH_NOT_ALLOWED = "ERR3003"
+  // Configuration file errors (1000s)
+  APP_CONFIG_NOT_FOUND = "ERR1001",
+  APP_CONFIG_INVALID = "ERR1002",
+  USER_CONFIG_INVALID = "ERR1003",
+
+  // Required field errors (2000s)
+  REQUIRED_FIELD_MISSING = "ERR2001",
+  INVALID_FIELD_TYPE = "ERR2002",
+
+  // Path validation errors (3000s)
+  INVALID_PATH_FORMAT = "ERR3001",
+  PATH_TRAVERSAL_DETECTED = "ERR3002",
+  ABSOLUTE_PATH_NOT_ALLOWED = "ERR3003",
 }
 ```
 
 ## Use Cases
 
-### 1. Multiple Configuration Sets Management
+### 1. Multiple Configuration Set Management
 
-Manage different configuration sets for various purposes - environments, features, clients, or any categorization that suits your application needs:
+You can manage different configuration sets for various purposes - environments, features, clients, or any classification that fits your application needs:
 
 ```typescript
 // Environment-based configurations
@@ -196,7 +270,8 @@ await premiumConfig.loadConfig();
 await clientAConfig.loadConfig();
 ```
 
-**Configuration Files Examples:**
+**Example configuration files:**
+
 - **Environment sets:** `development-app.yml`, `production-app.yml`, `staging-app.yml`
 - **Feature sets:** `basic-features-app.yml`, `premium-features-app.yml`
 - **Client sets:** `client-a-app.yml`, `client-b-app.yml`
@@ -218,7 +293,8 @@ const settings = agentConfig.getConfig();
 // Use settings.working_dir for agent workspace
 ```
 
-**Application Configuration (app.yml):**
+**Application configuration (app.yml):**
+
 ```yaml
 working_dir: "./.agent/breakdown"
 app_prompt:
@@ -233,14 +309,15 @@ app_schema:
     - "output.json"
 ```
 
-**User Configuration (user.yml):**
+**User configuration (user.yml):**
+
 ```yaml
 app_prompt:
-  base_dir: "./custom/prompts"  # Override prompt location
+  base_dir: "./custom/prompts" # Override prompt location
   custom_templates:
     - "my_template.md"
 app_schema:
-  strict_validation: false      # Add custom settings
+  strict_validation: false # Add custom setting
 ```
 
 ### 3. Multi-Project Configuration
@@ -252,7 +329,7 @@ Manage configurations for multiple projects from a single codebase:
 const projectA = new BreakdownConfig("project-a", "/workspace/project-a");
 await projectA.loadConfig();
 
-// Project B configuration  
+// Project B configuration
 const projectB = new BreakdownConfig("project-b", "/workspace/project-b");
 await projectB.loadConfig();
 
@@ -263,20 +340,21 @@ await sharedConfig.loadConfig();
 
 ### 4. Team-Based Configuration Overrides
 
-Allow team members to customize application behavior without affecting shared settings:
+Allow team members to customize application behavior without affecting shared configurations:
 
 ```typescript
 // Base team configuration
 const teamConfig = new BreakdownConfig("team");
 await teamConfig.loadConfig();
 
-// Individual team member can override with user.yml:
+// Individual team members can override in user.yml:
 // - Custom working directories
-// - Personal prompt preferences  
+// - Personal prompt preferences
 // - Development-specific settings
 ```
 
-**Team Configuration (team-app.yml):**
+**Team configuration (team-app.yml):**
+
 ```yaml
 working_dir: "./team-workspace"
 app_prompt:
@@ -287,25 +365,26 @@ app_schema:
   strict_mode: true
 ```
 
-**User Override (team-user.yml):**
+**User overrides (team-user.yml):**
+
 ```yaml
 app_prompt:
-  style: "casual"              # Personal preference
-  custom_dir: "./my-prompts"   # Additional prompts
+  style: "casual" # Personal preference
+  custom_dir: "./my-prompts" # Additional prompts
 app_schema:
-  strict_mode: false           # Relaxed validation for development
+  strict_mode: false # Relaxed validation for development
 ```
 
 ### 5. Configuration Testing and Validation
 
-Test different configuration scenarios in automated testing:
+Test different configuration scenarios in automated tests:
 
 ```typescript
 // Test with minimal configuration
 const minimalConfig = new BreakdownConfig();
 await minimalConfig.loadConfig();
 
-// Test with full feature configuration
+// Test with full-featured configuration
 const fullConfig = new BreakdownConfig("full-features");
 await fullConfig.loadConfig();
 
@@ -325,7 +404,7 @@ assert(settings.app_schema.base_dir);
 Load different configurations based on runtime conditions:
 
 ```typescript
-// Load configuration based on environment variable
+// Load configuration based on environment variables
 const env = Deno.env.get("APP_ENV") || "development";
 const config = new BreakdownConfig(env);
 await config.loadConfig();
@@ -344,21 +423,22 @@ await deployConfig.loadConfig();
 
 ### 7. Configuration Inheritance and Layering
 
-Create configuration hierarchies with inheritance:
+Create configuration hierarchies using inheritance:
 
 ```typescript
 // Base configuration
 const baseConfig = new BreakdownConfig("base");
 await baseConfig.loadConfig();
 
-// Feature-specific configuration that extends base
+// Feature-specific configuration extending base
 const featureConfig = new BreakdownConfig("feature-x");
 await featureConfig.loadConfig();
-// feature-x-app.yml can reference base settings
-// feature-x-user.yml provides user customizations
+// feature-x-app.yml can reference base configuration
+// feature-x-user.yml provides user customization
 ```
 
-**Base Configuration (base-app.yml):**
+**Base configuration (base-app.yml):**
+
 ```yaml
 working_dir: "./.agent/breakdown"
 app_prompt:
@@ -368,25 +448,28 @@ app_prompt:
     - "footer.md"
 ```
 
-**Feature Configuration (feature-x-app.yml):**
+**Feature configuration (feature-x-app.yml):**
+
 ```yaml
-working_dir: "./.agent/breakdown"  # Inherited
+working_dir: "./.agent/breakdown" # Inherited
 app_prompt:
-  base_dir: "./.agent/breakdown/prompts/feature-x"  # Override
-  common_templates:                # Inherited from base
+  base_dir: "./.agent/breakdown/prompts/feature-x" # Override
+  common_templates: # Inherited from base
     - "header.md"
     - "footer.md"
-  feature_templates:               # Additional templates
+  feature_templates: # Additional templates
     - "feature-x-prompt.md"
 ```
 
 ## Examples
 
-This repository includes two examples demonstrating the library's usage:
+This repository includes two examples demonstrating library usage:
 
 ### 1. Configuration Example (config-example)
-A sample demonstrating basic configuration file loading and usage:
-- Application configuration loading
+
+A sample showing basic configuration file loading and usage.
+
+- Loading application configuration
 - Path validation and resolution
 - Error handling
 - Log output
@@ -394,8 +477,10 @@ A sample demonstrating basic configuration file loading and usage:
 See [examples/config-example/README.md](./examples/config-example/README.md) for details.
 
 ### 2. Prompt Manager (prompt-manager)
-A multi-prompt management application sample:
-- Prompt and schema file management
+
+A sample multi-prompt management application.
+
+- Managing prompt and schema files
 - Integration of application and user configurations
 - Automatic directory structure generation
 - Error handling
@@ -407,9 +492,10 @@ See [examples/prompt-manager/README.md](./examples/prompt-manager/README.md) for
 
 ### Running Tests
 
-Tests are structured hierarchically:
+Tests are organized hierarchically:
+
 1. Basic functionality tests
-2. Core feature tests
+2. Core functionality tests
 3. Edge case tests
 4. Error case tests
 
@@ -428,6 +514,12 @@ deno check src/mod.ts
 ```bash
 deno lint
 ```
+
+### Test Coverage Requirements
+
+- Statement coverage: 90% or higher
+- Branch coverage: 85% or higher
+- Function coverage: 95% or higher
 
 ## License
 

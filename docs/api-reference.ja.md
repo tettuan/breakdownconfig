@@ -2,13 +2,13 @@
 
 ## Overview
 
-BreakdownConfig adopts type-safe Result types and provides error handling based on Total Function design.
+BreakdownConfig は型安全なResult型を採用し、Total Function設計に基づいたエラーハンドリングを提供します。
 
 ## Core Types
 
 ### Result<T, E>
 
-All APIs return Result type, explicitly expressing success and failure.
+すべてのAPIはResult型を返し、成功と失敗を明示的に表現します。
 
 ```typescript
 type Result<T, E = UnifiedError> = Success<T> | Failure<E>;
@@ -26,7 +26,7 @@ type Failure<E> = {
 
 ### UnifiedError
 
-Unified error type enables type-safe error handling.
+統一されたエラー型により、型安全なエラーハンドリングが可能です。
 
 ```typescript
 type UnifiedError =
@@ -35,14 +35,14 @@ type UnifiedError =
   | ConfigValidationError
   | PathValidationError
   | UnknownError;
-// ... other error types
+// ... その他のエラー型
 ```
 
 ## Main APIs
 
 ### ConfigManager
 
-Main class for loading and managing configurations.
+設定の読み込みと管理を行うメインクラスです。
 
 #### Constructor
 
@@ -57,13 +57,13 @@ constructor(
 
 ##### getConfig()
 
-Loads and merges configurations, returning the result.
+設定を読み込み、マージした結果を返します。
 
 ```typescript
 async getConfig(): Promise<Result<MergedConfig, UnifiedError>>
 ```
 
-**Usage example:**
+**使用例:**
 
 ```typescript
 const configManager = new ConfigManager(appLoader, userLoader);
@@ -80,17 +80,17 @@ if (Result.isOk(result)) {
 
 ### BreakdownConfig (Static API)
 
-Provides convenient access through static methods.
+静的メソッドによる簡便なアクセスを提供します。
 
 #### loadConfig()
 
-Loads configuration using default loaders.
+デフォルトローダーを使用して設定を読み込みます。
 
 ```typescript
 static async loadConfig(): Promise<Result<MergedConfig, UnifiedError>>
 ```
 
-**Usage example:**
+**使用例:**
 
 ```typescript
 const result = await BreakdownConfig.loadConfig();
@@ -105,27 +105,27 @@ Result.map(result, (config) => {
 
 #### errorManager
 
-Provides integrated error management system.
+統合エラー管理システムを提供します。
 
 ```typescript
-// Get error message (internationalization support)
+// エラーメッセージの取得（国際化対応）
 errorManager.getUserMessage(error: UnifiedError, language?: SupportedLanguage): string
 
-// Get debug information
+// デバッグ情報の取得
 errorManager.getDebugMessage(error: UnifiedError): string
 
-// Output error log
+// エラーログ出力
 errorManager.logError(error: UnifiedError, severity?: ErrorSeverity): void
 ```
 
-**Usage example:**
+**使用例:**
 
 ```typescript
-// Get error message in Japanese
+// 日本語でエラーメッセージを取得
 errorManager.setLanguage("ja");
 const message = errorManager.getUserMessage(error);
 
-// Get error details
+// エラー詳細情報を取得
 const details = errorManager.getErrorDetails(error);
 console.log("Title:", details.userFacing.title);
 console.log("Suggestion:", details.userFacing.suggestion);
@@ -135,7 +135,7 @@ console.log("Suggestion:", details.userFacing.suggestion);
 
 ### AppConfigLoader
 
-Loader for application configuration.
+アプリケーション設定を読み込むローダーです。
 
 ```typescript
 class AppConfigLoader extends SafeConfigLoader<AppConfig> {
@@ -145,7 +145,7 @@ class AppConfigLoader extends SafeConfigLoader<AppConfig> {
 
 ### UserConfigLoader
 
-Loader for user configuration.
+ユーザー設定を読み込むローダーです。
 
 ```typescript
 class UserConfigLoader extends SafeConfigLoader<UserConfig> {
@@ -157,39 +157,39 @@ class UserConfigLoader extends SafeConfigLoader<UserConfig> {
 
 ### Result Helper Functions
 
-Helper functions for manipulating Result types.
+Result型を操作するためのヘルパー関数群です。
 
 ```typescript
-// Create success result
+// 成功結果の作成
 Result.ok<T>(data: T): Success<T>
 
-// Create failure result
+// 失敗結果の作成
 Result.err<E>(error: E): Failure<E>
 
-// Type guards
+// 型ガード
 Result.isOk<T, E>(result: Result<T, E>): result is Success<T>
 Result.isErr<T, E>(result: Result<T, E>): result is Failure<E>
 
-// Mapping
+// マッピング
 Result.map<T, U, E>(result: Result<T, E>, fn: (data: T) => U): Result<U, E>
 Result.mapErr<T, E, F>(result: Result<T, E>, fn: (error: E) => F): Result<T, F>
 
-// Chain operations
+// チェイン操作
 Result.flatMap<T, U, E>(result: Result<T, E>, fn: (data: T) => Result<U, E>): Result<U, E>
 
-// Default values
+// デフォルト値
 Result.unwrapOr<T, E>(result: Result<T, E>, defaultValue: T): T
 
-// Combine multiple Results
+// 複数Result統合
 Result.all<T, E>(results: Result<T, E>[]): Result<T[], E>
 ```
 
 ### Error Factory Functions
 
-Type-safe error generation functions.
+型安全なエラー生成関数です。
 
 ```typescript
-// ConfigManager-specific errors
+// ConfigManager専用エラー
 ConfigManagerErrors.configFileNotFound(path: string, configType: "app" | "user"): UnifiedError
 ConfigManagerErrors.configParseError(path: string, syntaxError: string): UnifiedError
 ConfigManagerErrors.configValidationError(path: string, fieldErrors: ValidationError[]): UnifiedError
@@ -200,7 +200,7 @@ ConfigManagerErrors.pathValidationError(path: string, reason: PathErrorReason): 
 
 ### MergedConfig
 
-Type definition for merged configuration.
+マージされた設定の型定義です。
 
 ```typescript
 interface MergedConfig {
@@ -219,7 +219,7 @@ interface MergedConfig {
 
 ### ConfigError Types
 
-Detailed type definitions for various errors.
+各種エラーの詳細型定義です。
 
 ```typescript
 interface ConfigFileNotFoundError {
@@ -315,6 +315,6 @@ return Result.err(error);
 
 4. **Set appropriate language for error messages**
    ```typescript
-   errorManager.setLanguage("ja"); // Japanese
+   errorManager.setLanguage("ja"); // 日本語
    const userMessage = errorManager.getUserMessage(error);
    ```
