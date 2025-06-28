@@ -1,9 +1,40 @@
 import { AppConfigLoader } from "./loaders/app_config_loader.ts";
 import { UserConfigLoader } from "./loaders/user_config_loader.ts";
 import type { AppConfig } from "./types/app_config.ts";
-import type { UserConfig } from "./types/user_config.ts";
+import type { LegacyUserConfig, UserConfig } from "./types/user_config.ts";
+import { UserConfigFactory, UserConfigGuards } from "./types/user_config.ts";
 import type { MergedConfig } from "./types/merged_config.ts";
-import { ErrorCode, ErrorManager } from "./error_manager.ts";
+import { Result } from "./types/unified_result.ts";
+import { ErrorFactories, UnifiedError } from "./errors/unified_errors.ts";
+import type { ValidationError } from "./types/config_result.ts";
+
+/**
+ * Discriminated Union for AppConfig state management
+ */
+type AppConfigState =
+  | { kind: "uninitialized" }
+  | { kind: "loading" }
+  | { kind: "loaded"; data: AppConfig }
+  | { kind: "error"; error: UnifiedError };
+
+/**
+ * Discriminated Union for UserConfig state management
+ */
+type UserConfigState =
+  | { kind: "uninitialized" }
+  | { kind: "loading" }
+  | { kind: "loaded"; data: UserConfig }
+  | { kind: "not_found" }
+  | { kind: "error"; error: UnifiedError };
+
+/**
+ * Discriminated Union for overall configuration state
+ */
+type ConfigManagerState =
+  | { kind: "uninitialized" }
+  | { kind: "loading" }
+  | { kind: "loaded"; config: MergedConfig }
+  | { kind: "error"; error: UnifiedError };
 
 /**
  * Manages the loading and merging of application and user configurations.
@@ -20,14 +51,9 @@ import { ErrorCode, ErrorManager } from "./error_manager.ts";
  * ```
  */
 export class ConfigManager {
-  private appConfig: AppConfig | null = null;
-  private userConfig: UserConfig | null = null;
-  private isLoaded = false;
-  private config: MergedConfig = {
-    working_dir: "",
-    app_prompt: { base_dir: "" },
-    app_schema: { base_dir: "" },
-  };
+  private appConfigState: AppConfigState = { kind: "uninitialized" };
+  private userConfigState: UserConfigState = { kind: "uninitialized" };
+  private managerState: ConfigManagerState = { kind: "uninitialized" };
 
   /**
    * Creates a new instance of ConfigManager.
@@ -41,6 +67,48 @@ export class ConfigManager {
   ) {}
 
   /**
+   * Gets the current state of the configuration manager
+   * @returns The current state
+   */
+  public getState(): ConfigManagerState {
+    return this.managerState;
+  }
+
+  /**
+   * Checks if the configuration is currently loaded
+   * @returns True if configuration is loaded, false otherwise
+   */
+  public isLoaded(): boolean {
+    return this.managerState.kind === "loaded";
+  }
+
+  /**
+   * Checks if the configuration is currently in an error state
+   * @returns True if in error state, false otherwise
+   */
+  public isInError(): boolean {
+    return this.managerState.kind === "error";
+  }
+
+  /**
+   * Checks if the configuration is currently loading
+   * @returns True if loading, false otherwise
+   */
+  public isLoading(): boolean {
+    return this.managerState.kind === "loading";
+  }
+
+  /**
+   * Resets the configuration manager state to uninitialized
+   * This forces a reload on the next access
+   */
+  public reset(): void {
+    this.managerState = { kind: "uninitialized" };
+    this.appConfigState = { kind: "uninitialized" };
+    this.userConfigState = { kind: "uninitialized" };
+  }
+
+  /**
    * Loads and merges the application and user configurations.
    * If configurations are already loaded, returns the cached result.
    *
@@ -48,21 +116,69 @@ export class ConfigManager {
    * @throws {Error} If the application configuration is invalid
    */
   public async getConfig(): Promise<MergedConfig> {
-    if (this.isLoaded) {
-      return this.config;
+    const result = await this.getConfigSafe();
+    if (result.success) {
+      return result.data;
+    } else {
+      throw new Error(
+        result.error && typeof result.error === "object" && "message" in result.error
+          ? result.error.message
+          : "Unknown error",
+      );
+    }
+  }
+
+  /**
+   * Loads and merges the application and user configurations (Result-based API).
+   * If configurations are already loaded, returns the cached result.
+   *
+   * @returns {Promise<Result<MergedConfig, UnifiedError>>} The merged configuration or error
+   */
+  public async getConfigSafe(): Promise<Result<MergedConfig, UnifiedError>> {
+    // Return cached result if already loaded
+    if (this.managerState.kind === "loaded") {
+      return Result.ok(this.managerState.config);
     }
 
+    // Return cached error if in error state
+    if (this.managerState.kind === "error") {
+      return Result.err(this.managerState.error);
+    }
+
+    // Set loading state
+    this.managerState = { kind: "loading" };
+
     try {
-      const appConfig = await this.loadAppConfig();
-      const userConfig = await this.loadUserConfig();
-      this.config = this.mergeConfigs(appConfig, userConfig);
-      this.isLoaded = true;
-      return this.config;
-    } catch (_error) {
-      if (_error instanceof Error) {
-        throw _error;
+      const appConfigResult = await this.loadAppConfigSafe();
+      if (!appConfigResult.success) {
+        this.managerState = { kind: "error", error: appConfigResult.error };
+        return appConfigResult;
       }
-      ErrorManager.throwError(ErrorCode.APP_CONFIG_INVALID, "Invalid application configuration");
+
+      const userConfigResult = await this.loadUserConfigSafe();
+      if (!userConfigResult.success) {
+        this.managerState = { kind: "error", error: userConfigResult.error };
+        return userConfigResult;
+      }
+
+      // Convert UserConfig back to legacy format for merging
+      const legacyUserConfig = UserConfigFactory.toLegacy(userConfigResult.data);
+      const mergeResult = this.mergeConfigs(appConfigResult.data, legacyUserConfig);
+      if (!mergeResult.success) {
+        this.managerState = { kind: "error", error: mergeResult.error };
+        return mergeResult;
+      }
+
+      // Update to loaded state
+      this.managerState = { kind: "loaded", config: mergeResult.data };
+      return Result.ok(mergeResult.data);
+    } catch (error) {
+      const unifiedError = ErrorFactories.unknown(
+        error ? error : new Error(String(error)),
+        "getConfigSafe",
+      );
+      this.managerState = { kind: "error", error: unifiedError };
+      return Result.err(unifiedError);
     }
   }
 
@@ -73,20 +189,84 @@ export class ConfigManager {
    * @throws {Error} If the application configuration is invalid
    */
   private async loadAppConfig(): Promise<AppConfig> {
+    const result = await this.loadAppConfigSafe();
+    if (result.success) {
+      return result.data;
+    } else {
+      throw new Error(
+        result.error && typeof result.error === "object" && "message" in result.error
+          ? result.error.message
+          : "Unknown error",
+      );
+    }
+  }
+
+  /**
+   * Loads the application configuration (Result-based API).
+   *
+   * @returns {Promise<Result<AppConfig, UnifiedError>>} The loaded application configuration or error
+   */
+  private async loadAppConfigSafe(): Promise<Result<AppConfig, UnifiedError>> {
+    // Return cached result if already loaded
+    if (this.appConfigState.kind === "loaded") {
+      return Result.ok(this.appConfigState.data);
+    }
+
+    // Return cached error if in error state
+    if (this.appConfigState.kind === "error") {
+      return Result.err(this.appConfigState.error);
+    }
+
+    // Set loading state
+    this.appConfigState = { kind: "loading" };
+
     try {
-      this.appConfig = await this.appConfigLoader.load();
-      if (!this.appConfig) {
-        ErrorManager.throwError(
-          ErrorCode.APP_CONFIG_NOT_FOUND,
-          "Application configuration file not found",
+      const result = await this.appConfigLoader.loadSafe();
+      if (result.success) {
+        this.appConfigState = { kind: "loaded", data: result.data };
+        return Result.ok(result.data);
+      }
+
+      // Convert ConfigError to UnifiedError
+      const error = result.error;
+      let unifiedError: UnifiedError;
+
+      if (error.kind === "fileNotFound") {
+        unifiedError = ErrorFactories.configFileNotFound(error.path, "app");
+      } else if (error.kind === "parseError") {
+        unifiedError = ErrorFactories.configParseError(
+          error.path,
+          error && typeof error === "object" && "message" in error
+            ? error.message
+            : "Unknown error",
+          error.line,
+          error.column,
+        );
+      } else if (error.kind === "configValidationError") {
+        const violations = error.errors.map((e: ValidationError) => ({
+          field: e.field,
+          value: e.value,
+          expectedType: e.expectedType,
+          actualType: typeof e.value,
+          constraint: e.message,
+        }));
+        unifiedError = ErrorFactories.configValidationError(error.path, violations);
+      } else {
+        unifiedError = ErrorFactories.unknown(
+          error ? error : new Error(String(error)),
+          "loadAppConfig",
         );
       }
-      return this.appConfig;
+
+      this.appConfigState = { kind: "error", error: unifiedError };
+      return Result.err(unifiedError);
     } catch (error) {
-      if (error instanceof Error) {
-        throw error;
-      }
-      ErrorManager.throwError(ErrorCode.APP_CONFIG_INVALID, "Invalid application configuration");
+      const unifiedError = ErrorFactories.unknown(
+        error ? error : new Error(String(error)),
+        "loadAppConfigSafe",
+      );
+      this.appConfigState = { kind: "error", error: unifiedError };
+      return Result.err(unifiedError);
     }
   }
 
@@ -96,16 +276,68 @@ export class ConfigManager {
    * @returns {Promise<UserConfig>} The loaded user configuration
    * @throws {Error} If the user configuration is invalid
    */
-  private async loadUserConfig(): Promise<UserConfig> {
+  private async loadUserConfig(): Promise<LegacyUserConfig> {
+    const result = await this.loadUserConfigSafe();
+    if (result.success) {
+      return result.data as unknown as LegacyUserConfig;
+    } else {
+      return {} as LegacyUserConfig;
+    }
+  }
+
+  /**
+   * Loads the user configuration (Result-based API).
+   *
+   * @returns {Promise<Result<UserConfig, UnifiedError>>} The loaded user configuration or error
+   */
+  private async loadUserConfigSafe(): Promise<Result<UserConfig, UnifiedError>> {
+    // Return cached result if already loaded
+    if (this.userConfigState.kind === "loaded") {
+      return Result.ok(this.userConfigState.data);
+    }
+
+    // Return empty config if already determined not found
+    if (this.userConfigState.kind === "not_found") {
+      return Result.ok(UserConfigFactory.createEmpty());
+    }
+
+    // Return cached error if in error state
+    if (this.userConfigState.kind === "error") {
+      return Result.err(this.userConfigState.error);
+    }
+
+    // Set loading state
+    this.userConfigState = { kind: "loading" };
+
     try {
-      this.userConfig = await this.userConfigLoader.load();
-      if (!this.userConfig) {
-        return {} as UserConfig; // Return empty config if not found
+      const result = await this.userConfigLoader.load();
+      if (result.success) {
+        // Check if user config data exists (not null)
+        if (result.data === null) {
+          // User config file doesn't exist, treat as empty
+          this.userConfigState = { kind: "not_found" };
+          return Result.ok(UserConfigFactory.createEmpty());
+        }
+
+        // For now, maintain backward compatibility with legacy format
+        const userData = result.data as unknown as LegacyUserConfig;
+        // Convert to new discriminated union format for internal state management
+        const discriminatedUserData = UserConfigFactory.fromLegacy(userData);
+        this.userConfigState = { kind: "loaded", data: discriminatedUserData };
+        // But return the legacy format for compatibility
+        return Result.ok(discriminatedUserData);
       }
-      return this.userConfig;
-    } catch (_error) {
-      // User config is optional, so we return empty config on error
-      return {} as UserConfig;
+
+      // User config is optional, so we treat failure as "not found"
+      this.userConfigState = { kind: "not_found" };
+      return Result.ok(UserConfigFactory.createEmpty());
+    } catch (error) {
+      const unifiedError = ErrorFactories.unknown(
+        error ? error : new Error(String(error)),
+        "loadUserConfigSafe",
+      );
+      this.userConfigState = { kind: "error", error: unifiedError };
+      return Result.err(unifiedError);
     }
   }
 
@@ -114,38 +346,301 @@ export class ConfigManager {
    * 1. User settings override application settings
    * 2. For nested configurations, override occurs at the highest level
    * 3. Lower-level items are preserved unless explicitly overridden
+   * 4. Uses type-safe state management with discriminated unions internally
+   * 5. Handles large configurations (10MB+) with thousands of config items
    *
    * @param appConfig - The application configuration
-   * @param userConfig - The user configuration (optional)
-   * @returns {MergedConfig} The merged configuration
+   * @param userConfig - The user configuration (legacy format)
+   * @returns {Result<MergedConfig, UnifiedError>} The merged configuration or error
    */
   private mergeConfigs(
     appConfig: AppConfig,
-    userConfig: UserConfig | null | undefined,
-  ): MergedConfig {
-    const mergedConfig: MergedConfig = {
-      working_dir: String(userConfig?.working_dir || appConfig.working_dir),
-      app_prompt: {
-        base_dir: userConfig?.app_prompt?.base_dir
-          ? String(userConfig.app_prompt.base_dir)
-          : String(appConfig.app_prompt.base_dir),
-      },
-      app_schema: {
-        base_dir: userConfig?.app_schema?.base_dir
-          ? String(userConfig.app_schema.base_dir)
-          : String(appConfig.app_schema.base_dir),
-      },
-    };
+    userConfig: LegacyUserConfig,
+  ): Result<MergedConfig, UnifiedError> {
+    try {
+      // Deep clone app config to avoid reference issues with large configs
+      const appConfigCopy = this.deepCloneConfig(appConfig as unknown as Record<string, unknown>);
 
-    // If userConfig exists, merge additional fields
-    if (userConfig) {
-      for (const [key, value] of Object.entries(userConfig)) {
-        if (!(key in mergedConfig)) {
-          mergedConfig[key] = String(value);
+      // Start with complete app config as base - ensuring ALL fields are preserved
+      const mergedConfig: MergedConfig = {
+        working_dir: String(appConfigCopy.working_dir || ""),
+        app_prompt: {
+          base_dir: this.safeGetBaseDir(appConfigCopy.app_prompt),
+          // Deep clone additional app_prompt fields to prevent reference issues
+          ...this.deepCloneNestedFields(appConfigCopy.app_prompt as Record<string, unknown>, [
+            "base_dir",
+          ]),
+        },
+        app_schema: {
+          base_dir: this.safeGetBaseDir(appConfigCopy.app_schema),
+          // Deep clone additional app_schema fields to prevent reference issues
+          ...this.deepCloneNestedFields(appConfigCopy.app_schema as Record<string, unknown>, [
+            "base_dir",
+          ]),
+        },
+      };
+
+      // Copy ALL additional fields from app config (handles large configs with thousands of items)
+      this.copyAdditionalFields(appConfigCopy, mergedConfig, [
+        "working_dir",
+        "app_prompt",
+        "app_schema",
+      ]);
+
+      // Apply user config overrides with proper type handling
+      this.applyUserConfigOverrides(userConfig, mergedConfig);
+
+      return Result.ok(mergedConfig);
+    } catch (error) {
+      return Result.err(ErrorFactories.configMergeError(error));
+    }
+  }
+
+  /**
+   * Safely extracts base_dir from configuration object following Total Function principle
+   * Always returns a string, never throws exceptions
+   *
+   * @param configObj - Configuration object that may contain base_dir
+   * @returns {string} The base_dir value or empty string if not found/invalid
+   */
+  private safeGetBaseDir(configObj: unknown): string {
+    // Handle null or undefined
+    if (configObj == null) {
+      return "";
+    }
+
+    // Ensure it's an object
+    if (typeof configObj !== "object") {
+      return "";
+    }
+
+    // Type-safe access to base_dir property
+    const obj = configObj as Record<string, unknown>;
+    const baseDir = obj.base_dir;
+
+    // Ensure base_dir is a string
+    if (typeof baseDir === "string") {
+      return baseDir;
+    }
+
+    // For any other type, return empty string (Total Function - no exceptions)
+    return "";
+  }
+
+  /**
+   * Deep clone configuration object to prevent reference issues
+   * Optimized for large configurations
+   */
+  private deepCloneConfig(config: Record<string, unknown>): Record<string, unknown> {
+    try {
+      return JSON.parse(JSON.stringify(config));
+    } catch (_error) {
+      // Fallback for non-serializable values
+      const clone: Record<string, unknown> = {};
+      for (const [key, value] of Object.entries(config)) {
+        if (value !== undefined && value !== null) {
+          clone[key] = typeof value === "object"
+            ? { ...(value as Record<string, unknown>) }
+            : value;
+        }
+      }
+      return clone;
+    }
+  }
+
+  /**
+   * Extract additional fields from nested config objects
+   */
+  private extractAdditionalFields(
+    obj: Record<string, unknown> | undefined,
+    excludeKeys: string[],
+  ): Record<string, unknown> {
+    if (!obj || typeof obj !== "object") return {};
+
+    const additional: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(obj)) {
+      if (!excludeKeys.includes(key) && value !== undefined) {
+        additional[key] = value;
+      }
+    }
+    return additional;
+  }
+
+  /**
+   * Deep clone nested fields from an object with exclusions
+   */
+  private deepCloneNestedFields(
+    obj: Record<string, unknown> | undefined,
+    excludeKeys: string[],
+  ): Record<string, unknown> {
+    if (!obj || typeof obj !== "object") return {};
+
+    const cloned: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(obj)) {
+      if (!excludeKeys.includes(key) && value !== undefined) {
+        // Deep clone complex objects to prevent reference issues
+        if (typeof value === "object" && value !== null) {
+          try {
+            cloned[key] = JSON.parse(JSON.stringify(value));
+          } catch {
+            cloned[key] = value;
+          }
+        } else {
+          cloned[key] = value;
+        }
+      }
+    }
+    return cloned;
+  }
+
+  /**
+   * Copy additional fields from source to target configuration
+   * Handles large numbers of config items efficiently
+   */
+  private copyAdditionalFields(
+    source: Record<string, unknown>,
+    target: MergedConfig,
+    excludeKeys: string[],
+  ): void {
+    const targetRecord = target as Record<string, unknown>;
+
+    for (const [key, value] of Object.entries(source)) {
+      if (!excludeKeys.includes(key) && value !== undefined) {
+        targetRecord[key] = value;
+      }
+    }
+  }
+
+  /**
+   * Apply user config overrides with proper nested object handling
+   */
+  private applyUserConfigOverrides(
+    userConfig: LegacyUserConfig,
+    mergedConfig: MergedConfig,
+  ): void {
+    // Convert legacy user config to discriminated union for safe access
+    const discriminatedUserConfig = UserConfigFactory.fromLegacy(userConfig);
+
+    // Handle app_prompt overrides using type guards
+    if (UserConfigGuards.hasPromptConfig(discriminatedUserConfig)) {
+      mergedConfig.app_prompt.base_dir = String(discriminatedUserConfig.app_prompt.base_dir);
+    }
+
+    // Apply additional app_prompt fields from user config with deep merge
+    if (UserConfigGuards.hasPromptConfig(discriminatedUserConfig)) {
+      const promptConfig = mergedConfig.app_prompt as Record<string, unknown>;
+
+      for (const [key, value] of Object.entries(discriminatedUserConfig.app_prompt)) {
+        if (key !== "base_dir" && value !== undefined) {
+          // For object values like templates, perform deep merge
+          if (
+            typeof value === "object" && value !== null &&
+            typeof promptConfig[key] === "object" && promptConfig[key] !== null
+          ) {
+            const existingObj = promptConfig[key] as Record<string, unknown>;
+            const userObj = value as Record<string, unknown>;
+
+            // Deep merge object properties
+            for (const [objKey, objValue] of Object.entries(userObj)) {
+              if (objValue !== undefined) {
+                existingObj[objKey] = objValue;
+              }
+            }
+          } else {
+            // For non-objects, simple replacement
+            promptConfig[key] = value;
+          }
         }
       }
     }
 
-    return mergedConfig;
+    // Handle app_schema overrides using type guards
+    if (UserConfigGuards.hasSchemaConfig(discriminatedUserConfig)) {
+      mergedConfig.app_schema.base_dir = String(discriminatedUserConfig.app_schema.base_dir);
+    }
+
+    // Apply additional app_schema fields from user config with deep merge
+    if (UserConfigGuards.hasSchemaConfig(discriminatedUserConfig)) {
+      const schemaConfig = mergedConfig.app_schema as Record<string, unknown>;
+      for (const [key, value] of Object.entries(discriminatedUserConfig.app_schema)) {
+        if (key !== "base_dir" && value !== undefined) {
+          // For object values, perform deep merge
+          if (
+            typeof value === "object" && value !== null &&
+            typeof schemaConfig[key] === "object" && schemaConfig[key] !== null
+          ) {
+            const existingObj = schemaConfig[key] as Record<string, unknown>;
+            const userObj = value as Record<string, unknown>;
+
+            // Deep merge object properties
+            for (const [objKey, objValue] of Object.entries(userObj)) {
+              if (objValue !== undefined) {
+                existingObj[objKey] = objValue;
+              }
+            }
+          } else {
+            // For non-objects, simple replacement
+            schemaConfig[key] = value;
+          }
+        }
+      }
+    }
+
+    // Apply all other user config fields with deep merge for objects
+    const mergedRecord = mergedConfig as Record<string, unknown>;
+    for (const [key, value] of Object.entries(userConfig)) {
+      if (key !== "app_prompt" && key !== "app_schema" && value !== undefined) {
+        // Handle special case for UserConfig internal fields
+        if (key === "kind" || key === "customFields") {
+          // Skip internal UserConfig structure fields - customFields should be expanded
+          if (key === "customFields" && typeof value === "object" && value !== null) {
+            // Expand customFields properties at the root level
+            const customFieldsObj = value as Record<string, unknown>;
+            for (const [customKey, customValue] of Object.entries(customFieldsObj)) {
+              if (customValue !== undefined) {
+                // Apply the same deep merge logic to custom fields
+                if (
+                  typeof customValue === "object" && customValue !== null &&
+                  typeof mergedRecord[customKey] === "object" && mergedRecord[customKey] !== null
+                ) {
+                  const existingObj = mergedRecord[customKey] as Record<string, unknown>;
+                  const userObj = customValue as Record<string, unknown>;
+
+                  // Deep merge object properties
+                  for (const [objKey, objValue] of Object.entries(userObj)) {
+                    if (objValue !== undefined) {
+                      existingObj[objKey] = objValue;
+                    }
+                  }
+                } else {
+                  // For non-objects, simple replacement
+                  mergedRecord[customKey] = customValue;
+                }
+              }
+            }
+          }
+          continue;
+        }
+
+        // For object values, perform deep merge instead of complete replacement
+        if (
+          typeof value === "object" && value !== null &&
+          typeof mergedRecord[key] === "object" && mergedRecord[key] !== null
+        ) {
+          const existingObj = mergedRecord[key] as Record<string, unknown>;
+          const userObj = value as Record<string, unknown>;
+
+          // Deep merge object properties
+          for (const [objKey, objValue] of Object.entries(userObj)) {
+            if (objValue !== undefined) {
+              existingObj[objKey] = objValue;
+            }
+          }
+        } else {
+          // For non-objects, simple replacement
+          mergedRecord[key] = value;
+        }
+      }
+    }
   }
 }

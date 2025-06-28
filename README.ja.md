@@ -16,6 +16,7 @@
 ## アーキテクチャ
 
 ### コンポーネント構造
+
 ```mermaid
 graph LR
     subgraph Core
@@ -51,6 +52,7 @@ import { BreakdownConfig } from "https://jsr.io/@tettuan/breakdownconfig";
 ## 使用方法
 
 ### 基本的な使用方法
+
 ```typescript
 // 新しい設定インスタンスを作成
 const config = new BreakdownConfig();
@@ -106,19 +108,20 @@ const envConfig = new BreakdownConfig("staging", "/path/to/project");
 
 ```typescript
 // v1.2.0以前（非推奨）
-new BreakdownConfig("/path/to/project", "production") // ❌ 動作しません
+new BreakdownConfig("/path/to/project", "production"); // ❌ 動作しません
 
 // v1.2.0以降（現在）
-new BreakdownConfig("production", "/path/to/project") // ✅ 正しい
+new BreakdownConfig("production", "/path/to/project"); // ✅ 正しい
 
 // これらは変更なし（後方互換性あり）
-new BreakdownConfig()                    // ✅ そのまま動作
-new BreakdownConfig("production")        // ✅ そのまま動作
+new BreakdownConfig(); // ✅ そのまま動作
+new BreakdownConfig("production"); // ✅ そのまま動作
 ```
 
 ### 設定ファイルの読み込み場所
 
 #### デフォルトパス
+
 BreakdownConfigは引数を指定しない場合、以下の固定パスから設定ファイルを読み込みます：
 
 ```typescript
@@ -128,10 +131,12 @@ const config = new BreakdownConfig();
 ```
 
 **読み込まれるファイル**:
+
 - アプリケーション設定: `./.agent/breakdown/config/app.yml` （必須）
 - ユーザー設定: `./.agent/breakdown/config/user.yml` （オプション）
 
 #### カスタムベースディレクトリ
+
 ベースディレクトリを指定した場合：
 
 ```typescript
@@ -140,6 +145,7 @@ const config = new BreakdownConfig(undefined, "/path/to/project");
 ```
 
 #### 環境固有設定
+
 設定セット名を指定した場合：
 
 ```typescript
@@ -150,6 +156,7 @@ const config = new BreakdownConfig("production");
 ### 設定構造
 
 #### アプリケーション設定（必須）
+
 **デフォルト設定**: `./.agent/breakdown/config/app.yml`
 **環境固有設定**: `./.agent/breakdown/config/{prefix}-app.yml`
 
@@ -162,6 +169,7 @@ app_schema:
 ```
 
 #### ユーザー設定（オプション）
+
 **デフォルト設定**: `./.agent/breakdown/config/user.yml`
 **環境固有設定**: `./.agent/breakdown/config/{prefix}-user.yml`
 
@@ -172,7 +180,8 @@ app_schema:
   base_dir: "./schema/user"
 ```
 
-**重要**: 
+**重要**:
+
 - アプリケーション設定とユーザー設定は同じディレクトリ（`./.agent/breakdown/config/`）に配置されます
 - ユーザー設定は、working_dirの設定値に関係なく、常に固定の場所から読み込まれます
 - 設定ファイルが存在しない場合、アプリケーション設定は必須のためエラーになりますが、ユーザー設定はオプションのため正常に動作します
@@ -202,12 +211,12 @@ const devConfig = new BreakdownConfig("development");
 
 #### ファイル命名規則
 
-| 設定セット名 | アプリ設定ファイル | ユーザー設定ファイル |
-|------------|-----------------|-------------------|
-| 未指定（デフォルト） | `app.yml` | `user.yml` |
-| "production" | `production-app.yml` | `production-user.yml` |
-| "development" | `development-app.yml` | `development-user.yml` |
-| "{custom}" | `{custom}-app.yml` | `{custom}-user.yml` |
+| 設定セット名         | アプリ設定ファイル    | ユーザー設定ファイル   |
+| -------------------- | --------------------- | ---------------------- |
+| 未指定（デフォルト） | `app.yml`             | `user.yml`             |
+| "production"         | `production-app.yml`  | `production-user.yml`  |
+| "development"        | `development-app.yml` | `development-user.yml` |
+| "{custom}"           | `{custom}-app.yml`    | `{custom}-user.yml`    |
 
 すべてのファイルは `./.agent/breakdown/config/` ディレクトリに配置されます。
 
@@ -217,19 +226,19 @@ const devConfig = new BreakdownConfig("development");
 
 ```typescript
 enum ErrorCode {
-    // 設定ファイルエラー (1000s)
-    APP_CONFIG_NOT_FOUND = "ERR1001",
-    APP_CONFIG_INVALID = "ERR1002",
-    USER_CONFIG_INVALID = "ERR1003",
-    
-    // 必須フィールドエラー (2000s)
-    REQUIRED_FIELD_MISSING = "ERR2001",
-    INVALID_FIELD_TYPE = "ERR2002",
-    
-    // パス検証エラー (3000s)
-    INVALID_PATH_FORMAT = "ERR3001",
-    PATH_TRAVERSAL_DETECTED = "ERR3002",
-    ABSOLUTE_PATH_NOT_ALLOWED = "ERR3003"
+  // 設定ファイルエラー (1000s)
+  APP_CONFIG_NOT_FOUND = "ERR1001",
+  APP_CONFIG_INVALID = "ERR1002",
+  USER_CONFIG_INVALID = "ERR1003",
+
+  // 必須フィールドエラー (2000s)
+  REQUIRED_FIELD_MISSING = "ERR2001",
+  INVALID_FIELD_TYPE = "ERR2002",
+
+  // パス検証エラー (3000s)
+  INVALID_PATH_FORMAT = "ERR3001",
+  PATH_TRAVERSAL_DETECTED = "ERR3002",
+  ABSOLUTE_PATH_NOT_ALLOWED = "ERR3003",
 }
 ```
 
@@ -262,6 +271,7 @@ await clientAConfig.loadConfig();
 ```
 
 **設定ファイルの例：**
+
 - **環境セット:** `development-app.yml`, `production-app.yml`, `staging-app.yml`
 - **機能セット:** `basic-features-app.yml`, `premium-features-app.yml`
 - **クライアントセット:** `client-a-app.yml`, `client-b-app.yml`
@@ -284,6 +294,7 @@ const settings = agentConfig.getConfig();
 ```
 
 **アプリケーション設定 (app.yml):**
+
 ```yaml
 working_dir: "./.agent/breakdown"
 app_prompt:
@@ -299,13 +310,14 @@ app_schema:
 ```
 
 **ユーザー設定 (user.yml):**
+
 ```yaml
 app_prompt:
-  base_dir: "./custom/prompts"  # プロンプト場所の上書き
+  base_dir: "./custom/prompts" # プロンプト場所の上書き
   custom_templates:
     - "my_template.md"
 app_schema:
-  strict_validation: false      # カスタム設定の追加
+  strict_validation: false # カスタム設定の追加
 ```
 
 ### 3. マルチプロジェクト設定
@@ -342,6 +354,7 @@ await teamConfig.loadConfig();
 ```
 
 **チーム設定 (team-app.yml):**
+
 ```yaml
 working_dir: "./team-workspace"
 app_prompt:
@@ -353,12 +366,13 @@ app_schema:
 ```
 
 **ユーザー上書き (team-user.yml):**
+
 ```yaml
 app_prompt:
-  style: "casual"              # 個人的な好み
-  custom_dir: "./my-prompts"   # 追加プロンプト
+  style: "casual" # 個人的な好み
+  custom_dir: "./my-prompts" # 追加プロンプト
 app_schema:
-  strict_mode: false           # 開発用の緩和された検証
+  strict_mode: false # 開発用の緩和された検証
 ```
 
 ### 5. 設定テストと検証
@@ -424,6 +438,7 @@ await featureConfig.loadConfig();
 ```
 
 **ベース設定 (base-app.yml):**
+
 ```yaml
 working_dir: "./.agent/breakdown"
 app_prompt:
@@ -434,14 +449,15 @@ app_prompt:
 ```
 
 **機能設定 (feature-x-app.yml):**
+
 ```yaml
-working_dir: "./.agent/breakdown"  # 継承
+working_dir: "./.agent/breakdown" # 継承
 app_prompt:
-  base_dir: "./.agent/breakdown/prompts/feature-x"  # 上書き
-  common_templates:                # ベースから継承
+  base_dir: "./.agent/breakdown/prompts/feature-x" # 上書き
+  common_templates: # ベースから継承
     - "header.md"
     - "footer.md"
-  feature_templates:               # 追加テンプレート
+  feature_templates: # 追加テンプレート
     - "feature-x-prompt.md"
 ```
 
@@ -450,7 +466,9 @@ app_prompt:
 このリポジトリには、ライブラリの使用方法を示す2つのサンプルが含まれています：
 
 ### 1. 設定例 (config-example)
+
 基本的な設定ファイルの読み込みと使用方法を示すサンプルです。
+
 - アプリケーション設定の読み込み
 - パスの検証と解決
 - エラーハンドリング
@@ -459,7 +477,9 @@ app_prompt:
 詳細は [examples/config-example/README.md](./examples/config-example/README.md) を参照してください。
 
 ### 2. プロンプトマネージャー (prompt-manager)
+
 マルチプロンプト管理アプリケーションのサンプルです。
+
 - プロンプトとスキーマファイルの管理
 - アプリケーション設定とユーザー設定の統合
 - ディレクトリ構造の自動生成
@@ -473,6 +493,7 @@ app_prompt:
 ### テストの実行
 
 テストは階層的に構成されています：
+
 1. 基本機能テスト
 2. コア機能テスト
 3. エッジケーステスト
@@ -495,10 +516,11 @@ deno lint
 ```
 
 ### テストカバレッジ要件
+
 - ステートメントカバレッジ: 90%以上
 - ブランチカバレッジ: 85%以上
 - 関数カバレッジ: 95%以上
 
 ## ライセンス
 
-MIT 
+MIT

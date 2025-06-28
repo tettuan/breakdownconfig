@@ -30,9 +30,9 @@ export enum ErrorCode {
   /** Absolute path is not allowed */
   ABSOLUTE_PATH_NOT_ALLOWED = "ERR1009",
 
-  // 設定セット関連 (4000番台)
-  /** Invalid configuration set name */
-  INVALID_CONFIG_SET_NAME = "ERR4001",
+  // プロファイル関連 (4000番台)
+  /** Invalid profile name */
+  INVALID_PROFILE_NAME = "ERR4001",
 
   // その他 (9000番台)
   /** Unknown or unexpected error occurred */
@@ -63,7 +63,7 @@ export class ErrorManager {
     [ErrorCode.INVALID_PATH_FORMAT, "Invalid path format"],
     [ErrorCode.PATH_TRAVERSAL_DETECTED, "Path traversal detected"],
     [ErrorCode.ABSOLUTE_PATH_NOT_ALLOWED, "Absolute path is not allowed"],
-    [ErrorCode.INVALID_CONFIG_SET_NAME, "Invalid configuration set name"],
+    [ErrorCode.INVALID_PROFILE_NAME, "Invalid profile name"],
     [ErrorCode.UNKNOWN_ERROR, "Unknown error occurred"],
   ]);
 
@@ -100,8 +100,8 @@ export class ErrorManager {
    * );
    * ```
    */
-  static logWarning(code: ErrorCode, details?: string): void {
-    const message = this.errorMessages.get(code) || "Unknown warning";
-    console.warn(`${code}: ${message}${details ? ` - ${details}` : ""}`);
+  static logWarning(code: ErrorCode, _details?: string): void {
+    const _message = this.errorMessages.get(code) || "Unknown warning";
+    // Warning logging removed as per project requirements
   }
 }

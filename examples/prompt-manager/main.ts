@@ -86,7 +86,12 @@ async function loadAndValidateConfig(baseUrl: URL): Promise<{
   schemaDir: URL;
   isUserConfig: boolean;
 }> {
-  const config = new BreakdownConfig();
+  const configResult = BreakdownConfig.create();
+  if (!configResult.success) {
+    throw new Error(`Config creation failed: ${configResult.error.message}`);
+  }
+  const config = configResult.data;
+
   await config.loadConfig();
   const settings = await config.getConfig();
 

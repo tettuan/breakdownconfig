@@ -40,10 +40,6 @@ Desktop.ini
 /dist/
 /build/
 
-# Coverage directories
-/coverage/
-/.nyc_output/
-
 # Log files
 *.log
 npm-debug.log*

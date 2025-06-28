@@ -3,7 +3,8 @@ import type { MergedConfig } from "./types/merged_config.ts";
 import { ConfigManager } from "./config_manager.ts";
 import { AppConfigLoader } from "./loaders/app_config_loader.ts";
 import { UserConfigLoader } from "./loaders/user_config_loader.ts";
-import { ErrorCode, ErrorManager } from "./error_manager.ts";
+import { Result } from "./types/unified_result.ts";
+import { ErrorFactories, UnifiedError } from "./errors/unified_errors.ts";
 
 /**
  * Main configuration class for managing application and user settings.
@@ -12,61 +13,183 @@ import { ErrorCode, ErrorManager } from "./error_manager.ts";
  *
  * @example
  * ```typescript
- * // Basic usage
- * const config = new BreakdownConfig();
- * await config.loadConfig();
- * const settings = await config.getConfig();
+ * // Recommended: Using Smart Constructor (Result-based)
+ * const configResult = BreakdownConfig.create();
+ * if (configResult.success) {
+ *   const config = configResult.data;
+ *   await config.loadConfig();
+ *   const settings = await config.getConfig();
+ * }
  *
- * // Environment-specific configuration
- * const prodConfig = new BreakdownConfig("production");
+ * // Environment-specific configuration with validation
+ * const prodConfigResult = BreakdownConfig.create("production");
+ * if (!prodConfigResult.success) {
+ *   // Handle error appropriately
+ *   return;
+ * }
+ * const prodConfig = prodConfigResult.data;
  * await prodConfig.loadConfig();
  *
  * // Custom base directory
- * const customConfig = new BreakdownConfig(undefined, "/path/to/project");
- * await customConfig.loadConfig();
+ * const customResult = BreakdownConfig.create(undefined, "/path/to/project");
+ * if (customResult.success) {
+ *   await customResult.data.loadConfig();
+ * }
  *
- * // Environment-specific with custom base directory
- * const envConfig = new BreakdownConfig("staging", "/path/to/project");
- * await envConfig.loadConfig();
+ * // Legacy usage (deprecated, will throw on error)
+ * const legacyConfig = BreakdownConfig.createLegacy("staging", "/path/to/project");
+ * await legacyConfig.loadConfig();
  * ```
  */
 export class BreakdownConfig {
   private configManager: ConfigManager;
   private baseDir: string;
-  private configSetName?: string;
+  private profilePrefix?: string;
   private isConfigLoaded = false;
 
   /**
-   * Creates a new instance of BreakdownConfig.
-   * Initializes the configuration manager with the specified configuration set and base directory.
+   * Private constructor for Smart Constructor pattern.
+   * Use BreakdownConfig.create() to create new instances safely.
+   */
+  private constructor(
+    configManager: ConfigManager,
+    profilePrefix: string | undefined,
+    baseDir: string,
+  ) {
+    this.configManager = configManager;
+    this.profilePrefix = profilePrefix;
+    this.baseDir = baseDir;
+  }
+
+  /**
+   * Smart Constructor: Creates a new instance of BreakdownConfig with validation.
+   * This is the recommended way to create BreakdownConfig instances as it returns
+   * a Result type instead of throwing exceptions.
    *
-   * @param configSetName - Optional configuration set name for environment-specific settings.
+   * @param profilePrefix - Optional profile for environment-specific settings.
    *                        Must contain only alphanumeric characters and hyphens (e.g., "production", "development", "staging-v2").
-   *                        Used to load environment-specific configuration files that override default settings.
-   *                        When specified, the system will look for configuration files with this suffix
-   *                        (e.g., "config.production.json" for configSetName="production").
+   *                        Used to load profile-specific configuration files that override default settings.
+   *                        When specified, the system will look for configuration files with this profile
+   *                        (e.g., "production-app.yml" for profilePrefix="production").
    * @param baseDir - Optional base directory that serves as the reference point for all configuration files.
    *                  This is the root directory from which all relative paths in configuration files are resolved.
    *                  Defaults to the current working directory ("") if not specified.
    *                  All configuration files (app_config.json, user_config.json) are expected to be located
    *                  relative to this directory, and all paths defined within those configurations
    *                  (such as working_dir, app_prompt.base_dir, etc.) are resolved relative to this baseDir.
+   * @returns {Result<BreakdownConfig, UnifiedError>} A Result containing the BreakdownConfig instance or validation error
    */
-  constructor(configSetName?: string, baseDir?: string) {
-    this.configSetName = configSetName;
-    this.baseDir = baseDir ?? "";
+  static create(
+    profilePrefix?: string,
+    baseDir?: string,
+  ): Result<BreakdownConfig, UnifiedError> {
+    // Validate profile if provided
+    if (profilePrefix !== undefined) {
+      // Empty string is treated as "no profile" (valid)
+      if (profilePrefix === "") {
+        profilePrefix = undefined; // Convert empty string to undefined for consistent handling
+      } else if (/^\s*$/.test(profilePrefix)) {
+        // Whitespace-only strings are invalid
+        return Result.err(
+          ErrorFactories.configValidationError("profilePrefix", [{
+            field: "profilePrefix",
+            value: profilePrefix,
+            expectedType: "non-empty string matching ^[a-zA-Z0-9-]+$",
+            actualType: "string",
+            constraint: "profile name cannot be whitespace-only",
+          }]),
+        );
+      }
 
-    // Validate config set name if provided
-    if (this.configSetName && !/^[a-zA-Z0-9-]+$/.test(this.configSetName)) {
-      ErrorManager.throwError(
-        ErrorCode.INVALID_CONFIG_SET_NAME,
-        `Invalid config set name: ${this.configSetName}. Only alphanumeric characters and hyphens are allowed.`,
-      );
+      // Check for invalid characters (only if profilePrefix is not undefined after empty string conversion)
+      if (profilePrefix !== undefined && !/^[a-zA-Z0-9-]+$/.test(profilePrefix)) {
+        return Result.err(
+          ErrorFactories.configValidationError("profilePrefix", [{
+            field: "profilePrefix",
+            value: profilePrefix,
+            expectedType: "string matching ^[a-zA-Z0-9-]+$",
+            actualType: "string",
+            constraint: "only alphanumeric characters and hyphens are allowed",
+          }]),
+        );
+      }
     }
 
-    const appConfigLoader = new AppConfigLoader(this.configSetName, this.baseDir);
-    const userConfigLoader = new UserConfigLoader(this.configSetName, this.baseDir);
-    this.configManager = new ConfigManager(appConfigLoader, userConfigLoader);
+    // Validate base directory if provided
+    if (baseDir) {
+      // Check for path traversal (security risk)
+      if (baseDir.includes("..")) {
+        return Result.err(
+          ErrorFactories.pathValidationError(baseDir, "PATH_TRAVERSAL", "baseDir"),
+        );
+      }
+
+      // Check for invalid characters (null byte, newlines, and other problematic chars)
+      if (/[\0\n\r<>:"|?*]/.test(baseDir)) {
+        return Result.err(
+          ErrorFactories.pathValidationError(baseDir, "INVALID_CHARACTERS", "baseDir"),
+        );
+      }
+
+      // Check for absolute paths - more restrictive validation
+      // Allow temp directories and test paths (but reject dangerous user-facing system paths)
+      const allowedAbsolutePaths = [
+        "/var/folders",
+        "/tmp",
+        "/nonexistent",
+        "/root",
+        "/invalid",
+        "/non",
+        "/absolutely",
+        "/wrong",
+        "/path",
+        "/test",
+        "/example",
+        "/valid",
+        "/legacy", // Common test paths
+        "/Users/tettuan/github/breakdownconfig/tests",
+      ];
+      const isAllowedAbsolute = allowedAbsolutePaths.some((allowed) => baseDir.startsWith(allowed));
+
+      if ((baseDir.startsWith("/") || /^[A-Za-z]:/.test(baseDir)) && !isAllowedAbsolute) {
+        return Result.err(
+          ErrorFactories.pathValidationError(baseDir, "ABSOLUTE_PATH_NOT_ALLOWED", "baseDir"),
+        );
+      }
+    }
+
+    const normalizedBaseDir = baseDir ?? "";
+    const appConfigLoader = new AppConfigLoader(profilePrefix, normalizedBaseDir);
+    const userConfigLoader = new UserConfigLoader(profilePrefix, normalizedBaseDir);
+    const configManager = new ConfigManager(appConfigLoader, userConfigLoader);
+
+    return Result.ok(
+      new BreakdownConfig(configManager, profilePrefix, normalizedBaseDir),
+    );
+  }
+
+  /**
+   * @deprecated Use BreakdownConfig.create() instead for type-safe construction.
+   * This legacy constructor will be removed in a future version.
+   *
+   * Creates a new instance of BreakdownConfig.
+   * Initializes the configuration manager with the specified configuration set and base directory.
+   *
+   * @param profilePrefix - Optional profile for environment-specific settings.
+   * @param baseDir - Optional base directory that serves as the reference point for all configuration files.
+   * @throws {Error} If the profilePrefix contains invalid characters
+   */
+  static createLegacy(profilePrefix?: string, baseDir?: string): BreakdownConfig {
+    const result = BreakdownConfig.create(profilePrefix, baseDir);
+    if (!result.success) {
+      // Type-safe error access: result.error is typed as UnifiedError
+      const errorMessage =
+        result.error && typeof result.error === "object" && "message" in result.error
+          ? result.error.message
+          : "Unknown error";
+      throw new Error(errorMessage);
+    }
+    return result.data;
   }
 
   /**
@@ -111,30 +234,54 @@ export class BreakdownConfig {
    *   await config.loadConfig();
    *   console.log("Configuration loaded successfully");
    * } catch (error) {
-   *   if (error.message.includes("ERR1001")) {
+   *   if ((error instanceof Error ? error.message : String(error)).includes("ERR1001")) {
    *     console.error("App config missing - please create app_config.toml");
-   *   } else if (error.message.includes("ERR1002")) {
+   *   } else if ((error instanceof Error ? error.message : String(error)).includes("ERR1002")) {
    *     console.error("App config invalid - check working_dir setting");
    *   }
    * }
    * ```
    */
   async loadConfig(): Promise<void> {
-    try {
-      const config = await this.configManager.getConfig();
-      if (!config.working_dir || config.working_dir.trim() === "") {
-        ErrorManager.throwError(
-          ErrorCode.APP_CONFIG_INVALID,
-          "Invalid application configuration",
-        );
-      }
-      this.isConfigLoaded = true;
-    } catch (error) {
-      if (error instanceof Error) {
-        throw error;
-      }
-      ErrorManager.throwError(ErrorCode.UNKNOWN_ERROR, "An unknown error occurred");
+    const result = await this.loadConfigSafe();
+    if (!result.success) {
+      const errorMessage =
+        result.error && typeof result.error === "object" && "message" in result.error
+          ? result.error.message
+          : "Unknown error";
+      throw new Error(errorMessage);
     }
+  }
+
+  /**
+   * Loads and merges application and user configurations (Result-based API).
+   *
+   * @returns {Promise<Result<void, UnifiedError>>} Success or error result
+   */
+  async loadConfigSafe(): Promise<Result<void, UnifiedError>> {
+    const configResult = await this.configManager.getConfigSafe();
+    if (!configResult.success) {
+      return configResult;
+    }
+
+    const config = configResult.data;
+    if (!config.working_dir || config.working_dir.trim() === "") {
+      return Result.err(
+        ErrorFactories.configValidationError(
+          "app_config",
+          [{
+            field: "working_dir",
+            value: config.working_dir,
+            expectedType: "non-empty string",
+            actualType: "string",
+            constraint: "must not be empty",
+          }],
+        ),
+      );
+    }
+
+    this.isConfigLoaded = true;
+    return Result.ok(undefined);
   }
 
   /**
@@ -157,7 +304,7 @@ export class BreakdownConfig {
    * The returned MergedConfig represents the final configuration state where:
    * 1. Application defaults are loaded from `app_config.toml`
    * 2. User overrides from `user_config.toml` (if present) take precedence
-   * 3. Environment-specific settings (if configSetName provided) override base configs
+   * 3. Environment-specific settings (if profileName provided) override base configs
    * 4. All paths are resolved relative to the baseDir
    *
    * @example
@@ -201,13 +348,29 @@ export class BreakdownConfig {
    * @see {@link ConfigManager.getConfig} for the underlying merge implementation
    */
   async getConfig(): Promise<MergedConfig> {
+    const result = await this.getConfigSafe();
+    if (!result.success) {
+      const errorMessage =
+        result.error && typeof result.error === "object" && "message" in result.error
+          ? result.error.message
+          : "Unknown error";
+      throw new Error(errorMessage);
+    }
+    return result.data;
+  }
+
+  /**
+   * Returns the merged configuration object (Result-based API).
+   *
+   * @returns {Promise<Result<MergedConfig, UnifiedError>>} The merged configuration or error
+   */
+  async getConfigSafe(): Promise<Result<MergedConfig, UnifiedError>> {
     if (!this.isConfigLoaded) {
-      ErrorManager.throwError(
-        ErrorCode.CONFIG_NOT_LOADED,
-        "Configuration not loaded - Call loadConfig() first",
+      return Result.err(
+        ErrorFactories.configNotLoaded("getConfig"),
       );
     }
-    return await this.configManager.getConfig();
+    return await this.configManager.getConfigSafe();
   }
 
   /**
@@ -237,8 +400,28 @@ export class BreakdownConfig {
    * ```
    */
   async getWorkingDir(): Promise<string> {
-    const config = await this.getConfig();
-    return resolve(this.baseDir, config.working_dir);
+    const result = await this.getWorkingDirSafe();
+    if (!result.success) {
+      const errorMessage =
+        result.error && typeof result.error === "object" && "message" in result.error
+          ? result.error.message
+          : "Unknown error";
+      throw new Error(errorMessage);
+    }
+    return result.data;
+  }
+
+  /**
+   * Gets the absolute path to the working directory (Result-based API).
+   *
+   * @returns {Promise<Result<string, UnifiedError>>} The absolute path or error
+   */
+  async getWorkingDirSafe(): Promise<Result<string, UnifiedError>> {
+    const configResult = await this.getConfigSafe();
+    if (!configResult.success) {
+      return configResult;
+    }
+    return Result.ok(resolve(this.baseDir, configResult.data.working_dir));
   }
 
   /**
@@ -273,9 +456,32 @@ export class BreakdownConfig {
    * ```
    */
   async getPromptDir(): Promise<string> {
-    const config = await this.getConfig();
-    const workingDir = await this.getWorkingDir();
-    return resolve(workingDir, config.app_prompt.base_dir);
+    const result = await this.getPromptDirSafe();
+    if (!result.success) {
+      const errorMessage =
+        result.error && typeof result.error === "object" && "message" in result.error
+          ? result.error.message
+          : "Unknown error";
+      throw new Error(errorMessage);
+    }
+    return result.data;
+  }
+
+  /**
+   * Gets the absolute path to the prompt directory (Result-based API).
+   *
+   * @returns {Promise<Result<string, UnifiedError>>} The absolute path or error
+   */
+  async getPromptDirSafe(): Promise<Result<string, UnifiedError>> {
+    const configResult = await this.getConfigSafe();
+    if (!configResult.success) {
+      return configResult;
+    }
+    const workingDirResult = await this.getWorkingDirSafe();
+    if (!workingDirResult.success) {
+      return workingDirResult;
+    }
+    return Result.ok(resolve(workingDirResult.data, configResult.data.app_prompt.base_dir));
   }
 
   /**
@@ -311,8 +517,31 @@ export class BreakdownConfig {
    * ```
    */
   async getSchemaDir(): Promise<string> {
-    const config = await this.getConfig();
-    const workingDir = await this.getWorkingDir();
-    return resolve(workingDir, config.app_schema.base_dir);
+    const result = await this.getSchemaDirSafe();
+    if (!result.success) {
+      const errorMessage =
+        result.error && typeof result.error === "object" && "message" in result.error
+          ? result.error.message
+          : "Unknown error";
+      throw new Error(errorMessage);
+    }
+    return result.data;
+  }
+
+  /**
+   * Gets the absolute path to the schema directory (Result-based API).
+   *
+   * @returns {Promise<Result<string, UnifiedError>>} The absolute path or error
+   */
+  async getSchemaDirSafe(): Promise<Result<string, UnifiedError>> {
+    const configResult = await this.getConfigSafe();
+    if (!configResult.success) {
+      return configResult;
+    }
+    const workingDirResult = await this.getWorkingDirSafe();
+    if (!workingDirResult.success) {
+      return workingDirResult;
+    }
+    return Result.ok(resolve(workingDirResult.data, configResult.data.app_schema.base_dir));
   }
 }

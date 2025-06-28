@@ -1,0 +1,227 @@
+name: Test
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint-and-format:
+    runs-on: ubuntu-latest
+    name: Lint and Format
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      - name: Check formatting
+        run: deno fmt --check
+
+      - name: Run linter
+        run: deno lint
+
+  type-check:
+    runs-on: ubuntu-latest
+    name: Type Check
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      - name: Cache Deno dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/deno
+          key: ${{ runner.os }}-deno-${{ hashFiles('**/deno.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-deno-
+
+      - name: Type check entry point
+        run: deno check mod.ts
+
+      - name: Type check all source files
+        run: deno check src/**/*.ts
+
+      - name: Type check test files
+        run: deno check tests/**/*.ts
+
+  test:
+    runs-on: ubuntu-latest
+    name: Test Suite
+    needs: [lint-and-format, type-check]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      - name: Cache Deno dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/deno
+          key: ${{ runner.os }}-deno-${{ hashFiles('**/deno.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-deno-
+
+      - name: Run architecture tests
+        run: deno test --allow-env --allow-write --allow-read "src/**/*_architecture_test.ts"
+
+      - name: Run structure tests
+        run: deno test --allow-env --allow-write --allow-read "src/**/*_structure_test.ts"
+
+      - name: Run unit tests
+        run: deno test --allow-env --allow-write --allow-read "src/**/*_units_test.ts"
+
+      - name: Run integration tests
+        run: deno test --allow-env --allow-write --allow-read "tests/3.integrated/**/*_test.ts"
+
+      - name: Run end-to-end tests
+        run: deno test --allow-env --allow-write --allow-read "tests/4.e2e/**/*_test.ts"
+
+      - name: Run helper tests
+        run: |
+          if ls tests/test_helpers/**/*_test.ts 1> /dev/null 2>&1; then
+            deno test --allow-env --allow-write --allow-read "tests/test_helpers/**/*_test.ts"
+          else
+            echo "No helper tests found - skipping"
+          fi
+
+  comprehensive-test:
+    runs-on: ubuntu-latest
+    name: Comprehensive Test
+    needs: test
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      - name: Cache Deno dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/deno
+          key: ${{ runner.os }}-deno-${{ hashFiles('**/deno.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-deno-
+
+      - name: Run all tests with all permissions
+        run: deno test -A
+
+      - name: Final comprehensive type check
+        run: deno check --all
+
+  cross-platform-test:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    
+    runs-on: ${{ matrix.os }}
+    name: Cross-platform Test (${{ matrix.os }})
+    needs: [lint-and-format, type-check]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      - name: Run core tests
+        shell: bash
+        run: |
+          deno test --allow-env --allow-write --allow-read "src/breakdown_config_architecture_test.ts"
+          deno test --allow-env --allow-write --allow-read "src/breakdown_config_structure_test.ts" 
+          deno test --allow-env --allow-write --allow-read "src/breakdown_config_units_test.ts"
+
+  verify-total-function:
+    runs-on: ubuntu-latest
+    name: Total Function Compliance
+    needs: test
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      - name: Verify Result type usage
+        run: |
+          echo "Checking Result type implementation..."
+          if ! grep -r "Result<" src/ | grep -q "\.ts:"; then
+            echo "❌ Result types not found in source code"
+            exit 1
+          fi
+          echo "✅ Result types found"
+
+      - name: Verify Safe method implementations
+        run: |
+          echo "Checking Safe method implementations..."
+          if ! grep -r "Safe(" src/ | grep -q "\.ts:"; then
+            echo "❌ Safe methods not found"
+            exit 1
+          fi
+          echo "✅ Safe methods found"
+
+      - name: Verify no console usage in source
+        run: |
+          echo "Checking for console usage in source..."
+          # Exclude: test files, JSDoc comments (lines with *), single-line comments (//), md files, backup files
+          if grep -rn "console\." src/ --include="*.ts" | grep -v "test" | grep -v ":\s*\*" | grep -v ":\s*//" | grep -v "\.md:" | grep -v "\.backup:" | grep -q "\.ts:"; then
+            echo "❌ console usage found in source code"
+            grep -rn "console\." src/ --include="*.ts" | grep -v "test" | grep -v ":\s*\*" | grep -v ":\s*//" | grep -v "\.md:" | grep -v "\.backup:"
+            exit 1
+          fi
+          echo "✅ No console usage in source code"
+
+      - name: Verify UnifiedError usage
+        run: |
+          echo "Checking error handling patterns..."
+          if ! grep -r "UnifiedError" src/ | grep -q "\.ts:"; then
+            echo "❌ UnifiedError not found"
+            exit 1
+          fi
+          echo "✅ UnifiedError usage found"
+
+  publish-check:
+    runs-on: ubuntu-latest
+    name: Publish Check
+    needs: [comprehensive-test, cross-platform-test, verify-total-function]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      - name: Check if publishable
+        run: deno publish --dry-run
+
+      - name: Verify module exports
+        run: deno run --check mod.ts --help || echo "Module export check completed"

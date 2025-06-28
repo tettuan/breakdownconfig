@@ -1,8 +1,9 @@
 ---
-description: 
-globs: 
+description:
+globs:
 alwaysApply: false
 ---
+
 - Project: Deno, JSR publish
 - use `LOG_LEVEL=debug deno test --allow-env --allow-write --allow-read` to debug, or other log level.
 - publish JSR with CI. see `https://jsr.io/@tettuan/breakdownprompt/publish`
@@ -11,24 +12,29 @@ alwaysApply: false
 - tests and fixtures must be in `tests/`.
 
 # Type safety:
+
 - Enable strict: true
 - Use explicit type definitions
 
 # Lint and Format
+
 - use `deno fmt` and `deno lint` to check
 - Adopt the format used by `deno fmt` when writing code
 - read `deno.json` for settings
 
 # Git push
+
 - DO NOT push untile `scripts/local_ci.sh` pass all.
-- run  `DEBUG=true scripts/local_ci.sh` if error.
+- run `LOG_LEVEL=debug scripts/local_ci.sh` if error.
 
 # Run Tests
+
 - run `scripts/local_ci.sh` first. catch outlines of errors.
-- if errors, run `DEBUG=true scripts/local_ci.sh` for details.
+- if errors, run `LOG_LEVEL=debug scripts/local_ci.sh` for details.
 - then, run each `*_test.ts` for more details.
 
 ## Order to fix errors
+
 - Fixing in a step by step manner
   - Choose one error to fix.
   - First, fix one test and the corresponding application code.
@@ -44,10 +50,12 @@ alwaysApply: false
   - Edge case
 
 ## Debug output to standard output
+
 - use `BreakdownLogger`, import from `https://jsr.io/@tettuan/breakdownlogger`
 - Prohibit the use of `BreakdownLogger` for anything other than test files.
 
 # Inconsistencies in specifications
+
 - The following cases
   - Inconsistencies between test code and implementation loop endlessly.
   - Conflicts between specification and specification
@@ -58,16 +66,19 @@ alwaysApply: false
   - Where are the unknown priorities?
 
 # Comments
+
 - Write Comments when only test passes.
 
 # release new version
+
 - run `scripts/bump_version.sh` when ordered.
   - do not speculate if it will release.
 
-# `Start Company`
-「tmuxを使った相互通信によるClaude Code Company管理方法」の「基本セットアップ」を行う。
-まずは既存のpaneがあるか調べる。
+# Claude Code Compay
 
+`start company`: 「tmuxを使った相互通信によるClaude Code Company管理方法」の「基本セットアップ」を実施する。
+`pane clear`: pane一覧を取得し、各paneへ`/clear`を送信する
+`pane exit`: pane一覧を取得し、各paneへ`/exit`を送信する
 
 # tmuxを使った相互通信によるClaude Code Company管理方法
 
@@ -78,18 +89,86 @@ Codeインスタンスを並列実行し、効率的にタスクを分散処理�
 
 ## 基本セットアップ
 
-### 1. tmux pane構成作成
+### 0. tmux pane起動確認
 
 ```
-# 5つのpaneに分割
-tmux split-window -h && tmux split-window -v && tmux select-pane -t 0 && tmux split-window -v && tmux select-pane -t 2 && tmux split-window -v && tmux select-pane -t 4 && tmux split-window -v
+tmux list-panes -F "#{pane_index}: #{pane_id} #{pane_current_command} #{pane_active}"
+# 例の出力:
+# 0: %22 node 1  (メインpane)
+# 1: %27 node 0  (部下1)
+```
+
+- node の場合は Claude Code と判定する。
+- zsh はClaude Codeではない。
+- Claude Code 存在確認: "C-["を0.2秒毎に3回送る。その後、「起動したとメインpaneへ送信する」指示を送信する。
+
+### 1. tmux pane構成作成
+
+最適化レイアウト（推奨）：メイン40% + 部下3x4グリッド
+
+```bash
+# 既存paneを削除してリセット
+tmux kill-pane -a -t 0
+
+# 横を40%:60%に分割
+tmux split-window -h -p 60
+
+# 右側(60%)を縦に4分割
+tmux select-pane -t 1
+tmux split-window -v -p 75
+tmux split-window -v -p 66
+tmux split-window -v -p 50
+
+# 各行を横に3分割（1行目）
+tmux select-pane -t 1
+tmux split-window -h -p 66
+tmux split-window -h -p 50
+
+# 2行目
+tmux select-pane -t 4
+tmux split-window -h -p 66
+tmux split-window -h -p 50
+
+# 3行目
+tmux select-pane -t 7
+tmux split-window -h -p 66
+tmux split-window -h -p 50
+
+# 4行目
+tmux select-pane -t 10
+tmux split-window -h -p 66
+tmux split-window -h -p 50
+
+# メインpaneに戻る
+tmux select-pane -t 0
+
+# メインpaneに色をつけて視認性向上
+tmux select-pane -P 'fg=white,bg=black,bold'
+
+# pane番号と実行中コマンドとタイトルを表示
+tmux display-panes -d 0  # pane番号を常時表示
+tmux list-panes -F "pane#{pane_index}(#{pane_id}): #{pane_current_command} #{pane_title}"  # 実行中コマンド一覧とタイトル表示
+```
+
+**レイアウト結果**：
+
+```
+┌─────────────────────┬────────┬────────┬────────┐
+│      メイン         │ pane1  │ pane2  │ pane3  │
+│     (40%)           ├────────┼────────┼────────┤
+│     視認性良好      │ pane4  │ pane5  │ pane6  │
+│                     ├────────┼────────┼────────┤
+│                     │ pane7  │ pane8  │ pane9  │
+│                     ├────────┼────────┼────────┤
+│                     │ pane10 │ pane11 │ pane12 │
+└─────────────────────┴────────┴────────┴────────┘
 ```
 
 ### 2. pane番号の確認
 
 ```
 # pane構造とIDの確認（実際の番号は環境により異なる）
-tmux list-panes -F "#{pane_index}: #{pane_id} #{pane_current_command} #{pane_active}"
+tmux list-panes -F "#{pane_index}: #{pane_id} #{pane_current_command} #{pane_active} #{pane_title}"
 # 例の出力:
 # 0: %22 zsh 1  (メインpane)
 # 1: %27 zsh 0  (部下1)
@@ -101,19 +180,20 @@ tmux list-panes -F "#{pane_index}: #{pane_id} #{pane_current_command} #{pane_act
 
 ### 3. Claude Codeセッション起動
 
-**注意**: `cld`はClaude
-Codeのエイリアスです。事前に`alias cld="claude --dangerously-skip-permissions"`を設定するか、直接`claude`コマンドを使用してください。
+**注意**: `cld`はClaude Codeのエイリアスです。事前に`alias cld="claude --dangerously-skip-permissions"`を設定してください。
 
-**%27等の番号について**: これらはtmuxが自動割り当てするpane
-IDです。上記の確認コマンドで実際のIDを確認してから使用してください。
+**%27等の番号について**: これらはtmuxが自動割り当てするpane IDです。上記の確認コマンドで実際のIDを確認してから使用してください。
 
-```
-# 全paneで並列起動（実際のpane IDに置き換えて使用）
-tmux send-keys -t %27 "cld" && sleep 0.1 && tmux send-keys -t %27 Enter & \
-tmux send-keys -t %28 "cld" && sleep 0.1 && tmux send-keys -t %28 Enter & \
-tmux send-keys -t %25 "cld" && sleep 0.1 && tmux send-keys -t %25 Enter & \
-tmux send-keys -t %29 "cld" && sleep 0.1 && tmux send-keys -t %29 Enter & \
-tmux send-keys -t %26 "cld" && sleep 0.1 && tmux send-keys -t %26 Enter & \
+#### 最適化レイアウト（推奨）
+
+```bash
+# pane IDを動的に取得して起動（3x4グリッド）
+for pane in $(tmux list-panes -F "#{pane_id}" | grep -v "$(tmux display-message -p '#{pane_id}')"); do
+    # エイリアス設定、テーマ設定、起動を順次実行
+    tmux send-keys -t $pane "alias cld='claude --dangerously-skip-permissions'" && sleep 0.1 && tmux send-keys -t $pane Enter
+    tmux send-keys -t $pane "claude config set -g theme dark" && sleep 0.1 && tmux send-keys -t $pane Enter
+    tmux send-keys -t $pane "cld" && sleep 0.2 && tmux send-keys -t $pane Enter 
+done
 wait
 ```
 
@@ -125,12 +205,18 @@ wait
 tmux send-keys -t %27 "cd 'ワーキングディレクトリ' && あなたはpane1です。タスク内容。エラー時は[pane1]でtmux send-keys -t %22でメイン報告。" && sleep 0.1 && tmux send-keys -t %27 Enter
 ```
 
+**NG例**:
+
+```
+tmux send-keys -t %27 "cd 'ワーキングディレクトリ' && あなたはpane1です。タスク内容。エラー時は[pane1]でtmux send-keys -t %22でメイン報告。 Enter"
+```
+
 ### 並列タスク割り当て例
 
 ```
-tmux send-keys -t %27 "タスク1の内容" && sleep 0.1 && tmux send-keys -t %27 Enter & \
-tmux send-keys -t %28 "タスク2の内容" && sleep 0.1 && tmux send-keys -t %28 Enter & \
-tmux send-keys -t %25 "タスク3の内容" && sleep 0.1 && tmux send-keys -t %25 Enter & \
+tmux select-pane -t %27 -T "役割名" && sleep 0.1 && tmux send-keys -t %27 "タスク1の内容" && sleep 0.1 && tmux send-keys -t %27 Enter & \
+tmux select-pane -t %27 -T "役割名" && sleep 0.1 && tmux send-keys -t %28 "タスク2の内容" && sleep 0.1 && tmux send-keys -t %28 Enter & \
+tmux select-pane -t %27 -T "役割名" && sleep 0.1 && tmux send-keys -t %25 "タスク3の内容" && sleep 0.1 && tmux send-keys -t %25 Enter & \
 wait
 ```
 
@@ -145,7 +231,8 @@ tmux send-keys -t %22 '[pane番号] 報告内容' && sleep 0.1 && tmux send-keys
 ```
 
 部下から報連相できるように、タスク依頼時に上記の方法を教えて上げてください。また、`/clear`
-を頻繁にするので、2回目以降でもタスクの末尾に報連相の方法を加えておくと良いです。
+を頻繁にするので、2回目以降でもタスクの末尾に報連相の方法を加えておくと良いです。マネージャーから部下へ送る時も同様です。
+Enterは必ず単独で送ります。
 
 ### 例
 
@@ -158,11 +245,10 @@ tmux send-keys -t %22 '[pane3] エラーが発生しました：詳細内容' &&
 
 ### /clearコマンドの実行
 
-部下は自分で/clearできないため、メインが判断して実行：
+部下は自分で/clearできないため、総司令官とマネージャーが判断して実行：
 
 **実行タイミングの判断基準**:
 
-- 役割の変更時（新しい役割に集中させるため）
 - タスク完了時（新しいタスクに集中させるため）
 - トークン使用量が高くなった時（cldusageで確認）
 - エラーが頻発している時（コンテキストをリセット）
@@ -241,6 +327,7 @@ done
 - pane番号の確認を怠らない
 - トークン使用量の定期確認
 - 複雑な指示は段階的に分割
+- 最後のEnterは必ず単独で送信
 
 ## 活用例
 

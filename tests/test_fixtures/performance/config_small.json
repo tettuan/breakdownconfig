@@ -1,0 +1,429 @@
+{
+  "working_dir": ".",
+  "app_prompt": {
+    "base_dir": "./prompts"
+  },
+  "app_schema": {
+    "base_dir": "./schemas"
+  },
+  "config_item_0": {
+    "id": 0,
+    "name": "Item 0",
+    "description": "This is a description for item 0 with some additional text to increase size",
+    "enabled": true,
+    "settings": {
+      "timeout": 1000,
+      "retries": 3,
+      "options": [
+        {
+          "key": "option_0",
+          "value": "value_0_0"
+        },
+        {
+          "key": "option_1",
+          "value": "value_0_1"
+        },
+        {
+          "key": "option_2",
+          "value": "value_0_2"
+        },
+        {
+          "key": "option_3",
+          "value": "value_0_3"
+        },
+        {
+          "key": "option_4",
+          "value": "value_0_4"
+        }
+      ]
+    },
+    "metadata": {
+      "created": "2025-06-27T05:10:02.760Z",
+      "modified": "2025-06-27T05:10:02.766Z",
+      "version": "1.0.0",
+      "tags": [
+        "tag0",
+        "category0",
+        "type0"
+      ]
+    }
+  },
+  "config_item_1": {
+    "id": 1,
+    "name": "Item 1",
+    "description": "This is a description for item 1 with some additional text to increase size",
+    "enabled": false,
+    "settings": {
+      "timeout": 1001,
+      "retries": 3,
+      "options": [
+        {
+          "key": "option_0",
+          "value": "value_1_0"
+        },
+        {
+          "key": "option_1",
+          "value": "value_1_1"
+        },
+        {
+          "key": "option_2",
+          "value": "value_1_2"
+        },
+        {
+          "key": "option_3",
+          "value": "value_1_3"
+        },
+        {
+          "key": "option_4",
+          "value": "value_1_4"
+        }
+      ]
+    },
+    "metadata": {
+      "created": "2025-06-27T05:10:02.766Z",
+      "modified": "2025-06-27T05:10:02.766Z",
+      "version": "1.0.0",
+      "tags": [
+        "tag1",
+        "category1",
+        "type1"
+      ]
+    }
+  },
+  "config_item_2": {
+    "id": 2,
+    "name": "Item 2",
+    "description": "This is a description for item 2 with some additional text to increase size",
+    "enabled": true,
+    "settings": {
+      "timeout": 1002,
+      "retries": 3,
+      "options": [
+        {
+          "key": "option_0",
+          "value": "value_2_0"
+        },
+        {
+          "key": "option_1",
+          "value": "value_2_1"
+        },
+        {
+          "key": "option_2",
+          "value": "value_2_2"
+        },
+        {
+          "key": "option_3",
+          "value": "value_2_3"
+        },
+        {
+          "key": "option_4",
+          "value": "value_2_4"
+        }
+      ]
+    },
+    "metadata": {
+      "created": "2025-06-27T05:10:02.766Z",
+      "modified": "2025-06-27T05:10:02.766Z",
+      "version": "1.0.0",
+      "tags": [
+        "tag2",
+        "category2",
+        "type2"
+      ]
+    }
+  },
+  "config_item_3": {
+    "id": 3,
+    "name": "Item 3",
+    "description": "This is a description for item 3 with some additional text to increase size",
+    "enabled": false,
+    "settings": {
+      "timeout": 1003,
+      "retries": 3,
+      "options": [
+        {
+          "key": "option_0",
+          "value": "value_3_0"
+        },
+        {
+          "key": "option_1",
+          "value": "value_3_1"
+        },
+        {
+          "key": "option_2",
+          "value": "value_3_2"
+        },
+        {
+          "key": "option_3",
+          "value": "value_3_3"
+        },
+        {
+          "key": "option_4",
+          "value": "value_3_4"
+        }
+      ]
+    },
+    "metadata": {
+      "created": "2025-06-27T05:10:02.766Z",
+      "modified": "2025-06-27T05:10:02.766Z",
+      "version": "1.0.0",
+      "tags": [
+        "tag3",
+        "category3",
+        "type0"
+      ]
+    }
+  },
+  "config_item_4": {
+    "id": 4,
+    "name": "Item 4",
+    "description": "This is a description for item 4 with some additional text to increase size",
+    "enabled": true,
+    "settings": {
+      "timeout": 1004,
+      "retries": 3,
+      "options": [
+        {
+          "key": "option_0",
+          "value": "value_4_0"
+        },
+        {
+          "key": "option_1",
+          "value": "value_4_1"
+        },
+        {
+          "key": "option_2",
+          "value": "value_4_2"
+        },
+        {
+          "key": "option_3",
+          "value": "value_4_3"
+        },
+        {
+          "key": "option_4",
+          "value": "value_4_4"
+        }
+      ]
+    },
+    "metadata": {
+      "created": "2025-06-27T05:10:02.766Z",
+      "modified": "2025-06-27T05:10:02.766Z",
+      "version": "1.0.0",
+      "tags": [
+        "tag4",
+        "category4",
+        "type1"
+      ]
+    }
+  },
+  "config_item_5": {
+    "id": 5,
+    "name": "Item 5",
+    "description": "This is a description for item 5 with some additional text to increase size",
+    "enabled": false,
+    "settings": {
+      "timeout": 1005,
+      "retries": 3,
+      "options": [
+        {
+          "key": "option_0",
+          "value": "value_5_0"
+        },
+        {
+          "key": "option_1",
+          "value": "value_5_1"
+        },
+        {
+          "key": "option_2",
+          "value": "value_5_2"
+        },
+        {
+          "key": "option_3",
+          "value": "value_5_3"
+        },
+        {
+          "key": "option_4",
+          "value": "value_5_4"
+        }
+      ]
+    },
+    "metadata": {
+      "created": "2025-06-27T05:10:02.766Z",
+      "modified": "2025-06-27T05:10:02.766Z",
+      "version": "1.0.0",
+      "tags": [
+        "tag5",
+        "category0",
+        "type2"
+      ]
+    }
+  },
+  "config_item_6": {
+    "id": 6,
+    "name": "Item 6",
+    "description": "This is a description for item 6 with some additional text to increase size",
+    "enabled": true,
+    "settings": {
+      "timeout": 1006,
+      "retries": 3,
+      "options": [
+        {
+          "key": "option_0",
+          "value": "value_6_0"
+        },
+        {
+          "key": "option_1",
+          "value": "value_6_1"
+        },
+        {
+          "key": "option_2",
+          "value": "value_6_2"
+        },
+        {
+          "key": "option_3",
+          "value": "value_6_3"
+        },
+        {
+          "key": "option_4",
+          "value": "value_6_4"
+        }
+      ]
+    },
+    "metadata": {
+      "created": "2025-06-27T05:10:02.766Z",
+      "modified": "2025-06-27T05:10:02.766Z",
+      "version": "1.0.0",
+      "tags": [
+        "tag6",
+        "category1",
+        "type0"
+      ]
+    }
+  },
+  "config_item_7": {
+    "id": 7,
+    "name": "Item 7",
+    "description": "This is a description for item 7 with some additional text to increase size",
+    "enabled": false,
+    "settings": {
+      "timeout": 1007,
+      "retries": 3,
+      "options": [
+        {
+          "key": "option_0",
+          "value": "value_7_0"
+        },
+        {
+          "key": "option_1",
+          "value": "value_7_1"
+        },
+        {
+          "key": "option_2",
+          "value": "value_7_2"
+        },
+        {
+          "key": "option_3",
+          "value": "value_7_3"
+        },
+        {
+          "key": "option_4",
+          "value": "value_7_4"
+        }
+      ]
+    },
+    "metadata": {
+      "created": "2025-06-27T05:10:02.766Z",
+      "modified": "2025-06-27T05:10:02.766Z",
+      "version": "1.0.0",
+      "tags": [
+        "tag7",
+        "category2",
+        "type1"
+      ]
+    }
+  },
+  "config_item_8": {
+    "id": 8,
+    "name": "Item 8",
+    "description": "This is a description for item 8 with some additional text to increase size",
+    "enabled": true,
+    "settings": {
+      "timeout": 1008,
+      "retries": 3,
+      "options": [
+        {
+          "key": "option_0",
+          "value": "value_8_0"
+        },
+        {
+          "key": "option_1",
+          "value": "value_8_1"
+        },
+        {
+          "key": "option_2",
+          "value": "value_8_2"
+        },
+        {
+          "key": "option_3",
+          "value": "value_8_3"
+        },
+        {
+          "key": "option_4",
+          "value": "value_8_4"
+        }
+      ]
+    },
+    "metadata": {
+      "created": "2025-06-27T05:10:02.766Z",
+      "modified": "2025-06-27T05:10:02.766Z",
+      "version": "1.0.0",
+      "tags": [
+        "tag8",
+        "category3",
+        "type2"
+      ]
+    }
+  },
+  "config_item_9": {
+    "id": 9,
+    "name": "Item 9",
+    "description": "This is a description for item 9 with some additional text to increase size",
+    "enabled": false,
+    "settings": {
+      "timeout": 1009,
+      "retries": 3,
+      "options": [
+        {
+          "key": "option_0",
+          "value": "value_9_0"
+        },
+        {
+          "key": "option_1",
+          "value": "value_9_1"
+        },
+        {
+          "key": "option_2",
+          "value": "value_9_2"
+        },
+        {
+          "key": "option_3",
+          "value": "value_9_3"
+        },
+        {
+          "key": "option_4",
+          "value": "value_9_4"
+        }
+      ]
+    },
+    "metadata": {
+      "created": "2025-06-27T05:10:02.766Z",
+      "modified": "2025-06-27T05:10:02.766Z",
+      "version": "1.0.0",
+      "tags": [
+        "tag9",
+        "category4",
+        "type0"
+      ]
+    }
+  }
+}
