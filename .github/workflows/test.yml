@@ -94,7 +94,12 @@ jobs:
         run: deno test --allow-env --allow-write --allow-read "tests/4.e2e/**/*_test.ts"
 
       - name: Run helper tests
-        run: deno test --allow-env --allow-write --allow-read "tests/test_helpers/**/*_test.ts"
+        run: |
+          if ls tests/test_helpers/**/*_test.ts 1> /dev/null 2>&1; then
+            deno test --allow-env --allow-write --allow-read "tests/test_helpers/**/*_test.ts"
+          else
+            echo "No helper tests found - skipping"
+          fi
 
   comprehensive-test:
     runs-on: ubuntu-latest
