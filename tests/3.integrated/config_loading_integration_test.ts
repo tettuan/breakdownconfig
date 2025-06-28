@@ -368,8 +368,8 @@ describe("Config Loading Integration Tests", () => {
     });
 
     it("ファイルアクセスエラーのResult型ハンドリング", async () => {
-      // 読み取り権限のないディレクトリを指定
-      const configResult = BreakdownConfig.create(undefined, "/root/no-permission");
+      // 存在しないディレクトリを指定
+      const configResult = BreakdownConfig.create(undefined, "/nonexistent/directory/path");
       assertEquals(configResult.success, true);
       if (!configResult.success) return;
       const config = configResult.data;
