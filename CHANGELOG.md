@@ -46,7 +46,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Unified YAML extension to .yml with proper YAML notation capitalization
 - Refactored YAMLParser to YamlParser following camelCase convention
 - Simplified exports to only expose BreakdownConfig class
-- Enhanced test coverage and organization structure
+- Enhanced test organization structure
 
 ## [1.0.10] - 2025-04-13
 

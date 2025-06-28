@@ -6,7 +6,7 @@ import {
   type ParseError,
   Result,
   type UnknownError,
-  type ValidationError,
+  type ValidationError as _ValidationError,
 } from "../types/config_result.ts";
 
 /**

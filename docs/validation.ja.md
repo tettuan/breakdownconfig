@@ -1,5 +1,5 @@
 # 設定ファイルのバリデーション
-`docs/index.ja.md` および `docs/glosarry.ja.md` を事前理解してから読むこと。
+`docs/index.ja.md` および `docs/glossary.ja.md` を事前理解してから読むこと。
 
 ## アプリケーション設定ファイルのバリデーション
 
@@ -45,7 +45,7 @@
 ### 型定義エラーを返す
 型定義エラーは、 BreakdownConfig に定義されたエラー型を使う。
 
-エラー定義は、`docs/index.ja.md` や `docs/glosarry.ja.md` を参照する。
+エラー定義は、`docs/index.ja.md` や `docs/glossary.ja.md` を参照する。
 
 
 # バリデーションの方法

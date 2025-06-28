@@ -17,7 +17,9 @@
  * @example Basic configuration loading
  * ```typescript
  * // Initialize and load default configuration
- * const config = new BreakdownConfig();
+ * const configResult = BreakdownConfig.create();
+ * if (!configResult.success) throw new Error(`Config creation failed: ${configResult.error && typeof configResult.error === 'object' && 'message' in configResult.error ? configResult.error.message : 'Unknown error'}`);
+ * const config = configResult.data;
  * await config.loadConfig();
  *
  * // Access merged configuration (app + user overrides)
@@ -30,7 +32,9 @@
  * @example Custom base directory setup
  * ```typescript
  * // Use specific project directory
- * const config = new BreakdownConfig(undefined, "/path/to/my/project");
+ * const configResult = BreakdownConfig.create(undefined, "/path/to/my/project");
+ * if (!configResult.success) throw new Error(`Config creation failed: ${configResult.error && typeof configResult.error === 'object' && 'message' in configResult.error ? configResult.error.message : 'Unknown error'}`);
+ * const config = configResult.data;
  * await config.loadConfig();
  *
  * // Get absolute paths for directory operations
@@ -47,11 +51,15 @@
  * @example Environment-specific configuration
  * ```typescript
  * // Load production-specific configuration
- * const prodConfig = new BreakdownConfig("production", "/opt/app");
+ * const prodResult = BreakdownConfig.create("production", "/opt/app");
+ * if (!prodResult.success) throw new Error(`Config creation failed: ${prodResult.error && typeof prodResult.error === 'object' && 'message' in prodResult.error ? prodResult.error.message : 'Unknown error'}`);
+ * const prodConfig = prodResult.data;
  * await prodConfig.loadConfig();
  *
  * // Load development configuration
- * const devConfig = new BreakdownConfig("development", "/home/dev/app");
+ * const devResult = BreakdownConfig.create("development", "/home/dev/app");
+ * if (!devResult.success) throw new Error(`Config creation failed: ${devResult.error && typeof devResult.error === 'object' && 'message' in devResult.error ? devResult.error.message : 'Unknown error'}`);
+ * const devConfig = devResult.data;
  * await devConfig.loadConfig();
  *
  * // Each environment can have different settings
@@ -67,7 +75,9 @@
  * import { BreakdownConfig } from "@tettuan/breakdownconfig";
  *
  * async function setupConfig() {
- *   const config = new BreakdownConfig(undefined, "/my/project");
+ *   const configResult = BreakdownConfig.create(undefined, "/my/project");
+ *   if (!configResult.success) throw new Error(`Config creation failed: ${configResult.error && typeof configResult.error === 'object' && 'message' in configResult.error ? configResult.error.message : 'Unknown error'}`);
+ *   const config = configResult.data;
  *
  *   try {
  *     await config.loadConfig();
@@ -120,7 +130,9 @@
  *
  * // Type-safe configuration handling
  * async function processConfig(): Promise<MergedConfig> {
- *   const config = new BreakdownConfig();
+ *   const configResult = BreakdownConfig.create();
+ *   if (!configResult.success) throw new Error(`Config creation failed: ${configResult.error && typeof configResult.error === 'object' && 'message' in configResult.error ? configResult.error.message : 'Unknown error'}`);
+ *   const config = configResult.data;
  *   await config.loadConfig();
  *
  *   // TypeScript knows the exact shape of the returned config
@@ -205,7 +217,9 @@
  * import * as YAML from "https://deno.land/x/js_yaml_port@3.14.0/js-yaml.js";
  *
  * async function loadConfigWithErrorHandling() {
- *   const config = new BreakdownConfig();
+ *   const configResult = BreakdownConfig.create();
+ *   if (!configResult.success) throw new Error(`Config creation failed: ${configResult.error && typeof configResult.error === 'object' && 'message' in configResult.error ? configResult.error.message : 'Unknown error'}`);
+ *   const config = configResult.data;
  *
  *   try {
  *     await config.loadConfig();

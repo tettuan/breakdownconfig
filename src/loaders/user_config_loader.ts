@@ -1,16 +1,19 @@
 import { join } from "@std/path";
 import { parse as parseYaml } from "@std/yaml";
-import { ErrorCode, ErrorManager } from "../error_manager.ts";
+import {
+  ErrorCode as _ErrorCodeLoader,
+  ErrorManager as _ErrorManagerLoader,
+} from "../error_manager.ts";
 import type { LegacyUserConfig, UserConfig } from "../types/user_config.ts";
 import { UserConfigFactory } from "../types/user_config.ts";
 import { DefaultPaths } from "../types/app_config.ts";
 import {
   ConfigResult,
-  FileNotFoundError,
+  FileNotFoundError as _FileNotFoundErrorLoader,
   ParseError,
   Result,
   UnknownError,
-  ValidationError,
+  ValidationError as _ValidationErrorLoader,
 } from "../types/config_result.ts";
 
 /**
@@ -37,7 +40,7 @@ import {
  *
  * // userConfig will be {} if no user.yml exists
  * // or contain user overrides if file exists
- * console.log(userConfig.working_dir || "Using app default");
+ * // userConfig.working_dir || "Using app default"
  * ```
  *
  * @example Environment-specific user configurations
@@ -58,10 +61,10 @@ import {
  * try {
  *   const loader = new UserConfigLoader(undefined, "/project");
  *   const config = await loader.load();
- *   console.log("User config loaded:", config);
+ *   // User config loaded: config
  * } catch (error) {
- *   if (error.message.includes("ERR1004")) {
- *     console.error("User config exists but is invalid:", error.message);
+ *   if (error instanceof Error && error.message.includes("ERR1004")) {
+ *     // User config exists but is invalid - error already type-checked
  *     // Could fall back to defaults or prompt user to fix
  *   }
  * }
@@ -136,12 +139,12 @@ export class UserConfigLoader {
    * if (Result.isOk(result)) {
    *   const userConfig = result.data;
    *   if (userConfig === null) {
-   *     console.log("No user config, using defaults");
+   *     // No user config, using defaults
    *   } else {
-   *     console.log("User has custom settings:", userConfig);
+   *     // User has custom settings: userConfig
    *   }
    * } else {
-   *   console.error("Config error:", result.error);
+   *   // Config error: result.error
    * }
    * ```
    *
@@ -153,12 +156,12 @@ export class UserConfigLoader {
    *   const userConfig = result.data;
    *   // User can override working directory
    *   if (userConfig.working_dir) {
-   *     console.log("User working dir:", userConfig.working_dir);
+   *     // User working dir: userConfig.working_dir
    *   }
    *
    *   // User can override prompt settings
    *   if (userConfig.app_prompt?.base_dir) {
-   *     console.log("User prompt dir:", userConfig.app_prompt.base_dir);
+   *     // User prompt dir: userConfig.app_prompt.base_dir
    *   }
    * }
    * ```
@@ -189,7 +192,7 @@ export class UserConfigLoader {
     let config: unknown;
     try {
       config = parseYaml(text);
-    } catch (parseError) {
+    } catch (_) {
       // YAML parse error - this is a real error since the file exists
       return Result.err<ParseError>({
         kind: "parseError",

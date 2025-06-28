@@ -8,7 +8,7 @@
  * - デバッグ情報とユーザー向け情報の分離
  */
 
-import { ErrorFactories, ErrorGuards, UnifiedError } from "./unified_errors.ts";
+import { ErrorFactories, ErrorGuards as _ErrorGuards, UnifiedError } from "./unified_errors.ts";
 import { Result } from "../types/unified_result.ts";
 
 /**
@@ -44,9 +44,9 @@ export interface DebugInfo {
   readonly errorKind: string;
   readonly stackTrace?: string;
   readonly context?: string;
-  readonly originalError?: unknown;
+  readonly originalError?: Error | string | null;
   readonly timestamp: Date;
-  readonly metadata?: Record<string, unknown>;
+  readonly metadata?: Record<string, string | number | boolean | null>;
 }
 
 /**
@@ -338,25 +338,8 @@ export class UnifiedErrorManager {
   /**
    * エラーをログ出力
    */
-  public logError(error: UnifiedError, severity: ErrorSeverity = "error"): void {
-    const details = this.getErrorDetails(error);
-    const message = this.getUserMessage(error);
-    const debugMessage = this.getDebugMessage(error);
-
-    switch (severity) {
-      case "error":
-        console.error(`[ERROR] ${message}`);
-        console.error(debugMessage);
-        break;
-      case "warning":
-        console.warn(`[WARNING] ${message}`);
-        console.warn(debugMessage);
-        break;
-      case "info":
-        console.info(`[INFO] ${message}`);
-        console.info(debugMessage);
-        break;
-    }
+  public logError(_error: UnifiedError, _severity: ErrorSeverity = "error"): void {
+    // Console output removed
   }
 
   /**
@@ -548,23 +531,43 @@ export class UnifiedErrorManager {
   /**
    * 元エラーを抽出
    */
-  private extractOriginalError(error: UnifiedError): unknown {
-    if ("originalError" in error) {
-      return error.originalError;
+  private extractOriginalError(error: UnifiedError): Error | string | null {
+    if (error.kind === "UNKNOWN_ERROR") {
+      const originalError = error.originalError;
+      if (originalError instanceof Error) {
+        return originalError;
+      } else if (typeof originalError === "string") {
+        return originalError;
+      } else if (originalError === null || originalError === undefined) {
+        return null;
+      } else {
+        return String(originalError);
+      }
     }
-    return undefined;
+    if (error.kind === "USER_CONFIG_INVALID" && error.originalError) {
+      const originalError = error.originalError;
+      if (originalError instanceof Error) {
+        return originalError;
+      } else if (typeof originalError === "string") {
+        return originalError;
+      } else {
+        return String(originalError);
+      }
+    }
+    return null;
   }
 
   /**
    * メタデータを抽出
    */
-  private extractMetadata(error: UnifiedError): Record<string, unknown> {
-    const metadata: Record<string, unknown> = {};
+  private extractMetadata(error: UnifiedError): Record<string, string | number | boolean | null> {
+    const metadata: Record<string, string | number | boolean | null> = {};
 
     // エラー種別ごとの固有情報をメタデータとして収集
     switch (error.kind) {
       case "CONFIG_VALIDATION_ERROR":
-        metadata.violations = error.violations;
+        metadata.violationCount = error.violations.length;
+        metadata.firstViolationField = error.violations[0]?.field ?? null;
         break;
       case "PATH_VALIDATION_ERROR":
         metadata.reason = error.reason;
@@ -572,7 +575,7 @@ export class UnifiedErrorManager {
         break;
       case "FILE_SYSTEM_ERROR":
         metadata.operation = error.operation;
-        metadata.code = error.code;
+        metadata.code = error.code ?? null;
         break;
         // 他のエラー種別も必要に応じて追加
     }
@@ -594,7 +597,15 @@ export const ErrorUtils = {
    * エラーがConfigError型かどうかチェック（レガシー互換）
    */
   isConfigError: (error: unknown): error is UnifiedError => {
-    return typeof error === "object" && error !== null && "kind" in error && "timestamp" in error;
+    if (typeof error !== "object" || error === null) {
+      return false;
+    }
+    const errorObj = error as Record<string, unknown>;
+    return (
+      typeof errorObj.kind === "string" &&
+      errorObj.timestamp instanceof Date &&
+      typeof errorObj.message === "string"
+    );
   },
 
   /**
@@ -603,8 +614,17 @@ export const ErrorUtils = {
   safeLog: (error: unknown, context?: string) => {
     if (ErrorUtils.isConfigError(error)) {
       errorManager.logError(error);
-    } else {
+    } else if (error instanceof Error) {
       const unifiedError = ErrorFactories.unknown(error, context);
+      errorManager.logError(unifiedError);
+    } else if (typeof error === "string") {
+      const unifiedError = ErrorFactories.unknown(new Error(error), context);
+      errorManager.logError(unifiedError);
+    } else {
+      const unifiedError = ErrorFactories.unknown(
+        new Error(`Unknown error type: ${typeof error}`),
+        context,
+      );
       errorManager.logError(unifiedError);
     }
   },

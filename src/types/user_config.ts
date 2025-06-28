@@ -27,6 +27,7 @@ export interface PromptOnlyUserConfig extends BaseUserConfig {
   readonly kind: "prompt-only";
   readonly app_prompt: {
     readonly base_dir: string;
+    readonly [key: string]: unknown;
   };
 }
 
@@ -37,6 +38,7 @@ export interface SchemaOnlyUserConfig extends BaseUserConfig {
   readonly kind: "schema-only";
   readonly app_schema: {
     readonly base_dir: string;
+    readonly [key: string]: unknown;
   };
 }
 
@@ -47,9 +49,11 @@ export interface CompleteUserConfig extends BaseUserConfig {
   readonly kind: "complete";
   readonly app_prompt: {
     readonly base_dir: string;
+    readonly [key: string]: unknown;
   };
   readonly app_schema: {
     readonly base_dir: string;
+    readonly [key: string]: unknown;
   };
 }
 
@@ -57,7 +61,7 @@ export interface CompleteUserConfig extends BaseUserConfig {
  * Discriminated Union for all user configuration states
  * Provides type-safe handling of different configuration scenarios
  */
-export type UserConfig = 
+export type UserConfig =
   | EmptyUserConfig
   | PromptOnlyUserConfig
   | SchemaOnlyUserConfig
@@ -102,7 +106,10 @@ export class UserConfigFactory {
   static createEmpty(customFields?: Record<string, unknown>): EmptyUserConfig {
     return {
       kind: "empty",
-      customFields: customFields as Record<string, string | number | boolean | { [key: string]: unknown }>,
+      customFields: customFields as Record<
+        string,
+        string | number | boolean | { [key: string]: unknown }
+      >,
     };
   }
 
@@ -118,7 +125,10 @@ export class UserConfigFactory {
       app_prompt: {
         base_dir: promptBaseDir,
       },
-      customFields: customFields as Record<string, string | number | boolean | { [key: string]: unknown }>,
+      customFields: customFields as Record<
+        string,
+        string | number | boolean | { [key: string]: unknown }
+      >,
     };
   }
 
@@ -134,7 +144,10 @@ export class UserConfigFactory {
       app_schema: {
         base_dir: schemaBaseDir,
       },
-      customFields: customFields as Record<string, string | number | boolean | { [key: string]: unknown }>,
+      customFields: customFields as Record<
+        string,
+        string | number | boolean | { [key: string]: unknown }
+      >,
     };
   }
 
@@ -154,7 +167,10 @@ export class UserConfigFactory {
       app_schema: {
         base_dir: schemaBaseDir,
       },
-      customFields: customFields as Record<string, string | number | boolean | { [key: string]: unknown }>,
+      customFields: customFields as Record<
+        string,
+        string | number | boolean | { [key: string]: unknown }
+      >,
     };
   }
 
@@ -175,21 +191,66 @@ export class UserConfigFactory {
     const finalCustomFields = Object.keys(customFields).length > 0 ? customFields : undefined;
 
     if (hasPrompt && hasSchema) {
-      return UserConfigFactory.createComplete(
-        legacy.app_prompt!.base_dir,
-        legacy.app_schema!.base_dir,
-        finalCustomFields,
-      );
+      // Preserve ALL app_prompt and app_schema properties, not just base_dir
+      const promptWithAll = (() => {
+        if (!legacy.app_prompt) throw new Error("app_prompt is required");
+        return {
+          base_dir: legacy.app_prompt.base_dir,
+          ...Object.fromEntries(
+            Object.entries(legacy.app_prompt).filter(([key]) => key !== "base_dir"),
+          ),
+        };
+      })();
+      const schemaWithAll = (() => {
+        if (!legacy.app_schema) throw new Error("app_schema is required");
+        return {
+          base_dir: legacy.app_schema.base_dir,
+          ...Object.fromEntries(
+            Object.entries(legacy.app_schema).filter(([key]) => key !== "base_dir"),
+          ),
+        };
+      })();
+
+      return {
+        kind: "complete",
+        app_prompt: promptWithAll,
+        app_schema: schemaWithAll,
+        customFields: finalCustomFields,
+      } as CompleteUserConfig;
     } else if (hasPrompt) {
-      return UserConfigFactory.createPromptOnly(
-        legacy.app_prompt!.base_dir,
-        finalCustomFields,
-      );
+      // Preserve ALL app_prompt properties, not just base_dir
+      const promptWithAll = (() => {
+        if (!legacy.app_prompt) throw new Error("app_prompt is required");
+        return {
+          base_dir: legacy.app_prompt.base_dir,
+          ...Object.fromEntries(
+            Object.entries(legacy.app_prompt).filter(([key]) => key !== "base_dir"),
+          ),
+        };
+      })();
+
+      return {
+        kind: "prompt-only",
+        app_prompt: promptWithAll,
+        customFields: finalCustomFields,
+      } as unknown as PromptOnlyUserConfig;
     } else if (hasSchema) {
-      return UserConfigFactory.createSchemaOnly(
-        legacy.app_schema!.base_dir,
-        finalCustomFields,
-      );
+      // Preserve ALL app_schema properties, not just base_dir
+      const schemaWithAll = (() => {
+        if (!legacy.app_schema) throw new Error("app_schema is required");
+        return {
+          base_dir: legacy.app_schema.base_dir,
+          ...Object.fromEntries(
+            Object.entries(legacy.app_schema).filter(([key]) => key !== "base_dir"),
+          ),
+        };
+      })();
+
+      return {
+        kind: "schema-only",
+        app_schema: schemaWithAll,
+        customFields: finalCustomFields,
+      } as unknown as SchemaOnlyUserConfig;
     } else {
       return UserConfigFactory.createEmpty(finalCustomFields);
     }
@@ -205,22 +266,17 @@ export class UserConfigFactory {
       case "empty":
         break;
       case "prompt-only":
-        result.app_prompt = {
-          base_dir: userConfig.app_prompt.base_dir,
-        };
+        // Restore ALL app_prompt properties, not just base_dir
+        result.app_prompt = { ...userConfig.app_prompt };
         break;
       case "schema-only":
-        result.app_schema = {
-          base_dir: userConfig.app_schema.base_dir,
-        };
+        // Restore ALL app_schema properties, not just base_dir
+        result.app_schema = { ...userConfig.app_schema };
         break;
       case "complete":
-        result.app_prompt = {
-          base_dir: userConfig.app_prompt.base_dir,
-        };
-        result.app_schema = {
-          base_dir: userConfig.app_schema.base_dir,
-        };
+        // Restore ALL properties for both app_prompt and app_schema
+        result.app_prompt = { ...userConfig.app_prompt };
+        result.app_schema = { ...userConfig.app_schema };
         break;
     }
 
@@ -236,62 +292,86 @@ export class UserConfigFactory {
 /**
  * Type guards for UserConfig discrimination
  */
-export namespace UserConfigGuards {
-  export function isEmpty(config: UserConfig): config is EmptyUserConfig {
-    return config.kind === "empty";
-  }
+export function isEmpty(config: UserConfig): config is EmptyUserConfig {
+  return config.kind === "empty";
+}
 
-  export function isPromptOnly(config: UserConfig): config is PromptOnlyUserConfig {
-    return config.kind === "prompt-only";
-  }
+export function isPromptOnly(config: UserConfig): config is PromptOnlyUserConfig {
+  return config.kind === "prompt-only";
+}
 
-  export function isSchemaOnly(config: UserConfig): config is SchemaOnlyUserConfig {
-    return config.kind === "schema-only";
-  }
+export function isSchemaOnly(config: UserConfig): config is SchemaOnlyUserConfig {
+  return config.kind === "schema-only";
+}
 
-  export function isComplete(config: UserConfig): config is CompleteUserConfig {
-    return config.kind === "complete";
-  }
+export function isComplete(config: UserConfig): config is CompleteUserConfig {
+  return config.kind === "complete";
+}
 
-  export function hasPromptConfig(config: UserConfig): config is PromptOnlyUserConfig | CompleteUserConfig {
-    return config.kind === "prompt-only" || config.kind === "complete";
-  }
+export function hasPromptConfig(
+  config: UserConfig,
+): config is PromptOnlyUserConfig | CompleteUserConfig {
+  return config.kind === "prompt-only" || config.kind === "complete";
+}
 
-  export function hasSchemaConfig(config: UserConfig): config is SchemaOnlyUserConfig | CompleteUserConfig {
-    return config.kind === "schema-only" || config.kind === "complete";
-  }
+export function hasSchemaConfig(
+  config: UserConfig,
+): config is SchemaOnlyUserConfig | CompleteUserConfig {
+  return config.kind === "schema-only" || config.kind === "complete";
 }
 
 /**
  * Helper functions for working with UserConfig
  */
-export namespace UserConfigHelpers {
-  export function getPromptBaseDir(config: UserConfig): string | undefined {
-    if (UserConfigGuards.hasPromptConfig(config)) {
-      return config.app_prompt.base_dir;
-    }
-    return undefined;
+export function getPromptBaseDir(config: UserConfig): string | undefined {
+  if (hasPromptConfig(config)) {
+    return config.app_prompt.base_dir;
   }
+  return undefined;
+}
 
-  export function getSchemaBaseDir(config: UserConfig): string | undefined {
-    if (UserConfigGuards.hasSchemaConfig(config)) {
-      return config.app_schema.base_dir;
-    }
-    return undefined;
+export function getSchemaBaseDir(config: UserConfig): string | undefined {
+  if (hasSchemaConfig(config)) {
+    return config.app_schema.base_dir;
   }
+  return undefined;
+}
 
-  export function getCustomFields(config: UserConfig): Record<string, unknown> | undefined {
-    return config.customFields;
-  }
+export function getCustomFields(config: UserConfig): Record<string, unknown> | undefined {
+  return config.customFields;
+}
 
-  export function getConfigurationLevel(config: UserConfig): "empty" | "partial" | "complete" {
-    switch (config.kind) {
-      case "empty":
-        return "empty";
-      case "complete":
-        return "complete";
-      default:
-        return "partial";
-    }
+export function getConfigurationLevel(config: UserConfig): "empty" | "partial" | "complete" {
+  switch (config.kind) {
+    case "empty":
+      return "empty";
+    case "complete":
+      return "complete";
+    default:
+      return "partial";
   }
 }
+
+/**
+ * Guards namespace for backward compatibility
+ * Contains type guard functions for UserConfig discrimination
+ */
+export const UserConfigGuards = {
+  isEmpty,
+  isPromptOnly,
+  isSchemaOnly,
+  isComplete,
+  hasPromptConfig,
+  hasSchemaConfig,
+} as const;
+
+/**
+ * Helpers namespace for backward compatibility
+ * Contains helper functions for working with UserConfig
+ */
+export const UserConfigHelpers = {
+  getPromptBaseDir,
+  getSchemaBaseDir,
+  getCustomFields,
+  getConfigurationLevel,
+} as const;

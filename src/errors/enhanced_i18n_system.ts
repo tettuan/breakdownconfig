@@ -7,7 +7,11 @@
  */
 
 import { ErrorCodeRegistry, StandardErrorCode } from "./standardized_error_codes.ts";
-import { BaseErrorInterface, ErrorCategory, ErrorSeverity } from "./unified_error_interface.ts";
+import {
+  BaseErrorInterface,
+  ErrorCategory as _ErrorCategory,
+  ErrorSeverity as _ErrorSeverity,
+} from "./unified_error_interface.ts";
 
 /**
  * Supported languages with their ISO codes
@@ -124,6 +128,10 @@ export class EnhancedI18nManager {
       try {
         this.pluralRules.set(lang, new Intl.PluralRules(lang));
       } catch (error) {
+        // Type guard for error handling
+        if (error instanceof Error) {
+          // Failed to create PluralRules - silently fallback
+        }
         // Fallback to English plural rules if language not supported
         this.pluralRules.set(lang, new Intl.PluralRules(SupportedLanguage.ENGLISH));
       }
@@ -152,7 +160,7 @@ export class EnhancedI18nManager {
     Object.values(StandardErrorCode).forEach((code) => {
       const metadata = ErrorCodeRegistry[code];
       if (metadata) {
-        (bundle as Record<string, unknown>)[code] = {
+        (bundle as Record<StandardErrorCode, ErrorMessageDefinition>)[code] = {
           message: {
             default: metadata.description,
           },
@@ -428,7 +436,10 @@ export class EnhancedI18nManager {
   /**
    * Format parameter value based on type and locale
    */
-  private formatValue(value: unknown, language?: SupportedLanguage): string {
+  private formatValue(
+    value: string | number | boolean | Date | null | undefined,
+    language?: SupportedLanguage,
+  ): string {
     if (value === null || value === undefined) {
       return "";
     }
@@ -485,7 +496,12 @@ export class EnhancedI18nManager {
 
       this.messageBundles.set(language, bundle);
     } catch (error) {
-      console.warn(`Failed to load messages for ${language}:`, error);
+      // Type guard for error handling
+      if (error instanceof Error) {
+        // Failed to load messages - error handling without console
+      } else {
+        // Failed to load messages - unknown error
+      }
     }
   }
 }

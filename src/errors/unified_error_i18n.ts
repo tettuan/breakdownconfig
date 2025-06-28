@@ -8,8 +8,15 @@
  * - パラメータ置換サポート
  */
 
-import { ConfigError, PathErrorReason, ValidationError } from "../types/config_result.ts";
-import type { ValidationViolation, ConfigValidationError as UnifiedConfigValidationError } from "./unified_errors.ts";
+import {
+  ConfigError,
+  PathErrorReason as _PathErrorReason,
+  ValidationError as _ValidationError,
+} from "../types/config_result.ts";
+import type {
+  ConfigValidationError as UnifiedConfigValidationError,
+  ValidationViolation,
+} from "./unified_errors.ts";
 import configErrorMessages from "./config_error_messages.json" with { type: "json" };
 import errorCodeMessages from "./messages.json" with { type: "json" };
 
@@ -79,12 +86,15 @@ export class UnifiedErrorI18n {
 
       case "configValidationError":
         // Handle type compatibility between different ConfigValidationError types
-        if ('violations' in error) {
-          return this.getValidationErrorMessage(error as unknown as UnifiedConfigValidationError, lang);
+        if ("violations" in error) {
+          return this.getValidationErrorMessage(
+            error as unknown as UnifiedConfigValidationError,
+            lang,
+          );
         }
         return this.formatMessage(
           configErrorMessages.configError.configValidationError[lang],
-          { path: error.path }
+          { path: error.path },
         );
 
       case "pathError":
@@ -96,17 +106,21 @@ export class UnifiedErrorI18n {
           { message: error.message },
         );
 
-      default:
+      default: {
         // Use never assertion to ensure exhaustive checking
         const _exhaustiveCheck: never = error;
         return `Unknown error type: ${(error as { kind: string }).kind}`;
+      }
     }
   }
 
   /**
    * ValidationErrorのメッセージを生成
    */
-  private getValidationErrorMessage(error: UnifiedConfigValidationError, lang: SupportedLanguage): string {
+  private getValidationErrorMessage(
+    error: UnifiedConfigValidationError,
+    lang: SupportedLanguage,
+  ): string {
     const baseMessage = this.formatMessage(
       configErrorMessages.configError.configValidationError[lang],
       { path: error.path },
@@ -132,7 +146,8 @@ export class UnifiedErrorI18n {
   private getPathErrorMessage(error: PathError, lang: SupportedLanguage): string {
     const reasonMessages = configErrorMessages.configError.pathError[error.reason];
     if (!reasonMessages) {
-      return error.message || `Path error: ${error.reason}`;
+      const errorMessage = error instanceof Error ? error.message : `Path error: ${error.reason}`;
+      return errorMessage;
     }
 
     return this.formatMessage(reasonMessages[lang], { path: error.path });
@@ -171,11 +186,11 @@ export class UnifiedErrorI18n {
    */
   public logWarning(error: ConfigError, customMessage?: string): void {
     const baseMessage = this.getErrorMessage(error);
-    const fullMessage = customMessage
+    const _fullMessage = customMessage
       ? `[WARNING] ${baseMessage}: ${customMessage}`
       : `[WARNING] ${baseMessage}`;
 
-    console.warn(fullMessage);
+    // console.warn(fullMessage);
   }
 
   /**

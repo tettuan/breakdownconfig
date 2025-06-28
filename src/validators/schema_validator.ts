@@ -44,7 +44,6 @@ export class SchemaValidator {
   ): ConfigResult<true, ValidationError> {
     if (!value || typeof value !== "object") {
       return Result.err({
-        kind: "validationError",
         field: "root",
         value,
         expectedType: "object",
@@ -61,7 +60,6 @@ export class SchemaValidator {
       // Check required fields
       if (field.required && (fieldValue === undefined || fieldValue === null)) {
         return Result.err({
-          kind: "validationError",
           field: field.name,
           value: fieldValue,
           expectedType: field.type,
@@ -84,12 +82,13 @@ export class SchemaValidator {
       if (field.type === "object" && field.schema) {
         const nestedResult = this.validate(fieldValue, field.schema);
         if (!nestedResult.success) {
+          // Type guard: nestedResult.error is ValidationError
+          const error = nestedResult.error;
           return Result.err({
-            kind: "validationError",
-            field: `${field.name}.${nestedResult.error.field}`,
-            value: nestedResult.error.value,
-            expectedType: nestedResult.error.expectedType,
-            message: nestedResult.error.message,
+            field: `${field.name}.${error.field}`,
+            value: error.value,
+            expectedType: error.expectedType,
+            message: error.message ?? `Validation failed for field '${field.name}'`,
           });
         }
       }
@@ -131,7 +130,6 @@ export class SchemaValidator {
 
     if (actualType !== expectedType) {
       return Result.err({
-        kind: "validationError",
         field: fieldName,
         value,
         expectedType,
@@ -247,7 +245,6 @@ export class SchemaValidator {
   ): ConfigResult<true, ValidationError> {
     if (!value || value.trim() === "") {
       return Result.err({
-        kind: "validationError",
         field: fieldName,
         value,
         expectedType: "string",

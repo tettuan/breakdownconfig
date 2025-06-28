@@ -46,7 +46,9 @@ import { ConfigValidator } from "../validators/config_validator.ts";
  *   console.log("Prompt directory:", config.app_prompt.base_dir);
  *   console.log("Schema directory:", config.app_schema.base_dir);
  * } catch (error) {
- *   console.error("Failed to load app config:", error.message);
+ *   if (error instanceof Error) {
+ *     console.error("Failed to load app config:", error.message);
+ *   }
  * }
  * ```
  *
@@ -78,10 +80,12 @@ import { ConfigValidator } from "../validators/config_validator.ts";
  *   const promptDir = config.app_prompt.base_dir; // string, never undefined
  *
  * } catch (error) {
- *   if (error.message.includes("ERR1001")) {
- *     console.error("Config file not found - check file path");
- *   } else if (error.message.includes("ERR1002")) {
- *     console.error("Config file invalid - check YAML syntax and required fields");
+ *   if (error instanceof Error) {
+ *     if (error.message.includes("ERR1001")) {
+ *       console.error("Config file not found - check file path");
+ *     } else if (error.message.includes("ERR1002")) {
+ *       console.error("Config file invalid - check YAML syntax and required fields");
+ *     }
  *   }
  * }
  * ```
@@ -146,7 +150,9 @@ export class AppConfigLoader {
    *   const config = await loader.load();
    *   console.log(config.working_dir);
    * } catch (error) {
-   *   console.error("Failed to load config:", error.message);
+   *   if (error instanceof Error) {
+   *     console.error("Failed to load config:", error.message);
+   *   }
    * }
    * ```
    */
@@ -160,7 +166,9 @@ export class AppConfigLoader {
       } else if (error.kind === "parseError") {
         throw new Error(`[ERR1002] Invalid application configuration - ${error.message}`);
       } else if (error.kind === "configValidationError") {
-        const messages = error.errors.map((e: ValidationError) => e.message || `${e.field}: ${e.expectedType}`).join(
+        const messages = error.errors.map((e: ValidationError) =>
+          e.message || `${e.field}: ${e.expectedType}`
+        ).join(
           ", ",
         );
         throw new Error(`[ERR1002] Invalid application configuration - ${messages}`);

@@ -307,7 +307,9 @@ export const Result = {
     } catch (error) {
       const mappedError = errorMapper ? errorMapper(error) : {
         kind: "unknownError" as const,
-        message: error instanceof Error ? error.message : String(error),
+        message: error && typeof error === "object" && "message" in error
+          ? String(error.message)
+          : String(error),
         originalError: error,
       };
       return Result.err(mappedError);

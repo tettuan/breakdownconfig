@@ -5,7 +5,7 @@
  * These patterns provide advanced Result API operations for complex workflows
  */
 
-import { Failure, Result, Success } from "./unified_result.ts";
+import { Failure as _Failure, Result, Success as _Success } from "./unified_result.ts";
 import { ErrorFactories, UnifiedError } from "../errors/unified_errors.ts";
 
 /**

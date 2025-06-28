@@ -101,9 +101,8 @@ const message = errorManager.getUserMessage(error);
 
 ### 📊 Quality Metrics
 
-#### Testing & Coverage
+#### Testing
 
-- **テストカバレッジ**: 95%以上（statements, lines）
 - **統合テスト**: 全エラーケースの網羅的テスト
 - **型安全性テスト**: コンパイル時型チェックの検証
 
@@ -181,7 +180,6 @@ deno run tests/performance/benchmark.ts
 - ✅ All unit tests pass
 - ✅ Zero type errors
 - ✅ Performance benchmarks met
-- ✅ 95%+ test coverage
 
 ### 🐛 Bug Fixes
 

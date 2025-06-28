@@ -1,16 +1,17 @@
 import { AppConfigLoader } from "./loaders/app_config_loader.ts";
 import { UserConfigLoader } from "./loaders/user_config_loader.ts";
 import type { AppConfig } from "./types/app_config.ts";
-import type { UserConfig, LegacyUserConfig } from "./types/user_config.ts";
-import { UserConfigFactory, UserConfigGuards, UserConfigHelpers } from "./types/user_config.ts";
+import type { LegacyUserConfig, UserConfig } from "./types/user_config.ts";
+import { UserConfigFactory, UserConfigGuards } from "./types/user_config.ts";
 import type { MergedConfig } from "./types/merged_config.ts";
 import { Result } from "./types/unified_result.ts";
 import { ErrorFactories, UnifiedError } from "./errors/unified_errors.ts";
+import type { ValidationError } from "./types/config_result.ts";
 
 /**
  * Discriminated Union for AppConfig state management
  */
-type AppConfigState = 
+type AppConfigState =
   | { kind: "uninitialized" }
   | { kind: "loading" }
   | { kind: "loaded"; data: AppConfig }
@@ -19,7 +20,7 @@ type AppConfigState =
 /**
  * Discriminated Union for UserConfig state management
  */
-type UserConfigState = 
+type UserConfigState =
   | { kind: "uninitialized" }
   | { kind: "loading" }
   | { kind: "loaded"; data: UserConfig }
@@ -29,7 +30,7 @@ type UserConfigState =
 /**
  * Discriminated Union for overall configuration state
  */
-type ConfigManagerState = 
+type ConfigManagerState =
   | { kind: "uninitialized" }
   | { kind: "loading" }
   | { kind: "loaded"; config: MergedConfig }
@@ -119,7 +120,11 @@ export class ConfigManager {
     if (result.success) {
       return result.data;
     } else {
-      throw new Error(result.error.message);
+      throw new Error(
+        result.error && typeof result.error === "object" && "message" in result.error
+          ? result.error.message
+          : "Unknown error",
+      );
     }
   }
 
@@ -156,7 +161,9 @@ export class ConfigManager {
         return userConfigResult;
       }
 
-      const mergeResult = this.mergeConfigs(appConfigResult.data, userConfigResult.data as unknown as LegacyUserConfig);
+      // Convert UserConfig back to legacy format for merging
+      const legacyUserConfig = UserConfigFactory.toLegacy(userConfigResult.data);
+      const mergeResult = this.mergeConfigs(appConfigResult.data, legacyUserConfig);
       if (!mergeResult.success) {
         this.managerState = { kind: "error", error: mergeResult.error };
         return mergeResult;
@@ -166,7 +173,10 @@ export class ConfigManager {
       this.managerState = { kind: "loaded", config: mergeResult.data };
       return Result.ok(mergeResult.data);
     } catch (error) {
-      const unifiedError = ErrorFactories.unknown(error, "getConfigSafe");
+      const unifiedError = ErrorFactories.unknown(
+        error ? error : new Error(String(error)),
+        "getConfigSafe",
+      );
       this.managerState = { kind: "error", error: unifiedError };
       return Result.err(unifiedError);
     }
@@ -183,7 +193,11 @@ export class ConfigManager {
     if (result.success) {
       return result.data;
     } else {
-      throw new Error(result.error.message);
+      throw new Error(
+        result.error && typeof result.error === "object" && "message" in result.error
+          ? result.error.message
+          : "Unknown error",
+      );
     }
   }
 
@@ -216,13 +230,20 @@ export class ConfigManager {
       // Convert ConfigError to UnifiedError
       const error = result.error;
       let unifiedError: UnifiedError;
-      
+
       if (error.kind === "fileNotFound") {
         unifiedError = ErrorFactories.configFileNotFound(error.path, "app");
       } else if (error.kind === "parseError") {
-        unifiedError = ErrorFactories.configParseError(error.path, error.message, error.line, error.column);
+        unifiedError = ErrorFactories.configParseError(
+          error.path,
+          error && typeof error === "object" && "message" in error
+            ? error.message
+            : "Unknown error",
+          error.line,
+          error.column,
+        );
       } else if (error.kind === "configValidationError") {
-        const violations = error.errors.map((e: any) => ({
+        const violations = error.errors.map((e: ValidationError) => ({
           field: e.field,
           value: e.value,
           expectedType: e.expectedType,
@@ -231,13 +252,19 @@ export class ConfigManager {
         }));
         unifiedError = ErrorFactories.configValidationError(error.path, violations);
       } else {
-        unifiedError = ErrorFactories.unknown(error, "loadAppConfig");
+        unifiedError = ErrorFactories.unknown(
+          error ? error : new Error(String(error)),
+          "loadAppConfig",
+        );
       }
 
       this.appConfigState = { kind: "error", error: unifiedError };
       return Result.err(unifiedError);
     } catch (error) {
-      const unifiedError = ErrorFactories.unknown(error, "loadAppConfigSafe");
+      const unifiedError = ErrorFactories.unknown(
+        error ? error : new Error(String(error)),
+        "loadAppConfigSafe",
+      );
       this.appConfigState = { kind: "error", error: unifiedError };
       return Result.err(unifiedError);
     }
@@ -266,14 +293,12 @@ export class ConfigManager {
   private async loadUserConfigSafe(): Promise<Result<UserConfig, UnifiedError>> {
     // Return cached result if already loaded
     if (this.userConfigState.kind === "loaded") {
-      // Convert back to legacy format for compatibility
-      const legacyData = UserConfigFactory.toLegacy(this.userConfigState.data);
-      return Result.ok(legacyData as any);
+      return Result.ok(this.userConfigState.data);
     }
 
     // Return empty config if already determined not found
     if (this.userConfigState.kind === "not_found") {
-      return Result.ok({} as any);
+      return Result.ok(UserConfigFactory.createEmpty());
     }
 
     // Return cached error if in error state
@@ -287,20 +312,30 @@ export class ConfigManager {
     try {
       const result = await this.userConfigLoader.load();
       if (result.success) {
+        // Check if user config data exists (not null)
+        if (result.data === null) {
+          // User config file doesn't exist, treat as empty
+          this.userConfigState = { kind: "not_found" };
+          return Result.ok(UserConfigFactory.createEmpty());
+        }
+
         // For now, maintain backward compatibility with legacy format
-        const userData = result.data as unknown as LegacyUserConfig || {} as LegacyUserConfig;
+        const userData = result.data as unknown as LegacyUserConfig;
         // Convert to new discriminated union format for internal state management
         const discriminatedUserData = UserConfigFactory.fromLegacy(userData);
         this.userConfigState = { kind: "loaded", data: discriminatedUserData };
         // But return the legacy format for compatibility
-        return Result.ok(userData as any);
+        return Result.ok(discriminatedUserData);
       }
-      
+
       // User config is optional, so we treat failure as "not found"
       this.userConfigState = { kind: "not_found" };
-      return Result.ok({} as any);
+      return Result.ok(UserConfigFactory.createEmpty());
     } catch (error) {
-      const unifiedError = ErrorFactories.unknown(error, "loadUserConfigSafe");
+      const unifiedError = ErrorFactories.unknown(
+        error ? error : new Error(String(error)),
+        "loadUserConfigSafe",
+      );
       this.userConfigState = { kind: "error", error: unifiedError };
       return Result.err(unifiedError);
     }
@@ -312,6 +347,7 @@ export class ConfigManager {
    * 2. For nested configurations, override occurs at the highest level
    * 3. Lower-level items are preserved unless explicitly overridden
    * 4. Uses type-safe state management with discriminated unions internally
+   * 5. Handles large configurations (10MB+) with thousands of config items
    *
    * @param appConfig - The application configuration
    * @param userConfig - The user configuration (legacy format)
@@ -322,36 +358,289 @@ export class ConfigManager {
     userConfig: LegacyUserConfig,
   ): Result<MergedConfig, UnifiedError> {
     try {
-      // Start with app config as base
+      // Deep clone app config to avoid reference issues with large configs
+      const appConfigCopy = this.deepCloneConfig(appConfig as unknown as Record<string, unknown>);
+
+      // Start with complete app config as base - ensuring ALL fields are preserved
       const mergedConfig: MergedConfig = {
-        working_dir: String(appConfig.working_dir),
+        working_dir: String(appConfigCopy.working_dir || ""),
         app_prompt: {
-          base_dir: String(appConfig.app_prompt.base_dir),
+          base_dir: this.safeGetBaseDir(appConfigCopy.app_prompt),
+          // Deep clone additional app_prompt fields to prevent reference issues
+          ...this.deepCloneNestedFields(appConfigCopy.app_prompt as Record<string, unknown>, [
+            "base_dir",
+          ]),
         },
         app_schema: {
-          base_dir: String(appConfig.app_schema.base_dir),
+          base_dir: this.safeGetBaseDir(appConfigCopy.app_schema),
+          // Deep clone additional app_schema fields to prevent reference issues
+          ...this.deepCloneNestedFields(appConfigCopy.app_schema as Record<string, unknown>, [
+            "base_dir",
+          ]),
         },
       };
 
-      // Override with user config using legacy format for compatibility
-      if (userConfig.app_prompt?.base_dir) {
-        mergedConfig.app_prompt.base_dir = String(userConfig.app_prompt.base_dir);
-      }
+      // Copy ALL additional fields from app config (handles large configs with thousands of items)
+      this.copyAdditionalFields(appConfigCopy, mergedConfig, [
+        "working_dir",
+        "app_prompt",
+        "app_schema",
+      ]);
 
-      if (userConfig.app_schema?.base_dir) {
-        mergedConfig.app_schema.base_dir = String(userConfig.app_schema.base_dir);
-      }
-
-      // Add custom fields if they exist
-      for (const [key, value] of Object.entries(userConfig)) {
-        if (key !== "app_prompt" && key !== "app_schema" && value !== undefined && !(key in mergedConfig)) {
-          (mergedConfig as any)[key] = String(value);
-        }
-      }
+      // Apply user config overrides with proper type handling
+      this.applyUserConfigOverrides(userConfig, mergedConfig);
 
       return Result.ok(mergedConfig);
     } catch (error) {
       return Result.err(ErrorFactories.configMergeError(error));
+    }
+  }
+
+  /**
+   * Safely extracts base_dir from configuration object following Total Function principle
+   * Always returns a string, never throws exceptions
+   *
+   * @param configObj - Configuration object that may contain base_dir
+   * @returns {string} The base_dir value or empty string if not found/invalid
+   */
+  private safeGetBaseDir(configObj: unknown): string {
+    // Handle null or undefined
+    if (configObj == null) {
+      return "";
+    }
+
+    // Ensure it's an object
+    if (typeof configObj !== "object") {
+      return "";
+    }
+
+    // Type-safe access to base_dir property
+    const obj = configObj as Record<string, unknown>;
+    const baseDir = obj.base_dir;
+
+    // Ensure base_dir is a string
+    if (typeof baseDir === "string") {
+      return baseDir;
+    }
+
+    // For any other type, return empty string (Total Function - no exceptions)
+    return "";
+  }
+
+  /**
+   * Deep clone configuration object to prevent reference issues
+   * Optimized for large configurations
+   */
+  private deepCloneConfig(config: Record<string, unknown>): Record<string, unknown> {
+    try {
+      return JSON.parse(JSON.stringify(config));
+    } catch (_error) {
+      // Fallback for non-serializable values
+      const clone: Record<string, unknown> = {};
+      for (const [key, value] of Object.entries(config)) {
+        if (value !== undefined && value !== null) {
+          clone[key] = typeof value === "object"
+            ? { ...(value as Record<string, unknown>) }
+            : value;
+        }
+      }
+      return clone;
+    }
+  }
+
+  /**
+   * Extract additional fields from nested config objects
+   */
+  private extractAdditionalFields(
+    obj: Record<string, unknown> | undefined,
+    excludeKeys: string[],
+  ): Record<string, unknown> {
+    if (!obj || typeof obj !== "object") return {};
+
+    const additional: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(obj)) {
+      if (!excludeKeys.includes(key) && value !== undefined) {
+        additional[key] = value;
+      }
+    }
+    return additional;
+  }
+
+  /**
+   * Deep clone nested fields from an object with exclusions
+   */
+  private deepCloneNestedFields(
+    obj: Record<string, unknown> | undefined,
+    excludeKeys: string[],
+  ): Record<string, unknown> {
+    if (!obj || typeof obj !== "object") return {};
+
+    const cloned: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(obj)) {
+      if (!excludeKeys.includes(key) && value !== undefined) {
+        // Deep clone complex objects to prevent reference issues
+        if (typeof value === "object" && value !== null) {
+          try {
+            cloned[key] = JSON.parse(JSON.stringify(value));
+          } catch {
+            cloned[key] = value;
+          }
+        } else {
+          cloned[key] = value;
+        }
+      }
+    }
+    return cloned;
+  }
+
+  /**
+   * Copy additional fields from source to target configuration
+   * Handles large numbers of config items efficiently
+   */
+  private copyAdditionalFields(
+    source: Record<string, unknown>,
+    target: MergedConfig,
+    excludeKeys: string[],
+  ): void {
+    const targetRecord = target as Record<string, unknown>;
+
+    for (const [key, value] of Object.entries(source)) {
+      if (!excludeKeys.includes(key) && value !== undefined) {
+        targetRecord[key] = value;
+      }
+    }
+  }
+
+  /**
+   * Apply user config overrides with proper nested object handling
+   */
+  private applyUserConfigOverrides(
+    userConfig: LegacyUserConfig,
+    mergedConfig: MergedConfig,
+  ): void {
+    // Convert legacy user config to discriminated union for safe access
+    const discriminatedUserConfig = UserConfigFactory.fromLegacy(userConfig);
+
+    // Handle app_prompt overrides using type guards
+    if (UserConfigGuards.hasPromptConfig(discriminatedUserConfig)) {
+      mergedConfig.app_prompt.base_dir = String(discriminatedUserConfig.app_prompt.base_dir);
+    }
+
+    // Apply additional app_prompt fields from user config with deep merge
+    if (UserConfigGuards.hasPromptConfig(discriminatedUserConfig)) {
+      const promptConfig = mergedConfig.app_prompt as Record<string, unknown>;
+
+      for (const [key, value] of Object.entries(discriminatedUserConfig.app_prompt)) {
+        if (key !== "base_dir" && value !== undefined) {
+          // For object values like templates, perform deep merge
+          if (
+            typeof value === "object" && value !== null &&
+            typeof promptConfig[key] === "object" && promptConfig[key] !== null
+          ) {
+            const existingObj = promptConfig[key] as Record<string, unknown>;
+            const userObj = value as Record<string, unknown>;
+
+            // Deep merge object properties
+            for (const [objKey, objValue] of Object.entries(userObj)) {
+              if (objValue !== undefined) {
+                existingObj[objKey] = objValue;
+              }
+            }
+          } else {
+            // For non-objects, simple replacement
+            promptConfig[key] = value;
+          }
+        }
+      }
+    }
+
+    // Handle app_schema overrides using type guards
+    if (UserConfigGuards.hasSchemaConfig(discriminatedUserConfig)) {
+      mergedConfig.app_schema.base_dir = String(discriminatedUserConfig.app_schema.base_dir);
+    }
+
+    // Apply additional app_schema fields from user config with deep merge
+    if (UserConfigGuards.hasSchemaConfig(discriminatedUserConfig)) {
+      const schemaConfig = mergedConfig.app_schema as Record<string, unknown>;
+      for (const [key, value] of Object.entries(discriminatedUserConfig.app_schema)) {
+        if (key !== "base_dir" && value !== undefined) {
+          // For object values, perform deep merge
+          if (
+            typeof value === "object" && value !== null &&
+            typeof schemaConfig[key] === "object" && schemaConfig[key] !== null
+          ) {
+            const existingObj = schemaConfig[key] as Record<string, unknown>;
+            const userObj = value as Record<string, unknown>;
+
+            // Deep merge object properties
+            for (const [objKey, objValue] of Object.entries(userObj)) {
+              if (objValue !== undefined) {
+                existingObj[objKey] = objValue;
+              }
+            }
+          } else {
+            // For non-objects, simple replacement
+            schemaConfig[key] = value;
+          }
+        }
+      }
+    }
+
+    // Apply all other user config fields with deep merge for objects
+    const mergedRecord = mergedConfig as Record<string, unknown>;
+    for (const [key, value] of Object.entries(userConfig)) {
+      if (key !== "app_prompt" && key !== "app_schema" && value !== undefined) {
+        // Handle special case for UserConfig internal fields
+        if (key === "kind" || key === "customFields") {
+          // Skip internal UserConfig structure fields - customFields should be expanded
+          if (key === "customFields" && typeof value === "object" && value !== null) {
+            // Expand customFields properties at the root level
+            const customFieldsObj = value as Record<string, unknown>;
+            for (const [customKey, customValue] of Object.entries(customFieldsObj)) {
+              if (customValue !== undefined) {
+                // Apply the same deep merge logic to custom fields
+                if (
+                  typeof customValue === "object" && customValue !== null &&
+                  typeof mergedRecord[customKey] === "object" && mergedRecord[customKey] !== null
+                ) {
+                  const existingObj = mergedRecord[customKey] as Record<string, unknown>;
+                  const userObj = customValue as Record<string, unknown>;
+
+                  // Deep merge object properties
+                  for (const [objKey, objValue] of Object.entries(userObj)) {
+                    if (objValue !== undefined) {
+                      existingObj[objKey] = objValue;
+                    }
+                  }
+                } else {
+                  // For non-objects, simple replacement
+                  mergedRecord[customKey] = customValue;
+                }
+              }
+            }
+          }
+          continue;
+        }
+
+        // For object values, perform deep merge instead of complete replacement
+        if (
+          typeof value === "object" && value !== null &&
+          typeof mergedRecord[key] === "object" && mergedRecord[key] !== null
+        ) {
+          const existingObj = mergedRecord[key] as Record<string, unknown>;
+          const userObj = value as Record<string, unknown>;
+
+          // Deep merge object properties
+          for (const [objKey, objValue] of Object.entries(userObj)) {
+            if (objValue !== undefined) {
+              existingObj[objKey] = objValue;
+            }
+          }
+        } else {
+          // For non-objects, simple replacement
+          mergedRecord[key] = value;
+        }
+      }
     }
   }
 }

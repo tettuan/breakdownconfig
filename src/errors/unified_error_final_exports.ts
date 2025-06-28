@@ -12,32 +12,35 @@ import {
   unifiedErrorManager,
 } from "./unified_error_implementation.ts";
 
+// Import error handling utilities
+import { ErrorHandlingUtils as ErrorUtilsHandling } from "./error_handling_utils.ts";
+
+import type { UnifiedError as _UnifiedError } from "./unified_errors.ts";
+
 // Export only the key interfaces and types (no duplicate exports)
-export type {
-  BaseErrorInterface,
-  ErrorCategory,
-  ErrorSeverity,
-  StandardErrorCode,
-} from "./unified_error_interface.ts";
+export type { BaseErrorInterface, StandardErrorCode } from "./unified_error_interface.ts";
+
+// Export enums as values so they can be used at runtime
+export { ErrorCategory, ErrorSeverity } from "./unified_error_interface.ts";
 
 export type {
   ConfigFileNotFoundError,
   ConfigParseError,
   ConfigValidationError,
+  FileSystemError,
   InvalidProfileNameError,
+  PathErrorReason,
+  PathValidationError,
   RequiredFieldMissingError,
   TypeMismatchError,
-  UnknownError,
-  FileSystemError,
-  PathValidationError,
   UnifiedError,
+  UnknownError,
   ValidationViolation,
-  PathErrorReason,
 } from "./unified_errors.ts";
 
 // Export main functionality
 export { ErrorFactories, ErrorGuards } from "./unified_errors.ts";
-export { unifiedErrorManager, ErrorUtils };
+export { ErrorUtils, unifiedErrorManager };
 
 // Internationalization system
 export {
@@ -56,14 +59,9 @@ export type {
 } from "./enhanced_i18n_system.ts";
 
 // Standardized error codes
-export {
-  ErrorCodeRegistry,
-  ErrorCodeUtils,
-} from "./standardized_error_codes.ts";
+export { ErrorCodeRegistry, ErrorCodeUtils } from "./standardized_error_codes.ts";
 
-export type {
-  ErrorCodeMetadata,
-} from "./standardized_error_codes.ts";
+export type { ErrorCodeMetadata } from "./standardized_error_codes.ts";
 
 // Interface specifications
 export type {
@@ -86,29 +84,75 @@ export type {
 
 // Legacy compatibility exports already handled above
 
-// Import unified error types
-import { UnifiedError } from "./unified_errors.ts";
+// UnifiedError type already imported above
 
 export { convertLegacyError, ErrorCodeMapping, isErrorCode } from "./error_code_mapping.ts";
 
 // Import ErrorFactories for use in utility functions
 import { ErrorFactories } from "./unified_errors.ts";
-import { BaseErrorInterface, ErrorCategory, ErrorSeverity, StandardErrorCode, ErrorConfiguration } from "./unified_error_interface.ts";
+import {
+  BaseErrorInterface,
+  ErrorCategory,
+  ErrorConfiguration,
+  ErrorSeverity,
+  StandardErrorCode as _StandardErrorCode,
+} from "./unified_error_interface.ts";
 
-// Helper function to convert any error to unified error
-function toUnifiedError(error: unknown, context?: string): BaseErrorInterface {
-  if (error && typeof error === "object" && "kind" in error) {
-    return error as BaseErrorInterface;
+// Type guard to check if an object is a BaseErrorInterface
+function isBaseErrorInterface(value: unknown): value is BaseErrorInterface {
+  return (
+    value !== null &&
+    typeof value === "object" &&
+    "kind" in value &&
+    "code" in value &&
+    "category" in value &&
+    "severity" in value &&
+    "message" in value &&
+    "timestamp" in value
+  );
+}
+
+// Helper function to convert error to unified error using Total Function principle
+function toUnifiedError(
+  error: Error | string | BaseErrorInterface,
+  context?: string,
+): _UnifiedError {
+  // Type-safe check without type assertion
+  if (isBaseErrorInterface(error)) {
+    // Convert BaseErrorInterface to UnifiedError by creating UnknownError
+    return ErrorFactories.unknown(
+      new Error(error.message),
+      context ?? error.kind,
+    );
   }
 
   // Convert to UnknownError
-  const unknownError = ErrorFactories.unknown(error, context);
-  return {
-    ...unknownError,
-    code: StandardErrorCode.UN_UNKNOWN_ERROR,
-    category: ErrorCategory.UNKNOWN,
-    severity: ErrorSeverity.ERROR,
-  } as BaseErrorInterface;
+  const unknownError = ErrorFactories.unknown(
+    error instanceof Error ? error : new Error(String(error)),
+    context,
+  );
+
+  // Return the error directly without unnecessary spreading
+  return unknownError;
+}
+
+// Helper function to convert error to BaseErrorInterface
+function toBaseError(
+  error: Error | string | BaseErrorInterface | _UnifiedError,
+  context?: string,
+): BaseErrorInterface {
+  // If already BaseErrorInterface, return as is
+  if (isBaseErrorInterface(error)) {
+    return error;
+  }
+
+  // Convert to UnifiedError first
+  const unifiedError = ErrorUtilsHandling.isUnifiedError(error)
+    ? error
+    : toUnifiedError(error, context);
+
+  // Convert UnifiedError to BaseErrorInterface
+  return ErrorUtilsHandling.toBaseErrorInterface(unifiedError);
 }
 
 // Result types integration
@@ -133,23 +177,25 @@ export const QuickErrorFactory = {
   /**
    * Create validation error for missing field
    */
-  fieldMissing: (field: string, parent?: string) => ErrorFactories.requiredFieldMissing(field, parent),
+  fieldMissing: (field: string, parent?: string) =>
+    ErrorFactories.requiredFieldMissing(field, parent),
 
   /**
    * Create validation error for type mismatch
    */
-  typeMismatch: (field: string, expected: string, actual: string, value: unknown) =>
+  typeMismatch: <T>(field: string, expected: string, actual: string, value: T) =>
     ErrorFactories.typeMismatch(field, expected, actual, value),
 
   /**
    * Create security error for path traversal
    */
-  pathTraversal: (path: string, field: string) => ErrorFactories.pathValidationError(path, "PATH_TRAVERSAL", field),
+  pathTraversal: (path: string, field: string) =>
+    ErrorFactories.pathValidationError(path, "PATH_TRAVERSAL", field),
 
   /**
    * Create unknown error wrapper
    */
-  unknown: (error: unknown, context?: string) => ErrorFactories.unknown(error, context),
+  unknown: (error: Error | string, context?: string) => ErrorFactories.unknown(error, context),
 };
 
 /**
@@ -167,9 +213,13 @@ export const ErrorHandlingUtils = {
       const data = await promise;
       return { success: true, data };
     } catch (error) {
-      const unifiedError = toUnifiedError(error, context);
-      await unifiedErrorManager.processError(unifiedError);
-      return { success: false, error: unifiedError };
+      // Type-safe error handling
+      const baseError = toBaseError(
+        error instanceof Error ? error : new Error(String(error)),
+        context,
+      );
+      await unifiedErrorManager.processError(baseError);
+      return { success: false, error: baseError };
     }
   },
 
@@ -184,17 +234,21 @@ export const ErrorHandlingUtils = {
       const data = operation();
       return { success: true, data };
     } catch (error) {
-      const unifiedError = toUnifiedError(error, context);
+      // Type-safe error handling
+      const baseError = toBaseError(
+        error instanceof Error ? error : new Error(String(error)),
+        context,
+      );
       // Note: Sync processing - no await
-      unifiedErrorManager.processError(unifiedError);
-      return { success: false, error: unifiedError };
+      unifiedErrorManager.processError(baseError);
+      return { success: false, error: baseError };
     }
   },
 
   /**
    * Create error boundary for function execution
    */
-  withErrorBoundary<T extends any[], R>(
+  withErrorBoundary<T extends readonly unknown[], R>(
     fn: (...args: T) => R,
     context?: string,
   ): (...args: T) => { success: true; data: R } | { success: false; error: BaseErrorInterface } {
@@ -206,7 +260,7 @@ export const ErrorHandlingUtils = {
   /**
    * Create async error boundary for promise-returning functions
    */
-  withAsyncErrorBoundary<T extends any[], R>(
+  withAsyncErrorBoundary<T extends readonly unknown[], R>(
     fn: (...args: T) => Promise<R>,
     context?: string,
   ): (
@@ -401,8 +455,6 @@ export function initializeErrorSystem(
   const finalConfig = { ...baseConfig, ...customConfig };
 
   unifiedErrorManager.configure(finalConfig);
-
-  console.log(`🚀 Unified Error System initialized with ${preset} preset`);
 
   return unifiedErrorManager;
 }

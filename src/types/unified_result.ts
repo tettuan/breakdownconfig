@@ -251,7 +251,7 @@ export const Result: {
   },
 
   /**
-   * Converts a Promise to a Result, catching any thrown errors
+   * Converts a Promise to a Result, catching thrown errors
    */
   async fromPromise<T>(
     promise: Promise<T>,
@@ -265,13 +265,17 @@ export const Result: {
         return Result.err(errorMapper(error));
       }
       // Default error mapping
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage = error && typeof error === "object" && "message" in error
+        ? String(error.message)
+        : String(error);
       return Result.err({
         kind: "UNKNOWN_ERROR",
         originalError: error,
         message: errorMessage,
         timestamp: new Date(),
-        stackTrace: error instanceof Error ? error.stack : undefined,
+        stackTrace: error && typeof error === "object" && "stack" in error
+          ? String(error.stack)
+          : undefined,
       } as UnifiedError);
     }
   },

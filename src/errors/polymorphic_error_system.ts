@@ -7,16 +7,16 @@
 
 import {
   BaseErrorInterface,
-  ErrorAggregator,
+  ErrorAggregator as _ErrorAggregator,
   ErrorCategory,
   ErrorFactory,
   ErrorHandler,
-  ErrorMetrics,
-  ErrorReporter,
-  ErrorSerializer,
+  ErrorMetrics as _ErrorMetrics,
+  ErrorReporter as _ErrorReporter,
+  ErrorSerializer as _ErrorSerializer,
   ErrorSeverity,
-  ErrorTransformer,
-  ErrorValidator,
+  ErrorTransformer as _ErrorTransformer,
+  ErrorValidator as _ErrorValidator,
   StandardErrorCode,
 } from "./unified_error_interface.ts";
 
@@ -416,6 +416,118 @@ export class UnknownError extends SystemError {
 }
 
 /**
+ * ChainedError wrapper that properly maintains cause chain
+ * This avoids type assertions by creating proper error instances
+ */
+class ChainedError implements BaseErrorInterface {
+  readonly kind: string;
+  readonly code: StandardErrorCode;
+  readonly category: ErrorCategory;
+  readonly severity: ErrorSeverity;
+  readonly message: string;
+  readonly timestamp: Date;
+  readonly correlationId: string;
+  readonly context?: Record<string, unknown>;
+  readonly cause?: BaseErrorInterface;
+  readonly stackTrace?: string;
+
+  constructor(
+    private readonly wrappedError: BaseErrorInterface,
+    cause: BaseErrorInterface,
+  ) {
+    // Copy all properties from wrapped error
+    this.kind = wrappedError.kind;
+    this.code = wrappedError.code;
+    this.category = wrappedError.category;
+    this.severity = wrappedError.severity;
+    this.message = wrappedError.message;
+    this.timestamp = wrappedError.timestamp;
+    this.correlationId = wrappedError.correlationId ||
+      `chained-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    this.context = wrappedError.context;
+    this.stackTrace = wrappedError.stackTrace;
+
+    // Set the cause properly
+    this.cause = cause;
+  }
+
+  getFormattedMessage(): string {
+    if (
+      "getFormattedMessage" in this.wrappedError &&
+      typeof this.wrappedError.getFormattedMessage === "function"
+    ) {
+      return this.wrappedError.getFormattedMessage();
+    }
+    return this.message;
+  }
+
+  getDebugInfo(): Record<string, unknown> {
+    if (
+      "getDebugInfo" in this.wrappedError &&
+      typeof this.wrappedError.getDebugInfo === "function"
+    ) {
+      const info = this.wrappedError.getDebugInfo();
+      return {
+        ...info,
+        cause: this.cause
+          ? {
+            kind: this.cause.kind,
+            message: this.cause.message,
+            code: this.cause.code,
+          }
+          : undefined,
+      };
+    }
+    return {
+      kind: this.kind,
+      code: this.code,
+      category: this.category,
+      severity: this.severity,
+      message: this.message,
+      timestamp: this.timestamp,
+      correlationId: this.correlationId,
+      context: this.context,
+      cause: this.cause
+        ? {
+          kind: this.cause.kind,
+          message: this.cause.message,
+          code: this.cause.code,
+        }
+        : undefined,
+      stackTrace: this.stackTrace,
+    };
+  }
+
+  isRecoverable(): boolean {
+    if (
+      "isRecoverable" in this.wrappedError &&
+      typeof this.wrappedError.isRecoverable === "function"
+    ) {
+      return this.wrappedError.isRecoverable();
+    }
+    return false;
+  }
+
+  getRecoverySuggestions(): string[] {
+    if (
+      "getRecoverySuggestions" in this.wrappedError &&
+      typeof this.wrappedError.getRecoverySuggestions === "function"
+    ) {
+      return this.wrappedError.getRecoverySuggestions();
+    }
+    return [];
+  }
+
+  toJSON(): Record<string, unknown> {
+    return this.getDebugInfo();
+  }
+
+  toString(): string {
+    return `${this.code}: ${this.getFormattedMessage()}`;
+  }
+}
+
+/**
  * Polymorphic error handler registry
  */
 export class PolymorphicErrorHandlerRegistry {
@@ -456,8 +568,8 @@ export class PolymorphicErrorHandlerRegistry {
           const result = await handler.handle(error);
           if (result === undefined) return; // Successfully handled
           if (result !== error) return result; // Transformed error
-        } catch (handlerError) {
-          console.warn(`Error handler failed for ${error.kind}:`, handlerError);
+        } catch (_handlerError) {
+          // console.warn(`Error handler failed for ${error.kind}:`, handlerError);
         }
       }
     }
@@ -469,8 +581,8 @@ export class PolymorphicErrorHandlerRegistry {
           const result = await handler.handle(error);
           if (result === undefined) return; // Successfully handled
           if (result !== error) return result; // Transformed error
-        } catch (handlerError) {
-          console.warn(`Global error handler failed:`, handlerError);
+        } catch (_handlerError) {
+          // console.warn(`Global error handler failed:`, handlerError);
         }
       }
     }
@@ -602,18 +714,37 @@ export class ErrorChainBuilder {
     if (this.errors.length === 0) return null;
     if (this.errors.length === 1) return this.errors[0];
 
-    // Chain errors with cause relationship
-    for (let i = 1; i < this.errors.length; i++) {
-      const current = this.errors[i];
-      const previous = this.errors[i - 1];
+    // Build chain from first to last, creating new instances with proper cause
+    const chainedErrors: BaseErrorInterface[] = [];
 
-      // Create new error with cause if not already set
-      if (!current.cause && current instanceof AbstractError) {
-        (current as any).cause = previous;
+    for (let i = 0; i < this.errors.length; i++) {
+      const current = this.errors[i];
+      const previousError = i > 0 ? chainedErrors[i - 1] : undefined;
+
+      // If current error already has a cause or no previous error, use as-is
+      if (current.cause || !previousError) {
+        chainedErrors.push(current);
+        continue;
       }
+
+      // Create a wrapper error that properly includes the cause
+      const wrappedError = this.createErrorWithCause(current, previousError);
+      chainedErrors.push(wrappedError);
     }
 
-    return this.errors[this.errors.length - 1];
+    return chainedErrors[chainedErrors.length - 1];
+  }
+
+  /**
+   * Create a new error instance with proper cause chain
+   * This method avoids type assertions by creating proper error instances
+   */
+  private createErrorWithCause(
+    error: BaseErrorInterface,
+    cause: BaseErrorInterface,
+  ): BaseErrorInterface {
+    // Create a ChainedError wrapper that properly handles cause
+    return new ChainedError(error, cause);
   }
 
   /**

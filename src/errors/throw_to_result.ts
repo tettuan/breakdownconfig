@@ -14,7 +14,7 @@ export function userConfigErrorToResult(
   path: string,
   errorKind: "parseError" | "configValidationError" | "unknownError",
   message: string,
-  originalError?: unknown,
+  originalError?: Error | string | null,
 ): Result<never, UnifiedError> {
   switch (errorKind) {
     case "parseError":
@@ -59,17 +59,29 @@ export function errorCodeToUnifiedError(
     path?: string;
     field?: string;
     reason?: string;
-    originalError?: unknown;
+    originalError?: Error | string | null;
   } = {},
 ): UnifiedError {
   switch (code) {
-    case ErrorCode.USER_CONFIG_INVALID:
+    case ErrorCode.USER_CONFIG_INVALID: {
+      // Apply Total Function principle: validate reason type instead of using type assertion
+      const validReasons = ["PARSE_ERROR", "VALIDATION_ERROR", "UNKNOWN_ERROR"] as const;
+      type ValidReason = typeof validReasons[number];
+
+      const isValidReason = (r: string): r is ValidReason =>
+        validReasons.includes(r as ValidReason);
+
+      const reason: ValidReason = context.reason && isValidReason(context.reason)
+        ? context.reason
+        : "UNKNOWN_ERROR";
+
       return ErrorFactories.userConfigInvalid(
         context.path || "unknown",
-        context.reason as "PARSE_ERROR" | "VALIDATION_ERROR" | "UNKNOWN_ERROR" || "UNKNOWN_ERROR",
+        reason,
         message,
         context.originalError,
       );
+    }
 
     case ErrorCode.APP_CONFIG_NOT_FOUND:
       return ErrorFactories.configFileNotFound(

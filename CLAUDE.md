@@ -25,12 +25,12 @@ alwaysApply: false
 # Git push
 
 - DO NOT push untile `scripts/local_ci.sh` pass all.
-- run `DEBUG=true scripts/local_ci.sh` if error.
+- run `LOG_LEVEL=debug scripts/local_ci.sh` if error.
 
 # Run Tests
 
 - run `scripts/local_ci.sh` first. catch outlines of errors.
-- if errors, run `DEBUG=true scripts/local_ci.sh` for details.
+- if errors, run `LOG_LEVEL=debug scripts/local_ci.sh` for details.
 - then, run each `*_test.ts` for more details.
 
 ## Order to fix errors
@@ -100,7 +100,7 @@ tmux list-panes -F "#{pane_index}: #{pane_id} #{pane_current_command} #{pane_act
 
 - node の場合は Claude Code と判定する。
 - zsh はClaude Codeではない。
-- Claude Code 存在確認: "C-["を0.2秒毎に3回送る。その後、返信を求めるメッセージを送る。
+- Claude Code 存在確認: "C-["を0.2秒毎に3回送る。その後、「起動したとメインpaneへ送信する」指示を送信する。
 
 ### 1. tmux pane構成作成
 
@@ -145,9 +145,9 @@ tmux select-pane -t 0
 # メインpaneに色をつけて視認性向上
 tmux select-pane -P 'fg=white,bg=black,bold'
 
-# pane番号と実行中コマンドを表示
+# pane番号と実行中コマンドとタイトルを表示
 tmux display-panes -d 0  # pane番号を常時表示
-tmux list-panes -F "pane#{pane_index}(#{pane_id}): #{pane_current_command}"  # 実行中コマンド一覧表示
+tmux list-panes -F "pane#{pane_index}(#{pane_id}): #{pane_current_command} #{pane_title}"  # 実行中コマンド一覧とタイトル表示
 ```
 
 **レイアウト結果**：
@@ -168,7 +168,7 @@ tmux list-panes -F "pane#{pane_index}(#{pane_id}): #{pane_current_command}"  # �
 
 ```
 # pane構造とIDの確認（実際の番号は環境により異なる）
-tmux list-panes -F "#{pane_index}: #{pane_id} #{pane_current_command} #{pane_active}"
+tmux list-panes -F "#{pane_index}: #{pane_id} #{pane_current_command} #{pane_active} #{pane_title}"
 # 例の出力:
 # 0: %22 zsh 1  (メインpane)
 # 1: %27 zsh 0  (部下1)
@@ -245,7 +245,7 @@ tmux send-keys -t %22 '[pane3] エラーが発生しました：詳細内容' &&
 
 ### /clearコマンドの実行
 
-部下は自分で/clearできないため、メインが判断して実行：
+部下は自分で/clearできないため、総司令官とマネージャーが判断して実行：
 
 **実行タイミングの判断基準**:
 

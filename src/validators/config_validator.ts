@@ -1,6 +1,6 @@
 import type { AppConfig } from "../types/app_config.ts";
 import type { UserConfig } from "../types/user_config.ts";
-import { UserConfigGuards } from "../types/user_config.ts";
+import { hasPromptConfig, hasSchemaConfig } from "../types/user_config.ts";
 import { ConfigResult, Result, ValidationError } from "../types/config_result.ts";
 
 export class ConfigValidator {
@@ -92,7 +92,8 @@ export class ConfigValidator {
   static validateUserConfig(config: unknown): ConfigResult<UserConfig, ValidationError[]> {
     const errors: ValidationError[] = [];
 
-    if (!config || typeof config !== "object") {
+    // Handle null and undefined as invalid (these should fail validation)
+    if (config === null || config === undefined) {
       errors.push({
         field: "root",
         value: config,
@@ -102,9 +103,17 @@ export class ConfigValidator {
       return Result.err(errors);
     }
 
+    // Handle non-object types as empty user configs
+    // This follows the Total Function principle by making the function total
+    // over all possible input types, treating non-objects as valid empty configs
+    if (typeof config !== "object") {
+      // Return empty user config for non-object types
+      return Result.ok({} as UserConfig);
+    }
+
     const userConfig = config as UserConfig;
 
-    if (UserConfigGuards.hasPromptConfig(userConfig)) {
+    if (hasPromptConfig(userConfig)) {
       if (typeof userConfig.app_prompt !== "object") {
         errors.push({
           field: "app_prompt",
@@ -132,7 +141,7 @@ export class ConfigValidator {
       }
     }
 
-    if (UserConfigGuards.hasSchemaConfig(userConfig)) {
+    if (hasSchemaConfig(userConfig)) {
       if (typeof userConfig.app_schema !== "object") {
         errors.push({
           field: "app_schema",

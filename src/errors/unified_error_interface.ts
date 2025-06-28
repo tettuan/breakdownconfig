@@ -188,7 +188,10 @@ export interface ErrorFactory<T extends BaseErrorInterface> {
   /** Create error instance */
   create(params: Omit<T, "timestamp" | "correlationId">): T;
   /** Create error with context */
-  createWithContext(params: Omit<T, "timestamp" | "correlationId">, context: ErrorContext): T;
+  createWithContext(
+    params: Omit<T, "timestamp" | "correlationId">,
+    context: Record<string, unknown>,
+  ): T;
   /** Error type identifier */
   readonly errorType: string;
 }
@@ -218,9 +221,9 @@ export interface ErrorAggregator {
  */
 export interface ErrorReporter {
   /** Report error to external system */
-  report(error: BaseErrorInterface): Promise<void>;
+  report(error: BaseErrorInterface): void;
   /** Batch report multiple errors */
-  reportBatch(errors: BaseErrorInterface[]): Promise<void>;
+  reportBatch(errors: BaseErrorInterface[]): void;
   /** Configure reporting settings */
   configure(config: Record<string, unknown>): void;
 }

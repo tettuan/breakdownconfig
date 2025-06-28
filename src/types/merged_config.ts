@@ -1,10 +1,10 @@
 import type { AppConfig } from "./app_config.ts";
-import type { UserConfig, LegacyUserConfig } from "./user_config.ts";
+import type { LegacyUserConfig as _LegacyUserConfig, UserConfig } from "./user_config.ts";
 
 // Re-export for test compatibility
 export type { AppConfig };
 export type { UserConfig };
-import { UserConfigGuards, UserConfigHelpers } from "./user_config.ts";
+import { UserConfigGuards as _UserConfigGuards, UserConfigHelpers } from "./user_config.ts";
 import type { ValidPath } from "../utils/valid_path.ts";
 import { Result } from "./unified_result.ts";
 import type { UnifiedError, ValidationViolation } from "../errors/unified_errors.ts";
@@ -247,7 +247,7 @@ export class ConfigProfileFactory {
       case "empty":
         // 空の設定は常に有効
         break;
-      
+
       case "prompt-only":
         if (!config.app_prompt.base_dir || config.app_prompt.base_dir.trim() === "") {
           violations.push({
@@ -259,7 +259,7 @@ export class ConfigProfileFactory {
           });
         }
         break;
-      
+
       case "schema-only":
         if (!config.app_schema.base_dir || config.app_schema.base_dir.trim() === "") {
           violations.push({
@@ -271,7 +271,7 @@ export class ConfigProfileFactory {
           });
         }
         break;
-      
+
       case "complete":
         if (!config.app_prompt.base_dir || config.app_prompt.base_dir.trim() === "") {
           violations.push({
@@ -292,17 +292,18 @@ export class ConfigProfileFactory {
           });
         }
         break;
-      
-      default:
+
+      default: {
         // TypeScript exhaustiveness check
         const _exhaustive: never = config;
         violations.push({
           field: "kind",
-          value: (_exhaustive as any)?.kind,
+          value: "unknown",
           expectedType: "valid discriminator",
           actualType: "unknown",
           constraint: "must be a valid UserConfig variant",
         });
+      }
     }
 
     if (violations.length > 0) {
@@ -341,60 +342,75 @@ export class ConfigProfileFactory {
  * ConfigProfile型ガード
  * Type guards for ConfigProfile discrimination
  */
-export namespace ConfigProfileGuards {
-  export function isAppOnly(profile: ConfigProfile): profile is AppOnlyProfile {
-    return profile.kind === "app-only";
-  }
-
-  export function isMerged(profile: ConfigProfile): profile is MergedProfile {
-    return profile.kind === "merged";
-  }
-
-  export function isDefaultProfile(profile: ConfigProfile): boolean {
-    return profile.profileName === undefined;
-  }
-
-  export function isNamedProfile(profile: ConfigProfile): boolean {
-    return profile.profileName !== undefined;
-  }
+export function isAppOnly(profile: ConfigProfile): profile is AppOnlyProfile {
+  return profile.kind === "app-only";
 }
+
+export function isMerged(profile: ConfigProfile): profile is MergedProfile {
+  return profile.kind === "merged";
+}
+
+export function isDefaultProfile(profile: ConfigProfile): boolean {
+  return profile.profileName === undefined;
+}
+
+export function isNamedProfile(profile: ConfigProfile): boolean {
+  return profile.profileName !== undefined;
+}
+
+// Compatibility object for existing code
+export const ConfigProfileGuards = {
+  isAppOnly,
+  isMerged,
+  isDefaultProfile,
+  isNamedProfile,
+};
 
 /**
  * ConfigProfileヘルパー関数
  * Helper functions for working with ConfigProfile
  */
-export namespace ConfigProfileHelpers {
-  export function getProfileDisplayName(profile: ConfigProfile): string {
-    return profile.profileName ?? "default";
-  }
-
-  export function getWorkingDir(profile: ConfigProfile): string {
-    return profile.config.working_dir;
-  }
-
-  export function getPromptBaseDir(profile: ConfigProfile): string {
-    return profile.config.app_prompt.base_dir;
-  }
-
-  export function getSchemaBaseDir(profile: ConfigProfile): string {
-    return profile.config.app_schema.base_dir;
-  }
-
-  export function hasUserCustomization(profile: ConfigProfile): boolean {
-    return ConfigProfileGuards.isMerged(profile);
-  }
-
-  export function getConfigPath(profile: ConfigProfile): string {
-    return profile.source.appConfigPath;
-  }
-
-  export function getUserConfigPath(profile: ConfigProfile): string | undefined {
-    if (ConfigProfileGuards.isMerged(profile)) {
-      return profile.source.userConfigPath;
-    }
-    return undefined;
-  }
+export function getProfileDisplayName(profile: ConfigProfile): string {
+  return profile.profileName ?? "default";
 }
+
+export function getWorkingDir(profile: ConfigProfile): string {
+  return profile.config.working_dir;
+}
+
+export function getPromptBaseDir(profile: ConfigProfile): string {
+  return profile.config.app_prompt.base_dir;
+}
+
+export function getSchemaBaseDir(profile: ConfigProfile): string {
+  return profile.config.app_schema.base_dir;
+}
+
+export function hasUserCustomization(profile: ConfigProfile): boolean {
+  return isMerged(profile);
+}
+
+export function getConfigPath(profile: ConfigProfile): string {
+  return profile.source.appConfigPath;
+}
+
+export function getUserConfigPath(profile: ConfigProfile): string | undefined {
+  if (isMerged(profile)) {
+    return profile.source.userConfigPath;
+  }
+  return undefined;
+}
+
+// Compatibility object for existing code
+export const ConfigProfileHelpers = {
+  getProfileDisplayName,
+  getWorkingDir,
+  getPromptBaseDir,
+  getSchemaBaseDir,
+  hasUserCustomization,
+  getConfigPath,
+  getUserConfigPath,
+};
 
 /**
  * Legacy MergedConfig interface for backward compatibility
@@ -428,7 +444,7 @@ export function profileToLegacyConfig(profile: ConfigProfile): MergedConfig {
   };
 
   // Copy additional fields for merged profiles
-  if (ConfigProfileGuards.isMerged(profile)) {
+  if (isMerged(profile)) {
     for (const [key, value] of Object.entries(config)) {
       if (key !== "working_dir" && key !== "app_prompt" && key !== "app_schema") {
         (result as Record<string, unknown>)[key] = value;

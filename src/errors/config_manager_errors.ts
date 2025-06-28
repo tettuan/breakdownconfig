@@ -25,7 +25,7 @@ export const ConfigManagerErrors = {
   /**
    * 設定が読み込まれていない状態でアクセスを試行
    */
-  configNotLoaded: (operation: string, context?: ConfigManagerContext): UnifiedError => {
+  configNotLoaded: (operation: string, _context?: ConfigManagerContext): UnifiedError => {
     return ErrorFactories.configNotLoaded(operation);
   },
 
@@ -36,7 +36,7 @@ export const ConfigManagerErrors = {
     path: string,
     configType: "app" | "user" = "app",
     searchedLocations?: string[],
-    context?: ConfigManagerContext,
+    _context?: ConfigManagerContext,
   ): UnifiedError => {
     return ErrorFactories.configFileNotFound(path, configType, searchedLocations);
   },
@@ -49,7 +49,7 @@ export const ConfigManagerErrors = {
     syntaxError: string,
     line?: number,
     column?: number,
-    context?: ConfigManagerContext,
+    _context?: ConfigManagerContext,
   ): UnifiedError => {
     return ErrorFactories.configParseError(path, syntaxError, line, column);
   },
@@ -66,7 +66,7 @@ export const ConfigManagerErrors = {
       value: unknown;
       constraint?: string;
     }>,
-    context?: ConfigManagerContext,
+    _context?: ConfigManagerContext,
   ): UnifiedError => {
     const violations = fieldErrors.map((error) => ({
       field: error.field,
@@ -87,7 +87,7 @@ export const ConfigManagerErrors = {
     reason: "PARSE_ERROR" | "VALIDATION_ERROR" | "UNKNOWN_ERROR",
     details?: string,
     originalError?: unknown,
-    context?: ConfigManagerContext,
+    _context?: ConfigManagerContext,
   ): UnifiedError => {
     return ErrorFactories.userConfigInvalid(path, reason, details, originalError);
   },
@@ -104,7 +104,7 @@ export const ConfigManagerErrors = {
       | "PATH_TOO_LONG"
       | "EMPTY_PATH",
     fieldName: string,
-    context?: ConfigManagerContext,
+    _context?: ConfigManagerContext,
   ): UnifiedError => {
     return ErrorFactories.pathValidationError(path, reason, fieldName);
   },
@@ -116,7 +116,7 @@ export const ConfigManagerErrors = {
     fieldName: string,
     parentObject?: string,
     availableFields?: string[],
-    context?: ConfigManagerContext,
+    _context?: ConfigManagerContext,
   ): UnifiedError => {
     return ErrorFactories.requiredFieldMissing(fieldName, parentObject, availableFields);
   },
@@ -128,7 +128,7 @@ export const ConfigManagerErrors = {
     fieldName: string,
     expectedType: string,
     actualValue: unknown,
-    context?: ConfigManagerContext,
+    _context?: ConfigManagerContext,
   ): UnifiedError => {
     const actualType = Array.isArray(actualValue)
       ? "array"
@@ -144,7 +144,7 @@ export const ConfigManagerErrors = {
    */
   invalidProfileName: (
     providedName: string,
-    context?: ConfigManagerContext,
+    _context?: ConfigManagerContext,
   ): UnifiedError => {
     return ErrorFactories.invalidProfileName(providedName);
   },
@@ -157,7 +157,7 @@ export const ConfigManagerErrors = {
     path: string,
     systemError?: string,
     code?: string,
-    context?: ConfigManagerContext,
+    _context?: ConfigManagerContext,
   ): UnifiedError => {
     return ErrorFactories.fileSystemError(operation, path, systemError, code);
   },
@@ -167,7 +167,7 @@ export const ConfigManagerErrors = {
    */
   configMergeError: (
     error: unknown,
-    context?: ConfigManagerContext,
+    _context?: ConfigManagerContext,
   ): UnifiedError => {
     return ErrorFactories.configMergeError(error);
   },
@@ -178,7 +178,7 @@ export const ConfigManagerErrors = {
   unknown: (
     error: unknown,
     operation?: string,
-    context?: ConfigManagerContext,
+    _context?: ConfigManagerContext,
   ): UnifiedError => {
     const contextStr = operation ? `ConfigManager.${operation}` : "ConfigManager";
     return ErrorFactories.unknown(error, contextStr);

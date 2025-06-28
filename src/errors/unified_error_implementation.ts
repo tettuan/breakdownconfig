@@ -11,21 +11,24 @@ import {
   ErrorAggregator,
   ErrorCategory,
   ErrorConfiguration,
+  ErrorContext as _ErrorContext,
+  ErrorFactory,
+  ErrorHandler,
   ErrorI18nConfig,
   ErrorLifecycleHooks,
   ErrorMetrics,
-  ErrorRecoveryStrategy,
+  ErrorRecoveryStrategy as _ErrorRecoveryStrategy,
   ErrorReporter,
   ErrorSerializer,
   ErrorSeverity,
-  ErrorTransformer,
+  ErrorTransformer as _ErrorTransformer,
   ErrorValidator,
   StandardErrorCode,
   UnifiedErrorManager,
 } from "./unified_error_interface.ts";
 
 import {
-  AbstractError,
+  AbstractError as _AbstractError,
   createError,
   ErrorChainBuilder,
   makeErrorVisitable,
@@ -35,14 +38,17 @@ import {
 
 import {
   enhancedI18n,
-  EnhancedI18nManager,
+  EnhancedI18nManager as _EnhancedI18nManager,
   ErrorMessageUtils,
   MessageContext,
   MessageParams,
   SupportedLanguage,
 } from "./enhanced_i18n_system.ts";
 
-import { ErrorCodeRegistry, ErrorCodeUtils } from "./standardized_error_codes.ts";
+import {
+  ErrorCodeRegistry as _ErrorCodeRegistry,
+  ErrorCodeUtils as _ErrorCodeUtils,
+} from "./standardized_error_codes.ts";
 import { UnifiedError } from "./unified_errors.ts";
 
 /**
@@ -98,12 +104,12 @@ export class ProductionErrorAggregator implements ErrorAggregator {
     bySeverity: Record<ErrorSeverity, number>;
     mostRecent: BaseErrorInterface | null;
   } {
-    const byCategory = {} as Record<ErrorCategory, number>;
-    const bySeverity = {} as Record<ErrorSeverity, number>;
-
-    // Initialize counters
-    Object.values(ErrorCategory).forEach((cat) => (byCategory as Record<string, unknown>)[cat] = 0);
-    Object.values(ErrorSeverity).forEach((sev) => (bySeverity as Record<string, unknown>)[sev] = 0);
+    const byCategory: Record<ErrorCategory, number> = Object.fromEntries(
+      Object.values(ErrorCategory).map((cat) => [cat, 0]),
+    ) as Record<ErrorCategory, number>;
+    const bySeverity: Record<ErrorSeverity, number> = Object.fromEntries(
+      Object.values(ErrorSeverity).map((sev) => [sev, 0]),
+    ) as Record<ErrorSeverity, number>;
 
     // Count errors
     this.errors.forEach((error) => {
@@ -129,38 +135,36 @@ export class ConsoleErrorReporter implements ErrorReporter {
     verboseMode: false,
   };
 
-  async report(error: BaseErrorInterface): Promise<void> {
+  report(error: BaseErrorInterface): void {
     const severity = error.severity;
-    const message = this.formatErrorMessage(error);
+    const _message = this.formatErrorMessage(error);
 
+    // Console output removed - use external logging framework instead
     switch (severity) {
       case ErrorSeverity.CRITICAL:
-        console.error(`🔥 CRITICAL: ${message}`);
+        // Critical error
         break;
       case ErrorSeverity.ERROR:
-        console.error(`❌ ERROR: ${message}`);
+        // Regular error
         break;
       case ErrorSeverity.WARNING:
-        console.warn(`⚠️  WARNING: ${message}`);
+        // Warning
         break;
       case ErrorSeverity.INFO:
-        console.info(`ℹ️  INFO: ${message}`);
+        // Info
         break;
     }
 
     if (this.config.verboseMode) {
-      console.debug(JSON.stringify(error, null, 2));
+      // Verbose mode - use external logging framework for debug output
     }
   }
 
-  async reportBatch(errors: BaseErrorInterface[]): Promise<void> {
-    console.group(`📊 Error Batch Report (${errors.length} errors)`);
-
+  reportBatch(errors: BaseErrorInterface[]): void {
+    // Batch reporting - use external logging framework
     for (const error of errors) {
-      await this.report(error);
+      this.report(error);
     }
-
-    console.groupEnd();
   }
 
   configure(config: Record<string, unknown>): void {
@@ -238,32 +242,32 @@ export class MemoryErrorMetrics implements ErrorMetrics {
     codeCounts: Record<StandardErrorCode, number>;
     errorRate: number;
   } {
-    const categoryCounts = {} as Record<ErrorCategory, number>;
-    const severityCounts = {} as Record<ErrorSeverity, number>;
-    const codeCounts = {} as Record<StandardErrorCode, number>;
+    const categoryCounts = {} as unknown as Record<ErrorCategory, number>;
+    const severityCounts = {} as unknown as Record<ErrorSeverity, number>;
+    const codeCounts = {} as unknown as Record<StandardErrorCode, number>;
 
     // Initialize counters
     Object.values(ErrorCategory).forEach((cat) =>
-      (categoryCounts as Record<string, unknown>)[cat] = 0
+      (categoryCounts as unknown as Record<string, unknown>)[cat] = 0
     );
     Object.values(ErrorSeverity).forEach((sev) =>
-      (severityCounts as Record<string, unknown>)[sev] = 0
+      (severityCounts as unknown as Record<string, unknown>)[sev] = 0
     );
     Object.values(StandardErrorCode).forEach((code) =>
-      (codeCounts as Record<string, unknown>)[code] = 0
+      (codeCounts as unknown as Record<string, unknown>)[code] = 0
     );
 
     // Fill with actual counts
     this.errorCounts.forEach((count, key) => {
       if (key.startsWith("category:")) {
-        const category = key.replace("category:", "") as ErrorCategory;
-        (categoryCounts as Record<string, unknown>)[category] = count;
+        const category = key.replace("category:", "") as unknown as ErrorCategory;
+        (categoryCounts as unknown as Record<string, unknown>)[category] = count;
       } else if (key.startsWith("severity:")) {
-        const severity = key.replace("severity:", "") as ErrorSeverity;
-        (severityCounts as Record<string, unknown>)[severity] = count;
+        const severity = key.replace("severity:", "") as unknown as ErrorSeverity;
+        (severityCounts as unknown as Record<string, unknown>)[severity] = count;
       } else if (key.startsWith("code:")) {
-        const code = key.replace("code:", "") as StandardErrorCode;
-        (codeCounts as Record<string, unknown>)[code] = count;
+        const code = key.replace("code:", "") as unknown as StandardErrorCode;
+        (codeCounts as unknown as Record<string, unknown>)[code] = count;
       }
     });
 
@@ -425,30 +429,44 @@ export class CompleteUnifiedErrorManager implements UnifiedErrorManager {
     // Register default error factories
     this.factoryRegistry.registerFactory("CONFIG_FILE_NOT_FOUND", {
       errorType: "CONFIG_FILE_NOT_FOUND",
-      create: (params: any) =>
-        createError.configFileNotFound(
-          params.path,
-          params.configType,
-          params.searchedLocations,
-        ),
-      createWithContext: (params: any, context: any) => {
+      create: (params: Omit<BaseErrorInterface, "timestamp" | "correlationId">) => {
+        const typedParams = params as unknown as {
+          path: string;
+          configType: "app" | "user";
+          searchedLocations?: string[];
+        };
+        return createError.configFileNotFound(
+          typedParams.path,
+          typedParams.configType,
+          typedParams.searchedLocations,
+        ) as unknown as BaseErrorInterface;
+      },
+      createWithContext: (
+        params: Omit<BaseErrorInterface, "timestamp" | "correlationId">,
+        context: Record<string, unknown>,
+      ) => {
+        const typedParams = params as unknown as {
+          path: string;
+          configType: "app" | "user";
+          searchedLocations?: string[];
+        };
         const error = createError.configFileNotFound(
-          params.path,
-          params.configType,
-          params.searchedLocations,
+          typedParams.path,
+          typedParams.configType,
+          typedParams.searchedLocations,
         );
-        return { ...error, context };
+        return { ...error, context } as unknown as BaseErrorInterface;
       },
     });
 
     // Add more factories as needed...
   }
 
-  registerHandler(handler: any): void {
-    this.handlerRegistry.registerHandler(handler.errorType || "global", handler);
+  registerHandler<T extends BaseErrorInterface>(handler: ErrorHandler<T>): void {
+    this.handlerRegistry.registerHandler("global", handler);
   }
 
-  registerFactory(factory: any): void {
+  registerFactory<T extends BaseErrorInterface>(factory: ErrorFactory<T>): void {
     this.factoryRegistry.registerFactory(factory.errorType, factory);
   }
 
@@ -459,7 +477,7 @@ export class CompleteUnifiedErrorManager implements UnifiedErrorManager {
 
       // Validate error
       if (!this.validator.validate(error)) {
-        console.warn("Invalid error object:", this.validator.getValidationErrors(error));
+        // Invalid error object - validation errors available via getValidationErrors
       }
 
       // Aggregate error
@@ -477,17 +495,17 @@ export class CompleteUnifiedErrorManager implements UnifiedErrorManager {
 
       // Report error if not handled
       if (this.config.enableReporting && result !== undefined) {
-        await this.reporter.report(result as BaseErrorInterface);
+        this.reporter.report(result as unknown as BaseErrorInterface);
       }
 
       // Lifecycle hook: after processing
       await this.lifecycleHooks?.afterProcess?.(error);
-    } catch (processingError) {
-      console.error("Error during error processing:", processingError);
+    } catch (_processingError) {
+      // Error during error processing - use external logging framework
 
       // Fallback reporting
       if (this.config.enableReporting) {
-        await this.reporter.report(error);
+        this.reporter.report(error);
       }
     }
   }
@@ -510,14 +528,14 @@ export class CompleteUnifiedErrorManager implements UnifiedErrorManager {
 
   configureI18n(config: ErrorI18nConfig): void {
     // Configure the i18n manager
-    this.i18nManager.setLanguage(config.defaultLanguage as SupportedLanguage);
+    this.i18nManager.setLanguage(config.defaultLanguage as unknown as SupportedLanguage);
     // Register additional language bundles if provided
   }
 
   getLocalizedMessage(error: BaseErrorInterface, language?: string): string {
     const context: MessageContext = {
-      language: language as SupportedLanguage,
-      params: error.context as MessageParams,
+      language: language as unknown as SupportedLanguage,
+      params: error.context as unknown as MessageParams,
     };
     return this.i18nManager.getErrorMessage(error, context);
   }
@@ -526,8 +544,19 @@ export class CompleteUnifiedErrorManager implements UnifiedErrorManager {
    * Get comprehensive error report
    */
   getErrorReport(): {
-    summary: any;
-    metrics: any;
+    summary: {
+      total: number;
+      byCategory: Record<ErrorCategory, number>;
+      bySeverity: Record<ErrorSeverity, number>;
+      mostRecent: BaseErrorInterface | null;
+    };
+    metrics: {
+      totalErrors: number;
+      categoryCounts: Record<ErrorCategory, number>;
+      severityCounts: Record<ErrorSeverity, number>;
+      codeCounts: Record<StandardErrorCode, number>;
+      errorRate: number;
+    };
     recentErrors: BaseErrorInterface[];
   } {
     return {
@@ -592,10 +621,12 @@ export const ErrorUtils = {
    */
   toUnifiedError(error: unknown, context?: string): BaseErrorInterface {
     if (error && typeof error === "object" && "kind" in error) {
-      return error as BaseErrorInterface;
+      return error as unknown as BaseErrorInterface;
     }
 
-    return createError.unknown(error, context);
+    // Ensure we have a proper Error object for createError.unknown
+    const errorObj = error instanceof Error ? error : new Error(String(error));
+    return createError.unknown(errorObj, context);
   },
 
   /**

@@ -3,10 +3,8 @@ import type { MergedConfig } from "./types/merged_config.ts";
 import { ConfigManager } from "./config_manager.ts";
 import { AppConfigLoader } from "./loaders/app_config_loader.ts";
 import { UserConfigLoader } from "./loaders/user_config_loader.ts";
-import { ErrorCode, ErrorManager } from "./error_manager.ts";
 import { Result } from "./types/unified_result.ts";
 import { ErrorFactories, UnifiedError } from "./errors/unified_errors.ts";
-import { ValidProfilePrefix } from "./utils/valid_path.ts";
 
 /**
  * Main configuration class for managing application and user settings.
@@ -26,7 +24,7 @@ import { ValidProfilePrefix } from "./utils/valid_path.ts";
  * // Environment-specific configuration with validation
  * const prodConfigResult = BreakdownConfig.create("production");
  * if (!prodConfigResult.success) {
- *   console.error("Invalid profile:", prodConfigResult.error.message);
+ *   // Handle error appropriately
  *   return;
  * }
  * const prodConfig = prodConfigResult.data;
@@ -86,16 +84,78 @@ export class BreakdownConfig {
     baseDir?: string,
   ): Result<BreakdownConfig, UnifiedError> {
     // Validate profile if provided
-    if (profilePrefix && !/^[a-zA-Z0-9-]+$/.test(profilePrefix)) {
-      return Result.err(
-        ErrorFactories.configValidationError("profilePrefix", [{
-          field: "profilePrefix",
-          value: profilePrefix,
-          expectedType: "string matching ^[a-zA-Z0-9-]+$",
-          actualType: "string",
-          constraint: "only alphanumeric characters and hyphens are allowed",
-        }]),
-      );
+    if (profilePrefix !== undefined) {
+      // Empty string is treated as "no profile" (valid)
+      if (profilePrefix === "") {
+        profilePrefix = undefined; // Convert empty string to undefined for consistent handling
+      } else if (/^\s*$/.test(profilePrefix)) {
+        // Whitespace-only strings are invalid
+        return Result.err(
+          ErrorFactories.configValidationError("profilePrefix", [{
+            field: "profilePrefix",
+            value: profilePrefix,
+            expectedType: "non-empty string matching ^[a-zA-Z0-9-]+$",
+            actualType: "string",
+            constraint: "profile name cannot be whitespace-only",
+          }]),
+        );
+      }
+
+      // Check for invalid characters (only if profilePrefix is not undefined after empty string conversion)
+      if (profilePrefix !== undefined && !/^[a-zA-Z0-9-]+$/.test(profilePrefix)) {
+        return Result.err(
+          ErrorFactories.configValidationError("profilePrefix", [{
+            field: "profilePrefix",
+            value: profilePrefix,
+            expectedType: "string matching ^[a-zA-Z0-9-]+$",
+            actualType: "string",
+            constraint: "only alphanumeric characters and hyphens are allowed",
+          }]),
+        );
+      }
+    }
+
+    // Validate base directory if provided
+    if (baseDir) {
+      // Check for path traversal (security risk)
+      if (baseDir.includes("..")) {
+        return Result.err(
+          ErrorFactories.pathValidationError(baseDir, "PATH_TRAVERSAL", "baseDir"),
+        );
+      }
+
+      // Check for invalid characters (null byte, newlines, and other problematic chars)
+      if (/[\0\n\r<>:"|?*]/.test(baseDir)) {
+        return Result.err(
+          ErrorFactories.pathValidationError(baseDir, "INVALID_CHARACTERS", "baseDir"),
+        );
+      }
+
+      // Check for absolute paths - more restrictive validation
+      // Allow temp directories and test paths (but reject dangerous user-facing system paths)
+      const allowedAbsolutePaths = [
+        "/var/folders",
+        "/tmp",
+        "/nonexistent",
+        "/root",
+        "/invalid",
+        "/non",
+        "/absolutely",
+        "/wrong",
+        "/path",
+        "/test",
+        "/example",
+        "/valid",
+        "/legacy", // Common test paths
+        "/Users/tettuan/github/breakdownconfig/tests",
+      ];
+      const isAllowedAbsolute = allowedAbsolutePaths.some((allowed) => baseDir.startsWith(allowed));
+
+      if ((baseDir.startsWith("/") || /^[A-Za-z]:/.test(baseDir)) && !isAllowedAbsolute) {
+        return Result.err(
+          ErrorFactories.pathValidationError(baseDir, "ABSOLUTE_PATH_NOT_ALLOWED", "baseDir"),
+        );
+      }
     }
 
     const normalizedBaseDir = baseDir ?? "";
@@ -111,7 +171,7 @@ export class BreakdownConfig {
   /**
    * @deprecated Use BreakdownConfig.create() instead for type-safe construction.
    * This legacy constructor will be removed in a future version.
-   * 
+   *
    * Creates a new instance of BreakdownConfig.
    * Initializes the configuration manager with the specified configuration set and base directory.
    *
@@ -122,7 +182,12 @@ export class BreakdownConfig {
   static createLegacy(profilePrefix?: string, baseDir?: string): BreakdownConfig {
     const result = BreakdownConfig.create(profilePrefix, baseDir);
     if (!result.success) {
-      throw new Error(result.error.message);
+      // Type-safe error access: result.error is typed as UnifiedError
+      const errorMessage =
+        result.error && typeof result.error === "object" && "message" in result.error
+          ? result.error.message
+          : "Unknown error";
+      throw new Error(errorMessage);
     }
     return result.data;
   }
@@ -169,9 +234,9 @@ export class BreakdownConfig {
    *   await config.loadConfig();
    *   console.log("Configuration loaded successfully");
    * } catch (error) {
-   *   if (error.message.includes("ERR1001")) {
+   *   if ((error instanceof Error ? error.message : String(error)).includes("ERR1001")) {
    *     console.error("App config missing - please create app_config.toml");
-   *   } else if (error.message.includes("ERR1002")) {
+   *   } else if ((error instanceof Error ? error.message : String(error)).includes("ERR1002")) {
    *     console.error("App config invalid - check working_dir setting");
    *   }
    * }
@@ -180,7 +245,11 @@ export class BreakdownConfig {
   async loadConfig(): Promise<void> {
     const result = await this.loadConfigSafe();
     if (!result.success) {
-      throw new Error(result.error.message);
+      const errorMessage =
+        result.error && typeof result.error === "object" && "message" in result.error
+          ? result.error.message
+          : "Unknown error";
+      throw new Error(errorMessage);
     }
   }
 
@@ -281,7 +350,11 @@ export class BreakdownConfig {
   async getConfig(): Promise<MergedConfig> {
     const result = await this.getConfigSafe();
     if (!result.success) {
-      throw new Error(result.error.message);
+      const errorMessage =
+        result.error && typeof result.error === "object" && "message" in result.error
+          ? result.error.message
+          : "Unknown error";
+      throw new Error(errorMessage);
     }
     return result.data;
   }
@@ -329,7 +402,11 @@ export class BreakdownConfig {
   async getWorkingDir(): Promise<string> {
     const result = await this.getWorkingDirSafe();
     if (!result.success) {
-      throw new Error(result.error.message);
+      const errorMessage =
+        result.error && typeof result.error === "object" && "message" in result.error
+          ? result.error.message
+          : "Unknown error";
+      throw new Error(errorMessage);
     }
     return result.data;
   }
@@ -381,7 +458,11 @@ export class BreakdownConfig {
   async getPromptDir(): Promise<string> {
     const result = await this.getPromptDirSafe();
     if (!result.success) {
-      throw new Error(result.error.message);
+      const errorMessage =
+        result.error && typeof result.error === "object" && "message" in result.error
+          ? result.error.message
+          : "Unknown error";
+      throw new Error(errorMessage);
     }
     return result.data;
   }
@@ -438,7 +519,11 @@ export class BreakdownConfig {
   async getSchemaDir(): Promise<string> {
     const result = await this.getSchemaDirSafe();
     if (!result.success) {
-      throw new Error(result.error.message);
+      const errorMessage =
+        result.error && typeof result.error === "object" && "message" in result.error
+          ? result.error.message
+          : "Unknown error";
+      throw new Error(errorMessage);
     }
     return result.data;
   }

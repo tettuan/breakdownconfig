@@ -100,8 +100,8 @@ export class ErrorManager {
    * );
    * ```
    */
-  static logWarning(code: ErrorCode, details?: string): void {
-    const message = this.errorMessages.get(code) || "Unknown warning";
-    console.warn(`${code}: ${message}${details ? ` - ${details}` : ""}`);
+  static logWarning(code: ErrorCode, _details?: string): void {
+    const _message = this.errorMessages.get(code) || "Unknown warning";
+    // Warning logging removed as per project requirements
   }
 }

@@ -39,7 +39,7 @@ export function convertConfigErrorToUnified(configError: ConfigError): UnifiedEr
         configError.column,
       );
 
-    case "configValidationError":
+    case "configValidationError": {
       const violations = configError.errors.map((err) => ({
         field: err.field,
         value: err.value,
@@ -52,14 +52,16 @@ export function convertConfigErrorToUnified(configError: ConfigError): UnifiedEr
         configError.path,
         violations,
       );
+    }
 
-    case "pathError":
+    case "pathError": {
       const unifiedReason = PATH_REASON_MAP[configError.reason];
       return ErrorFactories.pathValidationError(
         configError.path,
         unifiedReason,
         "path", // Default field name
       );
+    }
 
     case "unknownError":
       return ErrorFactories.unknown(
@@ -67,13 +69,16 @@ export function convertConfigErrorToUnified(configError: ConfigError): UnifiedEr
         "legacy-config-error",
       );
 
-    default:
-      // Exhaustive check
+    default: {
+      // Exhaustive check with safe type access
       const _exhaustiveCheck: never = configError;
+      const unknownError = configError as { kind?: string };
+      const unknownKind = unknownError.kind ?? "unknown";
       return ErrorFactories.unknown(
-        new Error(`Unknown ConfigError type: ${(configError as any).kind}`),
+        new Error(`Unknown ConfigError type: ${unknownKind}`),
         "legacy-adapter",
       );
+    }
   }
 }
 
@@ -110,10 +115,13 @@ export function convertUnifiedToConfigError(unifiedError: UnifiedError): ConfigE
         })),
       };
 
-    case "PATH_VALIDATION_ERROR":
-      const legacyReason = Object.entries(PATH_REASON_MAP).find(
+    case "PATH_VALIDATION_ERROR": {
+      const legacyReasonEntry = Object.entries(PATH_REASON_MAP).find(
         ([_, unified]) => unified === unifiedError.reason,
-      )?.[0] as LegacyPathErrorReason || "invalidCharacters";
+      );
+      const legacyReason: LegacyPathErrorReason = legacyReasonEntry?.[0]
+        ? legacyReasonEntry[0] as LegacyPathErrorReason
+        : "invalidCharacters";
 
       return {
         kind: "pathError",
@@ -121,6 +129,7 @@ export function convertUnifiedToConfigError(unifiedError: UnifiedError): ConfigE
         reason: legacyReason,
         message: unifiedError.message,
       };
+    }
 
     case "USER_CONFIG_INVALID":
     case "CONFIG_NOT_LOADED":
@@ -144,28 +153,41 @@ export function convertUnifiedToConfigError(unifiedError: UnifiedError): ConfigE
  * Type guard to check if an error is a legacy ConfigError
  */
 export function isLegacyConfigError(error: unknown): error is ConfigError {
-  return (
-    typeof error === "object" &&
-    error !== null &&
-    "kind" in error &&
-    typeof (error as any).kind === "string" &&
-    ["fileNotFound", "parseError", "configValidationError", "pathError", "unknownError"].includes(
-      (error as any).kind,
-    )
-  );
+  if (typeof error !== "object" || error === null) {
+    return false;
+  }
+
+  const errorObj = error as Record<string, unknown>;
+  if (!("kind" in errorObj) || typeof errorObj.kind !== "string") {
+    return false;
+  }
+
+  const validKinds = [
+    "fileNotFound",
+    "parseError",
+    "configValidationError",
+    "pathError",
+    "unknownError",
+  ];
+  return validKinds.includes(errorObj.kind);
 }
 
 /**
  * Type guard to check if an error is a UnifiedError
  */
 export function isUnifiedError(error: unknown): error is UnifiedError {
+  if (typeof error !== "object" || error === null) {
+    return false;
+  }
+
+  const errorObj = error as Record<string, unknown>;
   return (
-    typeof error === "object" &&
-    error !== null &&
-    "kind" in error &&
-    "timestamp" in error &&
-    typeof (error as any).kind === "string" &&
-    (error as any).timestamp instanceof Date
+    "kind" in errorObj &&
+    typeof errorObj.kind === "string" &&
+    "timestamp" in errorObj &&
+    errorObj.timestamp instanceof Date &&
+    "message" in errorObj &&
+    typeof errorObj.message === "string"
   );
 }
 
@@ -186,6 +208,19 @@ export function normalizeError(error: unknown): UnifiedError {
     return ErrorFactories.unknown(error, "error-normalization");
   }
 
-  // Handle any other unknown error types
-  return ErrorFactories.unknown(error, "unknown-type");
+  // Handle string errors
+  if (typeof error === "string") {
+    return ErrorFactories.unknown(new Error(error), "string-error");
+  }
+
+  // Handle null/undefined
+  if (error === null || error === undefined) {
+    return ErrorFactories.unknown(new Error("Null or undefined error"), "null-error");
+  }
+
+  // Handle any other unknown error types with safe conversion
+  return ErrorFactories.unknown(
+    new Error(`Unknown error type: ${typeof error}`),
+    "unknown-type",
+  );
 }

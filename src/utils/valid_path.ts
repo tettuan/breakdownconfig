@@ -1,4 +1,10 @@
-import { ConfigResult, PathError, PathErrorReason, Result, ValidationError } from "../types/config_result.ts";
+import {
+  ConfigResult,
+  PathError,
+  PathErrorReason as _PathErrorReason,
+  Result,
+  ValidationError as _ValidationError,
+} from "../types/config_result.ts";
 import { Result as UnifiedResult } from "../types/unified_result.ts";
 import { ErrorFactories, UnifiedError } from "../errors/unified_errors.ts";
 
@@ -188,12 +194,12 @@ export class ValidPath {
 
 /**
  * ValidProfilePrefix - A Smart Constructor for profile validation
- * 
+ *
  * This class ensures that profiles:
  * 1. Are not empty
  * 2. Contain only alphanumeric characters and hyphens
  * 3. Follow the pattern: /^[a-zA-Z0-9-]+$/
- * 
+ *
  * Common usage: "production", "development", "staging-v2", "test-env"
  */
 export class ValidProfilePrefix {

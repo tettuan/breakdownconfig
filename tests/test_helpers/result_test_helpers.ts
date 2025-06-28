@@ -5,9 +5,13 @@
  * ConfigResult patterns and UnifiedError handling.
  */
 
-import { assert, assertEquals, assertExists } from "@std/assert";
-import { ConfigResult, Result } from "../../src/types/config_result.ts";
-import { Failure, Result as UnifiedResult, Success } from "../../src/types/unified_result.ts";
+import { assert, assertEquals, assertExists as _assertExists } from "@std/assert";
+import { ConfigResult, Result as _Result } from "../../src/types/config_result.ts";
+import {
+  Failure as _Failure,
+  Result as UnifiedResult,
+  Success as _Success,
+} from "../../src/types/unified_result.ts";
 import { UnifiedError } from "../../src/errors/unified_errors.ts";
 
 /**
@@ -96,10 +100,17 @@ export function assertResultErrorMessage<T>(
   message?: string,
 ): UnifiedError {
   const error = assertResultErr(result, message);
-  assert(
-    error.message.includes(expectedMessageContent),
-    `Expected error message to contain '${expectedMessageContent}' but got: ${error.message}`,
-  );
+  if (error instanceof Error) {
+    assert(
+      error.message.includes(expectedMessageContent),
+      `Expected error message to contain '${expectedMessageContent}' but got: ${error.message}`,
+    );
+  } else {
+    assert(
+      error.message.includes(expectedMessageContent),
+      `Expected error message to contain '${expectedMessageContent}' but got: ${error.message}`,
+    );
+  }
   return error;
 }
 
@@ -235,7 +246,7 @@ export function assertPathValidationError<T>(
  */
 export async function assertRejectsWithErrorKind(
   fn: () => Promise<unknown>,
-  expectedErrorKind: string,
+  _expectedErrorKind: string,
   expectedMessageContent?: string,
 ): Promise<void> {
   let thrownError: Error | null = null;

@@ -94,11 +94,11 @@ export class PathValidator {
     try {
       const fileExists = await exists(pathStr);
       return Result.ok(fileExists);
-    } catch (error) {
+    } catch (error: unknown) {
       return Result.err<UnknownError>({
         kind: "unknownError",
         message: `Failed to check path existence: ${pathStr}`,
-        originalError: error,
+        originalError: error instanceof Error ? error : new Error(String(error)),
       });
     }
   }
@@ -234,7 +234,7 @@ export class PathValidator {
       });
     }
 
-    // Remove base path and any leading slashes
+    // Remove base path and all leading slashes
     let relativePath = normalizedTarget.slice(normalizedBase.length);
     if (relativePath.startsWith("/") || relativePath.startsWith("\\")) {
       relativePath = relativePath.slice(1);

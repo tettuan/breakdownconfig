@@ -10,37 +10,71 @@ import {
   ErrorSeverity,
   StandardErrorCode,
 } from "./unified_error_interface.ts";
-import { Result } from "../types/unified_result.ts";
+import { Result as _Result } from "../types/unified_result.ts";
 
 /**
  * Error handling utilities
  */
 export class ErrorHandlingUtils {
   /**
-   * Convert any error to UnifiedError
+   * Convert any error to UnifiedError with proper type guards
    */
   static toUnifiedError(error: unknown, context?: string): UnifiedError {
+    // Type guard for UnifiedError
     if (this.isUnifiedError(error)) {
       return error;
     }
 
+    // Type guard for standard Error
     if (error instanceof Error) {
       return ErrorFactories.unknown(error, context);
     }
 
-    return ErrorFactories.unknown(error, context);
+    // Handle other types safely
+    const errorMessage = this.getErrorMessage(error);
+    return ErrorFactories.unknown(
+      new Error(errorMessage),
+      context,
+    );
   }
 
   /**
-   * Type guard for UnifiedError
+   * Safely extract error message from unknown type
+   */
+  private static getErrorMessage(error: unknown): string {
+    if (typeof error === "string") {
+      return error;
+    }
+    if (typeof error === "number" || typeof error === "boolean") {
+      return String(error);
+    }
+    if (
+      error && typeof error === "object" && "message" in error && typeof error.message === "string"
+    ) {
+      return error.message;
+    }
+    if (
+      error && typeof error === "object" && "toString" in error &&
+      typeof error.toString === "function"
+    ) {
+      return error.toString();
+    }
+    return "Unknown error";
+  }
+
+  /**
+   * Type guard for UnifiedError with proper type checking
    */
   static isUnifiedError(error: unknown): error is UnifiedError {
     return (
       typeof error === "object" &&
       error !== null &&
       "kind" in error &&
+      typeof (error as Record<string, unknown>).kind === "string" &&
       "message" in error &&
-      "timestamp" in error
+      typeof (error as Record<string, unknown>).message === "string" &&
+      "timestamp" in error &&
+      (error as Record<string, unknown>).timestamp instanceof Date
     );
   }
 
@@ -56,7 +90,9 @@ export class ErrorHandlingUtils {
       message: error.message,
       timestamp: error.timestamp,
       context: this.extractContext(error),
-      stackTrace: (error as any).stackTrace,
+      stackTrace: "stackTrace" in error && typeof error.stackTrace === "string"
+        ? error.stackTrace
+        : undefined,
       cause: undefined,
       correlationId: undefined,
     };
@@ -66,63 +102,84 @@ export class ErrorHandlingUtils {
    * Map error kind to StandardErrorCode
    */
   private static mapToStandardErrorCode(kind: string): StandardErrorCode {
-    const mapping: Record<string, StandardErrorCode> = {
-      "CONFIG_FILE_NOT_FOUND": StandardErrorCode.CF_CONFIG_FILE_NOT_FOUND,
-      "CONFIG_PARSE_ERROR": StandardErrorCode.CF_CONFIG_PARSE_ERROR,
-      "CONFIG_VALIDATION_ERROR": StandardErrorCode.CF_CONFIG_VALIDATION_ERROR,
-      "USER_CONFIG_INVALID": StandardErrorCode.CF_USER_CONFIG_INVALID,
-      "PATH_VALIDATION_ERROR": StandardErrorCode.PS_PATH_TRAVERSAL,
-      "CONFIG_NOT_LOADED": StandardErrorCode.CF_CONFIG_NOT_LOADED,
-      "INVALID_PROFILE_NAME": StandardErrorCode.CF_INVALID_PROFILE_NAME,
-      "FILE_SYSTEM_ERROR": StandardErrorCode.FS_FILE_NOT_FOUND,
-      "REQUIRED_FIELD_MISSING": StandardErrorCode.VL_REQUIRED_FIELD_MISSING,
-      "TYPE_MISMATCH": StandardErrorCode.VL_TYPE_MISMATCH,
-      "UNKNOWN_ERROR": StandardErrorCode.UN_UNKNOWN_ERROR,
-    };
-
-    return mapping[kind] || StandardErrorCode.UN_UNKNOWN_ERROR;
+    // Exhaustive mapping using switch for Total Function compliance
+    switch (kind) {
+      case "CONFIG_FILE_NOT_FOUND":
+        return StandardErrorCode.CF_CONFIG_FILE_NOT_FOUND;
+      case "CONFIG_PARSE_ERROR":
+        return StandardErrorCode.CF_CONFIG_PARSE_ERROR;
+      case "CONFIG_VALIDATION_ERROR":
+        return StandardErrorCode.CF_CONFIG_VALIDATION_ERROR;
+      case "USER_CONFIG_INVALID":
+        return StandardErrorCode.CF_USER_CONFIG_INVALID;
+      case "PATH_VALIDATION_ERROR":
+        return StandardErrorCode.PS_PATH_TRAVERSAL;
+      case "CONFIG_NOT_LOADED":
+        return StandardErrorCode.CF_CONFIG_NOT_LOADED;
+      case "INVALID_PROFILE_NAME":
+        return StandardErrorCode.CF_INVALID_PROFILE_NAME;
+      case "FILE_SYSTEM_ERROR":
+        return StandardErrorCode.FS_FILE_NOT_FOUND;
+      case "REQUIRED_FIELD_MISSING":
+        return StandardErrorCode.VL_REQUIRED_FIELD_MISSING;
+      case "TYPE_MISMATCH":
+        return StandardErrorCode.VL_TYPE_MISMATCH;
+      case "UNKNOWN_ERROR":
+        return StandardErrorCode.UN_UNKNOWN_ERROR;
+      default:
+        return StandardErrorCode.UN_UNKNOWN_ERROR;
+    }
   }
 
   /**
    * Map error kind to ErrorCategory
    */
   private static mapToErrorCategory(kind: string): ErrorCategory {
-    const mapping: Record<string, ErrorCategory> = {
-      "CONFIG_FILE_NOT_FOUND": ErrorCategory.CONFIGURATION,
-      "CONFIG_PARSE_ERROR": ErrorCategory.CONFIGURATION,
-      "CONFIG_VALIDATION_ERROR": ErrorCategory.VALIDATION,
-      "USER_CONFIG_INVALID": ErrorCategory.VALIDATION,
-      "PATH_VALIDATION_ERROR": ErrorCategory.VALIDATION,
-      "CONFIG_NOT_LOADED": ErrorCategory.CONFIGURATION,
-      "INVALID_PROFILE_NAME": ErrorCategory.VALIDATION,
-      "FILE_SYSTEM_ERROR": ErrorCategory.FILESYSTEM,
-      "REQUIRED_FIELD_MISSING": ErrorCategory.VALIDATION,
-      "TYPE_MISMATCH": ErrorCategory.VALIDATION,
-      "UNKNOWN_ERROR": ErrorCategory.UNKNOWN,
-    };
-
-    return mapping[kind] || ErrorCategory.UNKNOWN;
+    // Exhaustive mapping using switch for Total Function compliance
+    switch (kind) {
+      case "CONFIG_FILE_NOT_FOUND":
+      case "CONFIG_PARSE_ERROR":
+      case "CONFIG_NOT_LOADED":
+        return ErrorCategory.CONFIGURATION;
+      case "CONFIG_VALIDATION_ERROR":
+      case "USER_CONFIG_INVALID":
+      case "PATH_VALIDATION_ERROR":
+      case "INVALID_PROFILE_NAME":
+      case "REQUIRED_FIELD_MISSING":
+      case "TYPE_MISMATCH":
+        return ErrorCategory.VALIDATION;
+      case "FILE_SYSTEM_ERROR":
+        return ErrorCategory.FILESYSTEM;
+      case "UNKNOWN_ERROR":
+        return ErrorCategory.UNKNOWN;
+      default:
+        return ErrorCategory.UNKNOWN;
+    }
   }
 
   /**
    * Map error kind to ErrorSeverity
    */
   private static mapToErrorSeverity(kind: string): ErrorSeverity {
-    const mapping: Record<string, ErrorSeverity> = {
-      "CONFIG_FILE_NOT_FOUND": ErrorSeverity.ERROR,
-      "CONFIG_PARSE_ERROR": ErrorSeverity.ERROR,
-      "CONFIG_VALIDATION_ERROR": ErrorSeverity.ERROR,
-      "USER_CONFIG_INVALID": ErrorSeverity.WARNING,
-      "PATH_VALIDATION_ERROR": ErrorSeverity.ERROR,
-      "CONFIG_NOT_LOADED": ErrorSeverity.ERROR,
-      "INVALID_PROFILE_NAME": ErrorSeverity.ERROR,
-      "FILE_SYSTEM_ERROR": ErrorSeverity.CRITICAL,
-      "REQUIRED_FIELD_MISSING": ErrorSeverity.ERROR,
-      "TYPE_MISMATCH": ErrorSeverity.ERROR,
-      "UNKNOWN_ERROR": ErrorSeverity.CRITICAL,
-    };
-
-    return mapping[kind] || ErrorSeverity.ERROR;
+    // Exhaustive mapping using switch for Total Function compliance
+    switch (kind) {
+      case "USER_CONFIG_INVALID":
+        return ErrorSeverity.WARNING;
+      case "FILE_SYSTEM_ERROR":
+      case "UNKNOWN_ERROR":
+        return ErrorSeverity.CRITICAL;
+      case "CONFIG_FILE_NOT_FOUND":
+      case "CONFIG_PARSE_ERROR":
+      case "CONFIG_VALIDATION_ERROR":
+      case "PATH_VALIDATION_ERROR":
+      case "CONFIG_NOT_LOADED":
+      case "INVALID_PROFILE_NAME":
+      case "REQUIRED_FIELD_MISSING":
+      case "TYPE_MISMATCH":
+        return ErrorSeverity.ERROR;
+      default:
+        return ErrorSeverity.ERROR;
+    }
   }
 
   /**

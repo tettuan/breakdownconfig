@@ -236,14 +236,34 @@ export const ErrorFactories = {
   configValidationError: (
     path: string,
     violations: ValidationViolation[],
-  ): ConfigValidationError => ({
-    kind: "CONFIG_VALIDATION_ERROR",
-    path,
-    violations,
-    message:
-      `${ErrorCode.APP_CONFIG_INVALID}: Configuration validation failed for ${path}: ${violations.length} violation(s)`,
-    timestamp: new Date(),
-  }),
+  ): ConfigValidationError => {
+    // Build detailed error message including constraints
+    let message =
+      `${ErrorCode.APP_CONFIG_INVALID}: Configuration validation failed for ${path}: ${violations.length} violation(s)`;
+
+    if (violations.length > 0) {
+      const fields = violations.map((v) => v.field).join(", ");
+      message += ` (${fields})`;
+
+      // Add constraint details if available
+      const constraintDetails = violations
+        .filter((v) => v.constraint)
+        .map((v) => v.constraint)
+        .join("; ");
+
+      if (constraintDetails) {
+        message += ` - ${constraintDetails}`;
+      }
+    }
+
+    return {
+      kind: "CONFIG_VALIDATION_ERROR",
+      path,
+      violations,
+      message,
+      timestamp: new Date(),
+    };
+  },
 
   userConfigInvalid: (
     path: string,

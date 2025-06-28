@@ -429,11 +429,6 @@ deno check src/mod.ts
 deno lint
 ```
 
-### Test Coverage Requirements
-- Statement coverage: 90%+
-- Branch coverage: 85%+
-- Function coverage: 95%+
-
 ## License
 
 MIT
