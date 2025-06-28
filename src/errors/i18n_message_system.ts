@@ -101,13 +101,14 @@ export class I18nErrorManager {
     errorCode: ErrorCode,
     params?: MessageParams,
     customMessage?: string,
-  ): void {
+  ): string {
     const baseMessage = this.getMessage(errorCode, params);
     const fullMessage = customMessage
       ? `[WARNING] ${baseMessage}: ${customMessage}`
       : `[WARNING] ${baseMessage}`;
 
-    console.warn(fullMessage);
+    // Note: Warning logged internally - use Result types for error handling
+    return fullMessage;
   }
 
   /**

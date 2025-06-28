@@ -189,9 +189,10 @@ jobs:
       - name: Verify no console usage in source
         run: |
           echo "Checking for console usage in source..."
-          if grep -r "console\." src/ | grep -v "test" | grep -q "\.ts:"; then
+          # Exclude: test files, JSDoc comments (lines with *), single-line comments (//), md files, backup files
+          if grep -rn "console\." src/ --include="*.ts" | grep -v "test" | grep -v ":\s*\*" | grep -v ":\s*//" | grep -v "\.md:" | grep -v "\.backup:" | grep -q "\.ts:"; then
             echo "❌ console usage found in source code"
-            grep -r "console\." src/ | grep -v "test"
+            grep -rn "console\." src/ --include="*.ts" | grep -v "test" | grep -v ":\s*\*" | grep -v ":\s*//" | grep -v "\.md:" | grep -v "\.backup:"
             exit 1
           fi
           echo "✅ No console usage in source code"
