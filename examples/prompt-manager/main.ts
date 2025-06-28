@@ -19,9 +19,6 @@
  */
 
 import { BreakdownConfig } from "../../mod.ts";
-import { BreakdownLogger } from "@tettuan/breakdownlogger";
-
-const logger = new BreakdownLogger();
 
 /**
  * Validates a path using URL API
@@ -56,17 +53,17 @@ async function createDirectoryStructure(baseUrl: URL, dirs: string[]): Promise<v
 
     try {
       await Deno.mkdir(url.pathname, { recursive: true });
-      logger.debug("Directory created/validated", { directory: url.pathname });
+      console.log("📁 [DIR] Directory created/validated:", { directory: url.pathname });
     } catch (error) {
       if (error instanceof Deno.errors.AlreadyExists) {
-        logger.debug("Directory already exists", { directory: url.pathname });
+        console.log("📁 [DIR] Directory already exists:", { directory: url.pathname });
       } else if (error instanceof Error) {
-        logger.warn("Failed to create directory", {
+        console.log("⚠️ [DIR] Failed to create directory:", {
           directory: url.pathname,
           error: error.message,
         });
       } else {
-        logger.warn("Failed to create directory", {
+        console.log("⚠️ [DIR] Failed to create directory:", {
           directory: url.pathname,
           error: String(error),
         });
@@ -112,12 +109,14 @@ async function loadAndValidateConfig(baseUrl: URL): Promise<{
 }
 
 async function main() {
+  console.log("🚀 [TRACE] prompt-manager main() function started");
   try {
     const baseUrl = new URL(import.meta.url);
-    logger.info("Loading configuration...", { baseUrl: baseUrl.href });
+    console.log("🔧 [TRACE] baseUrl created:", baseUrl.href);
+    console.log("📚 [CONFIG] Loading configuration...", { baseUrl: baseUrl.href });
 
     const { workingDir, promptDir, schemaDir, isUserConfig } = await loadAndValidateConfig(baseUrl);
-    logger.debug("Configuration loaded successfully", {
+    console.log("🔍 [CONFIG] Configuration loaded successfully:", {
       workingDir: workingDir.pathname,
       promptDir: promptDir.pathname,
       schemaDir: schemaDir.pathname,
@@ -125,24 +124,24 @@ async function main() {
     });
 
     // Display configuration
-    logger.info("=== Prompt Manager Configuration ===");
-    logger.info("Working Directory", { workingDir: workingDir.pathname });
+    console.log("📋 [CONFIG] === Prompt Manager Configuration ===");
+    console.log("📁 [CONFIG] Working Directory:", { workingDir: workingDir.pathname });
 
     if (isUserConfig) {
-      logger.info("User configuration detected");
-      logger.info("Final Configuration (App + User)");
-      logger.info("Prompt Base Directory", { promptDir: promptDir.pathname });
-      logger.info("Schema Base Directory", { schemaDir: schemaDir.pathname });
-      logger.info("Note: User configuration has overridden the app configuration");
+      console.log("👤 [CONFIG] User configuration detected");
+      console.log("🔄 [CONFIG] Final Configuration (App + User)");
+      console.log("📄 [CONFIG] Prompt Base Directory:", { promptDir: promptDir.pathname });
+      console.log("📈 [CONFIG] Schema Base Directory:", { schemaDir: schemaDir.pathname });
+      console.log("ℹ️ [CONFIG] Note: User configuration has overridden the app configuration");
     } else {
-      logger.info("Using default application configuration");
-      logger.info("Final Configuration (App only)");
-      logger.info("Prompt Base Directory", { promptDir: promptDir.pathname });
-      logger.info("Schema Base Directory", { schemaDir: schemaDir.pathname });
+      console.log("🏠 [CONFIG] Using default application configuration");
+      console.log("📁 [CONFIG] Final Configuration (App only)");
+      console.log("📄 [CONFIG] Prompt Base Directory:", { promptDir: promptDir.pathname });
+      console.log("📈 [CONFIG] Schema Base Directory:", { schemaDir: schemaDir.pathname });
     }
 
     // Create directory structure
-    logger.info("Validating directory structure...");
+    console.log("🔍 [CONFIG] Validating directory structure...");
     await createDirectoryStructure(baseUrl, [
       workingDir.pathname,
       `${workingDir.pathname}/prompts`,
@@ -150,11 +149,9 @@ async function main() {
     ]);
   } catch (error: unknown) {
     if (error instanceof Error) {
-      logger.error("Configuration error", { error: error.message });
-      logger.error("Configuration error", { error: error.message });
+      console.log("💥 [ERROR] Configuration error:", { error: error.message });
     } else {
-      logger.error("Unknown error occurred");
-      logger.error("Unknown error occurred");
+      console.log("❓ [ERROR] Unknown error occurred");
     }
     Deno.exit(1);
   }
@@ -162,5 +159,8 @@ async function main() {
 
 // Run the example
 if (import.meta.main) {
+  console.log("🎬 [TRACE] prompt-manager import.meta.main is true, starting main()");
   main();
+} else {
+  console.log("⏸️ [TRACE] prompt-manager import.meta.main is false, not running main()");
 }
