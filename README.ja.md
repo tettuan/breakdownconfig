@@ -4,14 +4,15 @@
 
 ## 機能
 
-- 固定された場所（`./.agent/breakdown/config/`）からアプリケーション設定を読み込み、検証
-- 同じ場所からオプションのユーザー設定を読み込み
-- 環境別設定（プレフィックス）のサポート
-- 設定構造とパスの検証
-- ユーザー設定をアプリケーションのデフォルトと明確な上書きルールでマージ
-- 型安全な設定処理
-- パス安全性の検証
-- 一元化されたエラー管理
+- **Total Function設計**: 例外ではなくResult型による型安全なエラーハンドリング
+- **統合エラー管理**: UnifiedErrorシステムによる多言語対応エラーメッセージ
+- **型安全な設定処理**: Discriminated UnionとSmart Constructorによる制約値型
+- **設定ファイル統合**: アプリケーション設定とユーザー設定の明確な上書きルール
+- **環境別設定サポート**: プレフィックスベースの名前付きプロファイル
+- **包括的バリデーション**: 設定ファイル構文・パス形式・型制約の検証
+- **カスタムバリデーション**: アプリケーション側での型定義ベース検証API
+- **パス安全性保証**: 全域性原則に基づくパス種別の型分類
+- **網羅的分岐処理**: switch文によるdefault不要な完全ケース処理
 
 ## アーキテクチャ
 
@@ -43,6 +44,83 @@ graph LR
     C --> H
 ```
 
+## バリデーション機能
+
+BreakdownConfigは設定ファイルと設定値の包括的なバリデーションを提供します：
+
+### 設定ファイルのバリデーション
+
+アプリケーション設定ファイルの自動バリデーション：
+
+- **必須項目チェック**: `working_dir`、`app_prompt`、`app_schema`の存在確認
+- **項目定義制約**: 事前定義された項目のみ許可（未定義項目は無視）
+- **YAML構文チェック**: シンプルな単一ドキュメント形式の検証
+- **パス形式チェック**: 相対パス/絶対パスの記法検証
+
+### カスタムバリデーション API
+
+アプリケーション側で柔軟なバリデーションを実行可能：
+
+```typescript
+// 型定義に基づくバリデーション
+interface ConfigParamsType {
+  demonstrativeType: {
+    pattern: string;
+  };
+  layerType: {
+    pattern: string;
+  };
+}
+
+// 設定のバリデーション実行
+const config = await BreakdownConfig.loadConfig("profilename");
+if (Result.isOk(config)) {
+  const validated = config.data.validate('params.two', ConfigParamsType);
+  
+  if (Result.isOk(validated)) {
+    // バリデーション成功
+    const validConfig = validated.data;
+  } else {
+    // バリデーションエラー
+    const error = validated.error;
+    console.error("設定値エラー:", errorManager.getUserMessage(error));
+  }
+}
+```
+
+### パスバリデーション
+
+全域性原則に基づく型安全なパス検証：
+
+```typescript
+type PathType = 
+  | { kind: 'relative_file'; path: string }      // './file.txt', '../dir/file.txt'
+  | { kind: 'relative_directory'; path: string } // './dir', '../dir'
+  | { kind: 'current_directory'; path: '.' | './' }
+  | { kind: 'absolute'; path: string }           // '/absolute/path'
+
+// パス種別ごとの処理ロジック
+const pathResult = validatePath(configPath);
+if (Result.isOk(pathResult)) {
+  switch (pathResult.data.kind) {
+    case 'relative_file':
+      // 相対パスファイルの処理
+      break;
+    case 'absolute':
+      // 絶対パスの処理
+      break;
+    // 他のケースも網羅的に処理
+  }
+}
+```
+
+### バリデーション実行タイミング
+
+- **自動バリデーション**: 設定ファイル読み込み時に自動実行
+- **手動バリデーション**: アプリケーション側が必要時に呼び出し
+- **型定義ベース**: TypeScriptの型定義に基づく検証
+- **エラー統合**: UnifiedErrorシステムとの統合
+
 ## インストール
 
 ```typescript
@@ -54,22 +132,27 @@ import { BreakdownConfig } from "https://jsr.io/@tettuan/breakdownconfig";
 ### 基本的な使用方法
 
 ```typescript
-// 新しい設定インスタンスを作成
-const config = new BreakdownConfig();
+// 設定を読み込み（Result型を返す）
+const result = await BreakdownConfig.loadConfig();
 
-// アプリケーションとユーザーの設定を読み込み
-await config.loadConfig();
-
-// マージされた設定を取得
-const settings = config.getConfig();
+if (Result.isOk(result)) {
+  // 成功時：マージされた設定を取得
+  const settings = result.data;
+  console.log("Working directory:", settings.working_dir);
+} else {
+  // 失敗時：エラーハンドリング
+  errorManager.logError(result.error);
+  const userMessage = errorManager.getUserMessage(result.error);
+  console.error("設定読み込みエラー:", userMessage);
+}
 ```
 
-### コンストラクターオプション
+### API設計
 
-`BreakdownConfig` コンストラクターは2つのオプションパラメータを受け取ります：
+`BreakdownConfig` は静的メソッド `loadConfig` を提供し、2つのオプションパラメータを受け取ります：
 
 ```typescript
-constructor(configSetName?: string, baseDir?: string)
+static async loadConfig(configSetName?: string, baseDir?: string): Promise<Result<MergedConfig, UnifiedError>>
 ```
 
 #### パラメータ詳細
@@ -83,39 +166,72 @@ constructor(configSetName?: string, baseDir?: string)
   - デフォルトは現在の作業ディレクトリ (`""`)
   - 設定ファイルは `{baseDir}/.agent/breakdown/config/` から読み込み
 
+#### 戻り値
+
+- **Result型**: 成功と失敗を明示的に表現する型安全な戻り値
+  - 成功時: `{ success: true, data: MergedConfig }`
+  - 失敗時: `{ success: false, error: UnifiedError }`
+
 #### 使用例
 
 ```typescript
 // デフォルト使用 - カレントディレクトリからapp.ymlとuser.ymlを読み込み
-const config = new BreakdownConfig();
+const result = await BreakdownConfig.loadConfig();
 
 // 環境固有の設定
-const prodConfig = new BreakdownConfig("production");
+const prodResult = await BreakdownConfig.loadConfig("production");
 // 読み込み: production-app.yml と production-user.yml
 
-// デフォルト設定セットでカスタムベースディレクトリ
-const customConfig = new BreakdownConfig(undefined, "/path/to/project");
+// カスタムベースディレクトリ
+const customResult = await BreakdownConfig.loadConfig(undefined, "/path/to/project");
 // 読み込み: /path/to/project/.agent/breakdown/config/app.yml
 
 // 環境固有 + カスタムベースディレクトリ
-const envConfig = new BreakdownConfig("staging", "/path/to/project");
+const envResult = await BreakdownConfig.loadConfig("staging", "/path/to/project");
 // 読み込み: /path/to/project/.agent/breakdown/config/staging-app.yml
+
+// エラーハンドリングの例
+if (Result.isOk(result)) {
+  console.log("設定読み込み成功:", result.data);
+} else {
+  const error = result.error;
+  if (ErrorGuards.isConfigFileNotFound(error)) {
+    console.error("設定ファイルが見つかりません:", error.path);
+  } else if (ErrorGuards.isConfigParseError(error)) {
+    console.error("設定ファイルの構文エラー:", error.syntaxError);
+  } else {
+    console.error("予期しないエラー:", errorManager.getUserMessage(error));
+  }
+}
 ```
 
-#### 破壊的変更のお知らせ (v1.2.0)
+#### 破壊的変更のお知らせ (Total Function Revolution)
 
-⚠️ **v1.2.0でコンストラクターのパラメータ順序が変更されました**
+⚠️ **Total Function Revolutionで設計が大幅に変更されました**
 
 ```typescript
-// v1.2.0以前（非推奨）
-new BreakdownConfig("/path/to/project", "production"); // ❌ 動作しません
+// 旧API（throw-based、非推奨）
+try {
+  const config = new BreakdownConfig("production", "/path/to/project");
+  await config.loadConfig();
+  const settings = config.getConfig(); // ❌ 動作しません
+} catch (error) {
+  console.error(error.message);
+}
 
-// v1.2.0以降（現在）
-new BreakdownConfig("production", "/path/to/project"); // ✅ 正しい
+// 新API（Result-based、推奨）
+const result = await BreakdownConfig.loadConfig("production", "/path/to/project");
+if (Result.isOk(result)) {
+  const settings = result.data; // ✅ 型安全
+} else {
+  errorManager.logError(result.error); // ✅ 統合エラー管理
+}
 
-// これらは変更なし（後方互換性あり）
-new BreakdownConfig(); // ✅ そのまま動作
-new BreakdownConfig("production"); // ✅ そのまま動作
+// 変更点：
+// - インスタンスベース → 静的メソッドベース
+// - 例外ベース → Result型ベース  
+// - ErrorCode enum → UnifiedError型
+// - 手動エラーハンドリング → 統合エラー管理システム
 ```
 
 ### 設定ファイルの読み込み場所
@@ -222,23 +338,85 @@ const devConfig = new BreakdownConfig("development");
 
 ## エラーハンドリング
 
-ライブラリは包括的なエラーハンドリングを実装しています：
+ライブラリはTotal Function設計に基づく型安全なエラーハンドリングを実装しています：
+
+### UnifiedError型システム
+
+すべてのエラーはUnifiedError型として統一管理され、型安全なエラーハンドリングが可能です：
 
 ```typescript
-enum ErrorCode {
-  // 設定ファイルエラー (1000s)
-  APP_CONFIG_NOT_FOUND = "ERR1001",
-  APP_CONFIG_INVALID = "ERR1002",
-  USER_CONFIG_INVALID = "ERR1003",
+type UnifiedError =
+  | ConfigFileNotFoundError
+  | ConfigParseError
+  | ConfigValidationError
+  | PathValidationError
+  | UnknownError;
 
-  // 必須フィールドエラー (2000s)
-  REQUIRED_FIELD_MISSING = "ERR2001",
-  INVALID_FIELD_TYPE = "ERR2002",
+// 具体的なエラー型の例
+interface ConfigFileNotFoundError {
+  readonly kind: "CONFIG_FILE_NOT_FOUND";
+  readonly path: string;
+  readonly configType: "app" | "user";
+  readonly searchedLocations?: string[];
+  readonly message: string;
+  readonly timestamp: Date;
+}
 
-  // パス検証エラー (3000s)
-  INVALID_PATH_FORMAT = "ERR3001",
-  PATH_TRAVERSAL_DETECTED = "ERR3002",
-  ABSOLUTE_PATH_NOT_ALLOWED = "ERR3003",
+interface ConfigParseError {
+  readonly kind: "CONFIG_PARSE_ERROR";
+  readonly path: string;
+  readonly line?: number;
+  readonly column?: number;
+  readonly syntaxError: string;
+  readonly message: string;
+  readonly timestamp: Date;
+}
+```
+
+### エラー管理システム
+
+統合エラー管理システムによる多言語対応とログ機能：
+
+```typescript
+// エラーメッセージの取得（日本語対応）
+errorManager.setLanguage("ja");
+const userMessage = errorManager.getUserMessage(error);
+
+// デバッグ情報の取得
+const debugInfo = errorManager.getDebugMessage(error);
+
+// エラーログ出力
+errorManager.logError(error, "error");
+
+// エラー詳細情報
+const details = errorManager.getErrorDetails(error);
+console.log("Title:", details.userFacing.title);
+console.log("Suggestion:", details.userFacing.suggestion);
+```
+
+### Result型によるエラーハンドリング
+
+すべてのAPIはResult型を返し、例外ではなく値としてエラーを扱います：
+
+```typescript
+// 型安全なエラーハンドリング
+const result = await BreakdownConfig.loadConfig();
+
+if (Result.isOk(result)) {
+  // 成功時の処理
+  const config = result.data;
+} else {
+  // 失敗時の処理
+  const error = result.error;
+  
+  // 型ガードによる具体的なエラー処理
+  if (ErrorGuards.isConfigFileNotFound(error)) {
+    console.error(`設定ファイルが見つかりません: ${error.path}`);
+  } else if (ErrorGuards.isConfigParseError(error)) {
+    console.error(`YAML構文エラー: ${error.syntaxError}`);
+  } else {
+    console.error(`予期しないエラー: ${errorManager.getUserMessage(error)}`);
+  }
 }
 ```
 
@@ -250,24 +428,26 @@ enum ErrorCode {
 
 ```typescript
 // 環境ベースの設定
-const devConfig = new BreakdownConfig("development");
-const prodConfig = new BreakdownConfig("production");
+const devResult = await BreakdownConfig.loadConfig("development");
+const prodResult = await BreakdownConfig.loadConfig("production");
 
 // 機能ベースの設定
-const basicConfig = new BreakdownConfig("basic-features");
-const premiumConfig = new BreakdownConfig("premium-features");
+const basicResult = await BreakdownConfig.loadConfig("basic-features");
+const premiumResult = await BreakdownConfig.loadConfig("premium-features");
 
 // クライアント固有の設定
-const clientAConfig = new BreakdownConfig("client-a");
-const clientBConfig = new BreakdownConfig("client-b");
+const clientAResult = await BreakdownConfig.loadConfig("client-a");
+const clientBResult = await BreakdownConfig.loadConfig("client-b");
 
 // ロールベースの設定
-const adminConfig = new BreakdownConfig("admin");
-const userConfig = new BreakdownConfig("user");
+const adminResult = await BreakdownConfig.loadConfig("admin");
+const userResult = await BreakdownConfig.loadConfig("user");
 
-await devConfig.loadConfig();
-await premiumConfig.loadConfig();
-await clientAConfig.loadConfig();
+// Result型による安全な設定利用
+if (Result.isOk(devResult) && Result.isOk(premiumResult)) {
+  console.log("開発環境設定:", devResult.data.working_dir);
+  console.log("プレミアム機能設定:", premiumResult.data.app_prompt.base_dir);
+}
 ```
 
 **設定ファイルの例：**
@@ -284,13 +464,21 @@ AIエージェント用のプロンプト、スキーマ、作業ディレクト
 
 ```typescript
 // デフォルト設定のAIエージェント
-const agentConfig = new BreakdownConfig();
-await agentConfig.loadConfig();
+const agentResult = await BreakdownConfig.loadConfig();
 
-const settings = agentConfig.getConfig();
-// settings.app_prompt.base_dir をプロンプトテンプレートに使用
-// settings.app_schema.base_dir を検証スキーマに使用
-// settings.working_dir をエージェントワークスペースに使用
+if (Result.isOk(agentResult)) {
+  const settings = agentResult.data;
+  // settings.app_prompt.base_dir をプロンプトテンプレートに使用
+  // settings.app_schema.base_dir を検証スキーマに使用
+  // settings.working_dir をエージェントワークスペースに使用
+  
+  console.log("プロンプトディレクトリ:", settings.app_prompt.base_dir);
+  console.log("スキーマディレクトリ:", settings.app_schema.base_dir);
+  console.log("作業ディレクトリ:", settings.working_dir);
+} else {
+  errorManager.logError(agentResult.error);
+  console.error("設定読み込み失敗:", errorManager.getUserMessage(agentResult.error));
+}
 ```
 
 **アプリケーション設定 (app.yml):**
@@ -326,16 +514,26 @@ app_schema:
 
 ```typescript
 // プロジェクトAの設定
-const projectA = new BreakdownConfig("project-a", "/workspace/project-a");
-await projectA.loadConfig();
+const projectAResult = await BreakdownConfig.loadConfig("project-a", "/workspace/project-a");
 
 // プロジェクトBの設定
-const projectB = new BreakdownConfig("project-b", "/workspace/project-b");
-await projectB.loadConfig();
+const projectBResult = await BreakdownConfig.loadConfig("project-b", "/workspace/project-b");
 
 // 共有プロジェクトの設定
-const sharedConfig = new BreakdownConfig("shared", "/workspace/shared");
-await sharedConfig.loadConfig();
+const sharedResult = await BreakdownConfig.loadConfig("shared", "/workspace/shared");
+
+// 複数プロジェクトの設定を統合的に管理
+const allResults = [projectAResult, projectBResult, sharedResult];
+const validConfigs = allResults.filter(Result.isOk).map(result => result.data);
+
+if (validConfigs.length === allResults.length) {
+  console.log("すべてのプロジェクト設定が正常に読み込まれました");
+  validConfigs.forEach((config, index) => {
+    console.log(`プロジェクト${index + 1}の作業ディレクトリ:`, config.working_dir);
+  });
+} else {
+  console.error("一部のプロジェクト設定の読み込みに失敗しました");
+}
 ```
 
 ### 4. チームベース設定上書き
@@ -344,13 +542,21 @@ await sharedConfig.loadConfig();
 
 ```typescript
 // ベースチーム設定
-const teamConfig = new BreakdownConfig("team");
-await teamConfig.loadConfig();
+const teamResult = await BreakdownConfig.loadConfig("team");
 
-// 個々のチームメンバーはuser.ymlで上書き可能：
-// - カスタム作業ディレクトリ
-// - 個人的なプロンプト設定
-// - 開発固有の設定
+if (Result.isOk(teamResult)) {
+  const teamConfig = teamResult.data;
+  
+  // 個々のチームメンバーはuser.ymlで上書き可能：
+  console.log("チーム共通設定:");
+  console.log("- 作業ディレクトリ:", teamConfig.working_dir);
+  console.log("- プロンプトスタイル:", teamConfig.app_prompt.style);
+  console.log("- スキーマ厳密モード:", teamConfig.app_schema.strict_mode);
+  
+  // ユーザー固有の設定は team-user.yml で上書きされる
+} else {
+  console.error("チーム設定読み込み失敗:", errorManager.getUserMessage(teamResult.error));
+}
 ```
 
 **チーム設定 (team-app.yml):**
@@ -381,22 +587,31 @@ app_schema:
 
 ```typescript
 // 最小設定でのテスト
-const minimalConfig = new BreakdownConfig();
-await minimalConfig.loadConfig();
+const minimalResult = await BreakdownConfig.loadConfig();
 
-// フル機能設定でのテスト
-const fullConfig = new BreakdownConfig("full-features");
-await fullConfig.loadConfig();
+// フル機能設定でのテスト  
+const fullResult = await BreakdownConfig.loadConfig("full-features");
 
 // カスタムパスでのテスト
-const testConfig = new BreakdownConfig("test", "./test-fixtures");
-await testConfig.loadConfig();
+const testResult = await BreakdownConfig.loadConfig("test", "./test-fixtures");
 
-// 設定構造の検証
-const settings = testConfig.getConfig();
-assert(settings.working_dir);
-assert(settings.app_prompt.base_dir);
-assert(settings.app_schema.base_dir);
+// Result型による型安全なテスト
+assert(Result.isOk(minimalResult), "最小設定の読み込みに成功すること");
+assert(Result.isOk(fullResult), "フル機能設定の読み込みに成功すること");
+assert(Result.isOk(testResult), "テスト設定の読み込みに成功すること");
+
+if (Result.isOk(testResult)) {
+  const settings = testResult.data;
+  // 設定構造の検証
+  assert(settings.working_dir, "working_dirが設定されていること");
+  assert(settings.app_prompt.base_dir, "プロンプトbase_dirが設定されていること");
+  assert(settings.app_schema.base_dir, "スキーマbase_dirが設定されていること");
+}
+
+// エラーケースのテスト
+const invalidResult = await BreakdownConfig.loadConfig("non-existent");
+assert(Result.isErr(invalidResult), "存在しない設定は失敗すること");
+assert(ErrorGuards.isConfigFileNotFound(invalidResult.error), "適切なエラー型が返されること");
 ```
 
 ### 6. 動的設定ロード
@@ -406,19 +621,35 @@ assert(settings.app_schema.base_dir);
 ```typescript
 // 環境変数に基づく設定ロード
 const env = Deno.env.get("APP_ENV") || "development";
-const config = new BreakdownConfig(env);
-await config.loadConfig();
+const envResult = await BreakdownConfig.loadConfig(env);
 
 // コマンドライン引数に基づく設定ロード
 const configSet = Deno.args[0] || "default";
 const baseDir = Deno.args[1] || "";
-const dynamicConfig = new BreakdownConfig(configSet, baseDir);
-await dynamicConfig.loadConfig();
+const dynamicResult = await BreakdownConfig.loadConfig(configSet, baseDir);
 
 // デプロイメントコンテキストに基づく設定ロード
 const isProduction = Deno.env.get("DENO_DEPLOYMENT_ID") !== undefined;
-const deployConfig = new BreakdownConfig(isProduction ? "production" : "development");
-await deployConfig.loadConfig();
+const deployResult = await BreakdownConfig.loadConfig(isProduction ? "production" : "development");
+
+// 設定結果の統合処理
+const results = [envResult, dynamicResult, deployResult];
+const successfulConfigs = results.filter(Result.isOk);
+
+if (successfulConfigs.length > 0) {
+  console.log(`${successfulConfigs.length}個の設定が正常に読み込まれました`);
+  
+  // 最初の有効な設定を使用
+  const primaryConfig = successfulConfigs[0].data;
+  console.log("使用する設定:", primaryConfig.working_dir);
+} else {
+  console.error("すべての設定読み込みに失敗しました");
+  results.forEach((result, index) => {
+    if (Result.isErr(result)) {
+      console.error(`設定${index + 1}エラー:`, errorManager.getUserMessage(result.error));
+    }
+  });
+}
 ```
 
 ### 7. 設定継承とレイヤリング
@@ -427,14 +658,35 @@ await deployConfig.loadConfig();
 
 ```typescript
 // ベース設定
-const baseConfig = new BreakdownConfig("base");
-await baseConfig.loadConfig();
+const baseResult = await BreakdownConfig.loadConfig("base");
 
 // ベースを拡張する機能固有設定
-const featureConfig = new BreakdownConfig("feature-x");
-await featureConfig.loadConfig();
-// feature-x-app.yml はベース設定を参照可能
-// feature-x-user.yml はユーザーカスタマイゼーションを提供
+const featureResult = await BreakdownConfig.loadConfig("feature-x");
+
+// 継承関係の確認と設定の比較
+if (Result.isOk(baseResult) && Result.isOk(featureResult)) {
+  const baseConfig = baseResult.data;
+  const featureConfig = featureResult.data;
+  
+  console.log("ベース設定:");
+  console.log("- working_dir:", baseConfig.working_dir);
+  console.log("- プロンプト基盤:", baseConfig.app_prompt.base_dir);
+  
+  console.log("機能拡張設定:");
+  console.log("- working_dir:", featureConfig.working_dir); // 継承
+  console.log("- プロンプト拡張:", featureConfig.app_prompt.base_dir); // 上書き
+  console.log("- 機能固有テンプレート:", featureConfig.app_prompt.feature_templates);
+  
+  // feature-x-app.yml はベース設定を参照可能
+  // feature-x-user.yml はユーザーカスタマイゼーションを提供
+} else {
+  if (Result.isErr(baseResult)) {
+    console.error("ベース設定エラー:", errorManager.getUserMessage(baseResult.error));
+  }
+  if (Result.isErr(featureResult)) {
+    console.error("機能設定エラー:", errorManager.getUserMessage(featureResult.error));
+  }
+}
 ```
 
 **ベース設定 (base-app.yml):**

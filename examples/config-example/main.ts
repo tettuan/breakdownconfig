@@ -19,9 +19,6 @@
  */
 
 import { BreakdownConfig } from "../../mod.ts";
-import { BreakdownLogger } from "@tettuan/breakdownlogger";
-
-const logger = new BreakdownLogger();
 
 /**
  * Validates a path using URL API
@@ -52,14 +49,24 @@ async function loadAndValidateConfig(baseUrl: URL): Promise<{
   promptDir: URL;
   schemaDir: URL;
 }> {
+  console.log("⚙️ [TRACE] loadAndValidateConfig started with baseUrl:", baseUrl.href);
+  
+  console.log("🏗️ [TRACE] Creating BreakdownConfig...");
   const configResult = BreakdownConfig.create();
+  console.log("📊 [TRACE] BreakdownConfig.create() result:", configResult.success ? "SUCCESS" : "FAILED");
+  
   if (!configResult.success) {
+    console.log("💥 [TRACE] Config creation failed:", configResult.error.message);
     throw new Error(`Config creation failed: ${configResult.error.message}`);
   }
   const config = configResult.data;
+  console.log("✅ [TRACE] BreakdownConfig instance created successfully");
 
+  console.log("📖 [TRACE] Loading configuration...");
   await config.loadConfig();
+  console.log("✅ [TRACE] Configuration loaded, getting settings...");
   const settings = await config.getConfig();
+  console.log("📋 [TRACE] Settings retrieved:", JSON.stringify(settings, null, 2));
 
   // Validate paths
   const workingDir = validatePath(settings.working_dir, baseUrl);
@@ -74,35 +81,53 @@ async function loadAndValidateConfig(baseUrl: URL): Promise<{
 }
 
 async function main() {
+  console.log("🚀 [TRACE] config-example main() function started");
   try {
     const baseUrl = new URL(import.meta.url);
-    logger.info("Loading configuration...", { baseUrl: baseUrl.href });
+    console.log("🔧 [TRACE] baseUrl created:", baseUrl.href);
+    console.log("📚 [CONFIG] Loading configuration...", { baseUrl: baseUrl.href });
 
+    console.log("📥 [TRACE] Starting loadAndValidateConfig...");
     const { workingDir, promptDir, schemaDir } = await loadAndValidateConfig(baseUrl);
-    logger.debug("Configuration loaded successfully", {
+    console.log("✅ [TRACE] loadAndValidateConfig completed successfully");
+    console.log("📁 [TRACE] Paths:", { 
+      workingDir: workingDir.pathname,
+      promptDir: promptDir.pathname,
+      schemaDir: schemaDir.pathname
+    });
+    
+    console.log("🔍 [CONFIG] Configuration loaded successfully", {
       workingDir: workingDir.pathname,
       promptDir: promptDir.pathname,
       schemaDir: schemaDir.pathname,
     });
 
     // Display configuration
-    logger.info("=== Configuration Example ===");
-    logger.info("Working Directory", { workingDir: workingDir.pathname });
-    logger.info("App Prompt Base Directory", { promptDir: promptDir.pathname });
-    logger.info("App Schema Base Directory", { schemaDir: schemaDir.pathname });
+    console.log("🎯 [TRACE] Displaying configuration results...");
+    console.log("📋 [CONFIG] === Configuration Example ===");
+    console.log("📁 [CONFIG] Working Directory:", { workingDir: workingDir.pathname });
+    console.log("📄 [CONFIG] App Prompt Base Directory:", { promptDir: promptDir.pathname });
+    console.log("📊 [CONFIG] App Schema Base Directory:", { schemaDir: schemaDir.pathname });
+    console.log("✨ [TRACE] config-example completed successfully!");
   } catch (error: unknown) {
+    console.log("❌ [TRACE] Error caught in main():", error);
     if (error instanceof Error) {
-      logger.error("Configuration error", { error: error.message });
-      logger.error("Configuration error", { error: error.message });
+      console.log("🔍 [TRACE] Error details:", error.message);
+      console.log("🔍 [TRACE] Error stack:", error.stack);
+      console.log("💥 [ERROR] Configuration error:", { error: error.message });
     } else {
-      logger.error("Unknown error occurred");
-      logger.error("Unknown error occurred");
+      console.log("⚠️ [TRACE] Non-Error object caught:", error);
+      console.log("❓ [ERROR] Unknown error occurred");
     }
+    console.log("🚪 [TRACE] Exiting with code 1");
     Deno.exit(1);
   }
 }
 
 // Run the example
 if (import.meta.main) {
+  console.log("🎬 [TRACE] import.meta.main is true, starting main()");
   main();
+} else {
+  console.log("⏸️ [TRACE] import.meta.main is false, not running main()");
 }
