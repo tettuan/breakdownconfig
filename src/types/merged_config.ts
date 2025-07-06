@@ -351,11 +351,11 @@ export function isMerged(profile: ConfigProfile): profile is MergedProfile {
 }
 
 export function isDefaultProfile(profile: ConfigProfile): boolean {
-  return profile.profileName === undefined || profile.profileName === "default";
+  return profile.profileName === undefined;
 }
 
 export function isNamedProfile(profile: ConfigProfile): boolean {
-  return profile.profileName !== undefined && profile.profileName !== "default";
+  return profile.profileName !== undefined;
 }
 
 // Compatibility object for existing code
@@ -371,9 +371,7 @@ export const ConfigProfileGuards = {
  * Helper functions for working with ConfigProfile
  */
 export function getProfileDisplayName(profile: ConfigProfile): string {
-  return (profile.profileName === undefined || profile.profileName === "default") 
-    ? "default" 
-    : profile.profileName;
+  return profile.profileName ?? "default";
 }
 
 export function getWorkingDir(profile: ConfigProfile): string {

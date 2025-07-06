@@ -167,11 +167,7 @@ export class UserConfigLoader {
    * ```
    */
   async load(): Promise<ConfigResult<UserConfig | null>> {
-    // Generate config file name based on profilePrefix
-    // Treat "default" as no profile prefix (same as undefined)
-    const fileName = (this.profilePrefix && this.profilePrefix !== "default") 
-      ? `${this.profilePrefix}-user.yml` 
-      : "user.yml";
+    const fileName = this.profilePrefix ? `${this.profilePrefix}-user.yml` : "user.yml";
 
     const configPath = this.baseDir
       ? join(this.baseDir, DefaultPaths.WORKING_DIR, "config", fileName)

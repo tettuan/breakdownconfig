@@ -186,10 +186,7 @@ export class AppConfigLoader {
    */
   async loadSafe(): Promise<ConfigResult<AppConfig, ConfigError>> {
     // Generate config file name based on profilePrefix
-    // Treat "default" as no profile prefix (same as undefined)
-    const configFileName = (this.profilePrefix && this.profilePrefix !== "default") 
-      ? `${this.profilePrefix}-app.yml` 
-      : "app.yml";
+    const configFileName = this.profilePrefix ? `${this.profilePrefix}-app.yml` : "app.yml";
 
     const configPath = this.baseDir
       ? join(this.baseDir, DefaultPaths.WORKING_DIR, "config", configFileName)
