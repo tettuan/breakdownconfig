@@ -172,7 +172,10 @@ export class ProfileConfigLoader {
    * Gets the app configuration file path
    */
   private getAppConfigPath(): string {
-    const configFileName = this.profileName ? `${this.profileName}-app.yml` : "app.yml";
+    // Treat "default" as no profile prefix (same as undefined)
+    const configFileName = (this.profileName && this.profileName !== "default") 
+      ? `${this.profileName}-app.yml` 
+      : "app.yml";
     return this.baseDir
       ? join(this.baseDir, DefaultPaths.WORKING_DIR, "config", configFileName)
       : join(DefaultPaths.WORKING_DIR, "config", configFileName);
@@ -182,7 +185,10 @@ export class ProfileConfigLoader {
    * Gets the user configuration file path
    */
   private getUserConfigPath(): string {
-    const configFileName = this.profileName ? `${this.profileName}-user.yml` : "user.yml";
+    // Treat "default" as no profile prefix (same as undefined)
+    const configFileName = (this.profileName && this.profileName !== "default") 
+      ? `${this.profileName}-user.yml` 
+      : "user.yml";
     return this.baseDir
       ? join(this.baseDir, DefaultPaths.WORKING_DIR, "config", configFileName)
       : join(DefaultPaths.WORKING_DIR, "config", configFileName);
