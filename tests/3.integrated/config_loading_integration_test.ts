@@ -108,7 +108,7 @@ describe("Config Loading Integration Tests", () => {
     it("アプリ設定とユーザー設定の深いマージ検証", async () => {
       // より複雑な設定を作成
       const complexAppConfig = {
-        working_dir: ".agent/clipmt",
+        working_dir: ".agent/climpt",
         app_prompt: {
           base_dir: "prompts/default",
           templates: {

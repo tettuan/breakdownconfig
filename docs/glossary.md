@@ -5,14 +5,14 @@
 ### Application Configuration File
 
 - **Definition**: File that defines the default configuration of the application
-- **Location**: `{baseDirectory}/.agent/clipmt/config/app.yml` or `{baseDirectory}/.agent/clipmt/config/{profilePrefix}-app.yml`
+- **Location**: `{baseDirectory}/.agent/climpt/config/app.yml` or `{baseDirectory}/.agent/climpt/config/{profilePrefix}-app.yml`
 - **Characteristics**: Required file. Cannot be omitted. Items not defined are ignored
 - **Purpose**: Define basic application behavior configuration, working_dir settings
 
 ### User Configuration File
 
 - **Definition**: File that defines user-specific custom configuration
-- **Location**: `{working_dir}/.agent/clipmt/config/user.yml` or `{working_dir}/.agent/clipmt/config/{profilePrefix}-user.yml`
+- **Location**: `{working_dir}/.agent/climpt/config/user.yml` or `{working_dir}/.agent/climpt/config/{profilePrefix}-user.yml`
 - **Characteristics**: Optional. Normal processing even if it doesn't exist
 - **Constraint**: working_dir cannot be configured (can only be set in application configuration file)
 
@@ -74,8 +74,8 @@
 - **Scope**: System-wide reference point (all user configuration files are placed under this)
 - **Relative Base**: Relative path from project root (current directory at execution time)
 - **Configuration Location**: Can only be set in application configuration file (cannot be changed in user configuration file)
-- **Purpose**: Determine the placement location of user configuration files (`{working_dir}/.agent/clipmt/config/user.yml` etc.)
-- **Default Value**: "./.agent/clipmt"
+- **Purpose**: Determine the placement location of user configuration files (`{working_dir}/.agent/climpt/config/user.yml` etc.)
+- **Default Value**: "./.agent/climpt"
 - **Reference**: Used as `$working_dir` in other configurations and system internals
 
 ### base_dir
@@ -84,7 +84,7 @@
 - **Scope**: Individual directories by function (app_prompt.base_dir, app_schema.base_dir, etc.)
 - **Relative Base**: Relative path from project root (current directory at execution time)
 - **Configuration Location**: Individual configuration under app_prompt, app_schema sub-items
-- **Example**: `app_prompt.base_dir: "./.agent/clipmt/prompts/app"`
+- **Example**: `app_prompt.base_dir: "./.agent/climpt/prompts/app"`
 
 ## Main Class and Components
 
@@ -114,14 +114,14 @@
 
 - **Definition**: Configuration item for prompt files
 - **Configuration Items**: `base_dir` (Base folder specification)
-- **Default Value**: "./.agent/clipmt/prompts/app"
+- **Default Value**: "./.agent/climpt/prompts/app"
 - **Purpose**: Specify the location of prompt files
 
 ### app_schema
 
 - **Definition**: Configuration item for Schema files
 - **Configuration Items**: `base_dir` (Base folder specification)
-- **Default Value**: "./.agent/clipmt/schema/app"
+- **Default Value**: "./.agent/climpt/schema/app"
 - **Purpose**: Specify the location of Schema files
 
 ## Processing and Operations
@@ -322,30 +322,30 @@
 
 ### Path Resolution Differences
 
-- **Application Configuration File**: `baseDirectory + /.agent/clipmt/config/ + [profilePrefix-]app.yml`
-- **User Configuration File**: `working_dir + /.agent/clipmt/config/ + [profilePrefix-]user.yml`
+- **Application Configuration File**: `baseDirectory + /.agent/climpt/config/ + [profilePrefix-]app.yml`
+- **User Configuration File**: `working_dir + /.agent/climpt/config/ + [profilePrefix-]user.yml`
 
 ### Comparison in Configuration Examples
 
 ```yaml
 # Application configuration file (app.yml)
-working_dir: "./.agent/clipmt" # System-wide standard
+working_dir: "./.agent/climpt" # System-wide standard
 app_prompt:
-  base_dir: "./.agent/clipmt/prompts/app" # Prompt function standard
+  base_dir: "./.agent/climpt/prompts/app" # Prompt function standard
 app_schema:
-  base_dir: "./.agent/clipmt/schema/app" # Schema function standard
+  base_dir: "./.agent/climpt/schema/app" # Schema function standard
 ```
 
 ### Understanding with Actual File Placement
 
 ```
 baseDirectory/                     ← Specified by constructor or current directory
-├── .agent/clipmt/config/
+├── .agent/climpt/config/
 │   ├── app.yml                      ← Application configuration file (default profile)
 │   └── production-app.yml           ← Application configuration file (named profile)
 
 working_dir/                         ← Location specified in application configuration file
-├── .agent/clipmt/config/
+├── .agent/climpt/config/
 │   ├── user.yml                     ← User configuration file (default profile)
 │   └── production-user.yml          ← User configuration file (named profile)
 ├── prompts/app/                     ← Location pointed to by app_prompt.base_dir
@@ -362,8 +362,8 @@ working_dir/                         ← Location specified in application confi
 ### Path Resolution Principles
 
 1. All paths are relative paths from project root
-2. Application configuration files are loaded from `{baseDirectory}/.agent/clipmt/config/`
-3. User configuration files are loaded from `{working_dir}/.agent/clipmt/config/`
+2. Application configuration files are loaded from `{baseDirectory}/.agent/climpt/config/`
+3. User configuration files are loaded from `{working_dir}/.agent/climpt/config/`
 4. base_dir is the reference directory for actual file operations
 5. base_dir can be overridden in user configuration files (working_dir cannot)
 
@@ -403,7 +403,7 @@ Ubiquitous language definition for domain-driven design in the BreakdownConfig l
 | **Hierarchy** | Priority of User configuration file > Application configuration file |
 | **Constraints** | working_dir can only be set in application configuration |
 | **Naming Convention** | Unified format of `{profilePrefix}-{type}.yml` |
-| **Placement Rule** | Unified placement under `.agent/clipmt/config/` |
+| **Placement Rule** | Unified placement under `.agent/climpt/config/` |
 
 ### Conceptual Model Relationships
 

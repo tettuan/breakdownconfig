@@ -20,7 +20,7 @@ import { DefaultPaths } from "../src/types/app_config.ts";
 const logger = new BreakdownLogger();
 
 // Test data constants
-export const TEST_WORKING_DIR = ".agent/clipmt";
+export const TEST_WORKING_DIR = ".agent/climpt";
 
 // Valid configuration examples
 export const validAppConfig = {

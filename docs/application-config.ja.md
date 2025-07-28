@@ -1,7 +1,7 @@
 # アプリケーション設定ファイルの概要
 
 アプリケーション設定ファイル
-`{ベースディレクトリ}/.agent/clipmt/config/app.yml`
+`{ベースディレクトリ}/.agent/climpt/config/app.yml`
 を読み込む。プロジェクトルート（実行時のカレントディレクトリ）からの相対パス。
 
 # 設定項目
@@ -18,7 +18,7 @@ root からYAML形式で記載する。
 
 ## working_dir の設定
 
-設定ファイルに `working_dir: "./.agent/clipmt"` が記載されている。
+設定ファイルに `working_dir: "./.agent/climpt"` が記載されている。
 ユーザー設定ファイルの起点となる単一の基準ディレクトリを指定する。
 
 # 設定項目の項目名ルール
@@ -36,8 +36,8 @@ root からYAML形式で記載する。
 デフォルト値はアプリケーション側から求められたら返却するのみ。
 このライブラリ内が直接利用するのは、設定ファイルのみ。
 
-- working_dir : "./.agent/clipmt"
+- working_dir : "./.agent/climpt"
 - app_prompt :
-  - base_dir : "./.agent/clipmt/prompts/app"
+  - base_dir : "./.agent/climpt/prompts/app"
 - app_schema :
-  - base_dir : "./.agent/clipmt/schema/app"
+  - base_dir : "./.agent/climpt/schema/app"

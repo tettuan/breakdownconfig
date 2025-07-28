@@ -90,7 +90,7 @@
  *     const errorMessage = error instanceof Error ? error.message : String(error);
  *     if (errorMessage.includes("ERR1001")) {
  *       console.error("App configuration file not found");
- *       console.log("Please create .agent/clipmt/config/app.yml");
+ *       console.log("Please create .agent/climpt/config/app.yml");
  *     } else if (errorMessage.includes("ERR1002")) {
  *       console.error("Invalid configuration format");
  *       console.log("Check YAML syntax and required fields");
@@ -155,7 +155,7 @@
  * ### Configuration File Errors (1000 series)
  *
  * - **ERR1001: APP_CONFIG_NOT_FOUND**
- *   - **Condition**: Application configuration file `.agent/clipmt/config/app.yml` does not exist
+ *   - **Condition**: Application configuration file `.agent/climpt/config/app.yml` does not exist
  *   - **Resolution**: Create the required configuration file with valid YAML content
  *
  * - **ERR1002: APP_CONFIG_INVALID**
@@ -163,7 +163,7 @@
  *   - **Resolution**: Fix YAML syntax errors, ensure proper indentation, and verify all required fields
  *
  * - **ERR1003: USER_CONFIG_NOT_FOUND**
- *   - **Condition**: User configuration file `.agent/clipmt/config/user.yml` does not exist
+ *   - **Condition**: User configuration file `.agent/climpt/config/user.yml` does not exist
  *   - **Resolution**: This is usually not critical as user config is optional. Create the file if overrides are needed
  *
  * - **ERR1004: USER_CONFIG_INVALID**
@@ -276,7 +276,7 @@
  *
  * // Helper function to create default configuration
  * async function createDefaultAppConfig() {
- *   const configDir = ".agent/clipmt/config";
+ *   const configDir = ".agent/climpt/config";
  *   await ensureDir(configDir);
  *
  *   const defaultConfig = {
@@ -331,7 +331,7 @@
  *   }
  *
  *   private async loadCustomConfig(): Promise<void> {
- *     const customPath = `${this.baseDir}/.agent/clipmt/config/custom.yml`;
+ *     const customPath = `${this.baseDir}/.agent/climpt/config/custom.yml`;
  *     try {
  *       const customYaml = await Deno.readTextFile(customPath);
  *       this.customConfig = YAML.load(customYaml) as ExtendedConfig["custom"];

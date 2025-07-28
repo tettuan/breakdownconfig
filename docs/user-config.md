@@ -1,9 +1,9 @@
 # User Configuration File Overview
 
-The user configuration file is loaded from the fixed path `{working_dir}/.agent/clipmt/config/user.yml`.
+The user configuration file is loaded from the fixed path `{working_dir}/.agent/climpt/config/user.yml`.
 
 Configuration file
-`{working_dir}/.agent/clipmt/config/user.yml`
+`{working_dir}/.agent/climpt/config/user.yml`
 is loaded.
 
 # Configuration Items

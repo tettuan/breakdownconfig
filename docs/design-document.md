@@ -38,10 +38,10 @@ class WorkingDirectory {
 class ConfigFilePath {
   private constructor(readonly workingDir: WorkingDirectory, readonly relativePath: string) {}
   static forApplication(workingDir: WorkingDirectory): ConfigFilePath {
-    return new ConfigFilePath(workingDir, ".agent/clipmt/config/app.yml")
+    return new ConfigFilePath(workingDir, ".agent/climpt/config/app.yml")
   }
   static forUser(workingDir: WorkingDirectory): ConfigFilePath {
-    return new ConfigFilePath(workingDir, ".agent/clipmt/config/user.yml")
+    return new ConfigFilePath(workingDir, ".agent/climpt/config/user.yml")
   }
   get absolutePath(): string { return path.join(this.workingDir.value, this.relativePath) }
 }

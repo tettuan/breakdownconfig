@@ -66,7 +66,7 @@ describe("Profile Integration Tests", () => {
         const profileResult = ConfigProfileFactory.createAppOnly(
           mockAppConfig,
           undefined,
-          `${tempDir}/.agent/clipmt/config/app.yml`,
+          `${tempDir}/.agent/climpt/config/app.yml`,
           true,
         );
 
@@ -102,8 +102,8 @@ describe("Profile Integration Tests", () => {
           mockAppConfig,
           userConfig,
           undefined,
-          `${tempDir}/.agent/clipmt/config/app.yml`,
-          `${tempDir}/.agent/clipmt/config/user.yml`,
+          `${tempDir}/.agent/climpt/config/app.yml`,
+          `${tempDir}/.agent/climpt/config/user.yml`,
         );
 
         assertResultSuccess(profileResult);

@@ -5,7 +5,7 @@
  * using the BreakdownConfig class.
  *
  * The configuration structure follows the hierarchical design:
- * - breakdown/
+ * - climpt/
  *   - config/
  *     - app.yaml (Application configuration)
  *     - user.yaml (User-specific configuration)

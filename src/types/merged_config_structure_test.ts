@@ -25,12 +25,12 @@ Deno.test("Structure: ConfigProfile Discriminated Union Integrity", async (t) =>
     // console.log("Verifying ConfigProfile discriminators");
 
     const mockAppConfig: AppConfig = {
-      working_dir: ".agent/clipmt",
+      working_dir: ".agent/climpt",
       app_prompt: {
-        base_dir: "breakdown/prompts/app",
+        base_dir: "climpt/prompts/app",
       },
       app_schema: {
-        base_dir: "breakdown/schema/app",
+        base_dir: "climpt/schema/app",
       },
     };
 
@@ -71,12 +71,12 @@ Deno.test("Structure: ConfigProfile Discriminated Union Integrity", async (t) =>
     // console.log("Verifying AppOnlyProfile structure");
 
     const mockAppConfig: AppConfig = {
-      working_dir: ".agent/clipmt",
+      working_dir: ".agent/climpt",
       app_prompt: {
-        base_dir: "breakdown/prompts/app",
+        base_dir: "climpt/prompts/app",
       },
       app_schema: {
-        base_dir: "breakdown/schema/app",
+        base_dir: "climpt/schema/app",
       },
     };
 
@@ -109,12 +109,12 @@ Deno.test("Structure: ConfigProfile Discriminated Union Integrity", async (t) =>
     // console.log("Verifying MergedProfile structure");
 
     const mockAppConfig: AppConfig = {
-      working_dir: ".agent/clipmt",
+      working_dir: ".agent/climpt",
       app_prompt: {
-        base_dir: "breakdown/prompts/app",
+        base_dir: "climpt/prompts/app",
       },
       app_schema: {
-        base_dir: "breakdown/schema/app",
+        base_dir: "climpt/schema/app",
       },
     };
 
@@ -162,12 +162,12 @@ Deno.test("Structure: ConfigProfileFactory Contract Validation", async (t) => {
     assertExists(ConfigProfileFactory.createMerged, "createMerged should exist");
 
     const mockAppConfig: AppConfig = {
-      working_dir: ".agent/clipmt",
+      working_dir: ".agent/climpt",
       app_prompt: {
-        base_dir: "breakdown/prompts/app",
+        base_dir: "climpt/prompts/app",
       },
       app_schema: {
-        base_dir: "breakdown/schema/app",
+        base_dir: "climpt/schema/app",
       },
     };
 
@@ -198,12 +198,12 @@ Deno.test("Structure: ConfigProfileFactory Contract Validation", async (t) => {
     // console.log("Testing factory parameter validation");
 
     const mockAppConfig: AppConfig = {
-      working_dir: ".agent/clipmt",
+      working_dir: ".agent/climpt",
       app_prompt: {
-        base_dir: "breakdown/prompts/app",
+        base_dir: "climpt/prompts/app",
       },
       app_schema: {
-        base_dir: "breakdown/schema/app",
+        base_dir: "climpt/schema/app",
       },
     };
 
@@ -247,12 +247,12 @@ Deno.test("Structure: ConfigProfileFactory Contract Validation", async (t) => {
     // console.log("Testing factory output consistency");
 
     const mockAppConfig: AppConfig = {
-      working_dir: ".agent/clipmt",
+      working_dir: ".agent/climpt",
       app_prompt: {
-        base_dir: "breakdown/prompts/app",
+        base_dir: "climpt/prompts/app",
       },
       app_schema: {
-        base_dir: "breakdown/schema/app",
+        base_dir: "climpt/schema/app",
       },
     };
 
@@ -300,12 +300,12 @@ Deno.test("Structure: MergedConfig Schema Validation", async (t) => {
     // console.log("Verifying config combination logic");
 
     const mockAppConfig: AppConfig = {
-      working_dir: ".agent/clipmt",
+      working_dir: ".agent/climpt",
       app_prompt: {
-        base_dir: "breakdown/prompts/app",
+        base_dir: "climpt/prompts/app",
       },
       app_schema: {
-        base_dir: "breakdown/schema/app",
+        base_dir: "climpt/schema/app",
       },
     };
 
@@ -328,7 +328,7 @@ Deno.test("Structure: MergedConfig Schema Validation", async (t) => {
       assertEquals(profile.kind, "merged", "Should be merged profile");
       assertEquals(
         profile.config.working_dir,
-        ".agent/clipmt",
+        ".agent/climpt",
         "Should preserve AppConfig working_dir",
       );
       assertEquals(profile.source.userConfigExists, true, "Should have user config");
@@ -341,12 +341,12 @@ Deno.test("Structure: MergedConfig Schema Validation", async (t) => {
     // console.log("Testing directory resolution consistency");
 
     const mockAppConfig: AppConfig = {
-      working_dir: ".agent/clipmt",
+      working_dir: ".agent/climpt",
       app_prompt: {
-        base_dir: "breakdown/prompts/app",
+        base_dir: "climpt/prompts/app",
       },
       app_schema: {
-        base_dir: "breakdown/schema/app",
+        base_dir: "climpt/schema/app",
       },
     };
 
@@ -375,7 +375,7 @@ Deno.test("Structure: MergedConfig Schema Validation", async (t) => {
       );
       assertEquals(
         profile.config.working_dir,
-        ".agent/clipmt",
+        ".agent/climpt",
         "Should preserve AppConfig working_dir",
       );
     }
@@ -387,12 +387,12 @@ Deno.test("Structure: MergedConfig Schema Validation", async (t) => {
     // console.log("Testing type safety in configuration merging");
 
     const mockAppConfig: AppConfig = {
-      working_dir: ".agent/clipmt",
+      working_dir: ".agent/climpt",
       app_prompt: {
-        base_dir: "breakdown/prompts/app",
+        base_dir: "climpt/prompts/app",
       },
       app_schema: {
-        base_dir: "breakdown/schema/app",
+        base_dir: "climpt/schema/app",
       },
     };
 
@@ -446,7 +446,7 @@ Deno.test("Structure: MergedConfig Schema Validation", async (t) => {
         );
         assertEquals(
           profile.config.working_dir,
-          ".agent/clipmt",
+          ".agent/climpt",
           "AppConfig should be preserved",
         );
       }
@@ -463,12 +463,12 @@ Deno.test("Structure: Legacy Compatibility Structure", async (t) => {
     // console.log("Verifying backward compatibility");
 
     const mockAppConfig: AppConfig = {
-      working_dir: ".agent/clipmt",
+      working_dir: ".agent/climpt",
       app_prompt: {
-        base_dir: "breakdown/prompts/app",
+        base_dir: "climpt/prompts/app",
       },
       app_schema: {
-        base_dir: "breakdown/schema/app",
+        base_dir: "climpt/schema/app",
       },
     };
 
@@ -506,12 +506,12 @@ Deno.test("Structure: Legacy Compatibility Structure", async (t) => {
     // console.log("Testing profile evolution integrity");
 
     const mockAppConfig: AppConfig = {
-      working_dir: ".agent/clipmt",
+      working_dir: ".agent/climpt",
       app_prompt: {
-        base_dir: "breakdown/prompts/app",
+        base_dir: "climpt/prompts/app",
       },
       app_schema: {
-        base_dir: "breakdown/schema/app",
+        base_dir: "climpt/schema/app",
       },
     };
 

@@ -149,16 +149,16 @@ Deno.test("Integration: Safe Method APIs with Result Pattern", async (t) => {
 Deno.test("Integration: Error Propagation and Recovery", async (t) => {
   await t.step("Complete error flow with invalid YAML", async () => {
     const invalidYamlConfig = `
-working_dir: ./.agent/clipmt
+working_dir: ./.agent/climpt
 app_prompt:
-  base_dir: ./.agent/clipmt/prompts/app
+  base_dir: ./.agent/climpt/prompts/app
   invalid yaml here
 app_schema:
-  base_dir: ./.agent/clipmt/schema/app
+  base_dir: ./.agent/climpt/schema/app
 `;
 
     const tempDir = await Deno.makeTempDir();
-    const configDir = `${tempDir}/.agent/clipmt/config`;
+    const configDir = `${tempDir}/.agent/climpt/config`;
     await Deno.mkdir(configDir, { recursive: true });
     await Deno.writeTextFile(`${configDir}/app.yml`, invalidYamlConfig);
     try {

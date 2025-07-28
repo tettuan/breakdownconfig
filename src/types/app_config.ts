@@ -3,11 +3,11 @@
  */
 export enum DefaultPaths {
   /** Default working directory */
-  WORKING_DIR = ".agent/clipmt",
+  WORKING_DIR = ".agent/climpt",
   /** Default prompt base directory */
-  PROMPT_BASE_DIR = "breakdown/prompts/app",
+  PROMPT_BASE_DIR = "climpt/prompts/app",
   /** Default schema base directory */
-  SCHEMA_BASE_DIR = "breakdown/schema/app",
+  SCHEMA_BASE_DIR = "climpt/schema/app",
 }
 
 /**

@@ -1,4 +1,4 @@
-working_dir: "./.agent/clipmt"
+working_dir: "./.agent/climpt"
 app_prompt:
   base_dir: "./prompts/app"
 app_schema:

@@ -21,5 +21,5 @@ export function resolvePath(relativePath: string, baseUrl: URL = new URL(import.
  * @returns The default app config path
  */
 export function getDefaultAppConfigPath(): string {
-  return resolvePath("breakdown/config/app.yml");
+  return resolvePath("climpt/config/app.yml");
 }

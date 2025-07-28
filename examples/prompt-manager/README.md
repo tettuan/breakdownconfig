@@ -15,7 +15,7 @@
 ```
 prompt-manager/
 ├── .agent/
-│   └── breakdown/
+│   └── climpt/
 │       └── config/
 │           ├── app.yaml    # アプリケーション設定
 │           └── user.yaml   # ユーザー設定（オプション）
@@ -32,7 +32,7 @@ prompt-manager/
 ### app.yaml
 
 ```yaml
-working_dir: ./.agent/clipmt
+working_dir: ./.agent/climpt
 app_prompt:
   base_dir: ./prompts/app
 app_schema:
@@ -64,7 +64,7 @@ deno run --allow-read --allow-env --allow-write main.ts
 
 ```
 === Prompt Manager Example ===
-Working Directory: /path/to/.agent/clipmt
+Working Directory: /path/to/.agent/climpt
 App Prompt Base Directory: /path/to/prompts/app
 App Schema Base Directory: /path/to/schema/app
 User Prompt Base Directory: /path/to/prompts/user

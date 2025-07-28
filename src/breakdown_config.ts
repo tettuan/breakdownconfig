@@ -315,9 +315,9 @@ export class BreakdownConfig {
    * const mergedConfig = await config.getConfig();
    *
    * // Access default configuration values
-   * console.log(mergedConfig.working_dir);         // ".agent/clipmt" (default)
-   * console.log(mergedConfig.app_prompt.base_dir); // "breakdown/prompts/app" (default)
-   * console.log(mergedConfig.app_schema.base_dir); // "breakdown/schema/app" (default)
+   * console.log(mergedConfig.working_dir);         // ".agent/climpt" (default)
+   * console.log(mergedConfig.app_prompt.base_dir); // "climpt/prompts/app" (default)
+   * console.log(mergedConfig.app_schema.base_dir); // "climpt/schema/app" (default)
    *
    * // Access custom user-defined fields
    * if (mergedConfig.debugMode) {
