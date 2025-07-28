@@ -52,7 +52,7 @@ Deno.test("E2E: Error Boundary - Complete Error Handling Coverage", async (t) =>
     const tempDir = await Deno.makeTempDir();
     try {
       // Create invalid YAML file
-      const configPath = join(tempDir, ".agent", "breakdown", "config");
+      const configPath = join(tempDir, ".agent", "climpt", "config");
       await Deno.mkdir(configPath, { recursive: true });
       await Deno.writeTextFile(join(configPath, "app.yml"), "invalid: yaml: content: [");
 
@@ -103,7 +103,7 @@ Deno.test("E2E: Error Boundary - Complete Error Handling Coverage", async (t) =>
 
     try {
       await Deno.writeTextFile(
-        join(tempDir, ".agent", "breakdown", "config", "app.yml"),
+        join(tempDir, ".agent", "climpt", "config", "app.yml"),
         `app_prompt:\n  base_dir: "./prompts"\n`,
       );
 
@@ -128,7 +128,7 @@ Deno.test("E2E: Error Boundary - Complete Error Handling Coverage", async (t) =>
     const invalidTypeDir = await setupCustomConfigSet("invalid_types");
     try {
       await Deno.writeTextFile(
-        join(invalidTypeDir, ".agent", "breakdown", "config", "app.yml"),
+        join(invalidTypeDir, ".agent", "climpt", "config", "app.yml"),
         `working_dir: 123\napp_prompt:\n  base_dir: true\napp_schema:\n  base_dir: []\n`,
       );
 
@@ -149,7 +149,7 @@ Deno.test("E2E: Error Boundary - Complete Error Handling Coverage", async (t) =>
     const emptyValuesDir = await setupCustomConfigSet("empty_values");
     try {
       await Deno.writeTextFile(
-        join(emptyValuesDir, ".agent", "breakdown", "config", "app.yml"),
+        join(emptyValuesDir, ".agent", "climpt", "config", "app.yml"),
         `working_dir: ""\napp_prompt:\n  base_dir: ""\napp_schema:\n  base_dir: ""\n`,
       );
 
@@ -312,7 +312,7 @@ Deno.test("E2E: Error Boundary - Complete Error Handling Coverage", async (t) =>
     try {
       // Create a config that will trigger an unknown error
       // by manipulating the file system during operation
-      const configPath = join(tempDir, ".agent", "breakdown", "config", "app.yml");
+      const configPath = join(tempDir, ".agent", "climpt", "config", "app.yml");
       const configResult = BreakdownConfig.create(undefined, tempDir);
       assertResultSuccess(configResult);
 

@@ -25,7 +25,7 @@ async function measurePerformance(
   // Create a temporary directory structure for the test
   const tempDir = await Deno.makeTempDir();
   // App config goes in the "working_dir" location
-  const appConfigDir = join(tempDir, ".agent", "breakdown", "config");
+  const appConfigDir = join(tempDir, ".agent", "climpt", "config");
   await Deno.mkdir(appConfigDir, { recursive: true });
 
   // Read JSON test fixture and convert to YAML
@@ -212,7 +212,7 @@ Deno.test("E2E Performance Tests - Total Function Design", async (t) => {
 
     // Create temp setup for chain test
     const tempDir = await Deno.makeTempDir();
-    const configDir = join(tempDir, ".agent", "breakdown", "config");
+    const configDir = join(tempDir, ".agent", "climpt", "config");
     await Deno.mkdir(configDir, { recursive: true });
     const jsonContent = await Deno.readTextFile(testConfigPath);
     const jsonData = JSON.parse(jsonContent);
@@ -258,7 +258,7 @@ Deno.test("E2E Performance Tests - Total Function Design", async (t) => {
 
     for (let i = 0; i < 10; i++) {
       const tempDir = await Deno.makeTempDir();
-      const configDir = join(tempDir, ".agent", "breakdown", "config");
+      const configDir = join(tempDir, ".agent", "climpt", "config");
       await Deno.mkdir(configDir, { recursive: true });
       const jsonContent = await Deno.readTextFile(testConfigPath);
       const jsonData = JSON.parse(jsonContent);

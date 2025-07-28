@@ -4,7 +4,7 @@ A Deno library for managing application and user configurations. This library pr
 
 ## Features
 
-- Load and validate application configuration from a fixed location (`./.agent/breakdown/config/`)
+- Load and validate application configuration from a fixed location (`./.agent/clipmt/config/`)
 - Load optional user configuration from the same location
 - Support for environment-specific configurations (prefixes)
 - Configuration structure and path validation
@@ -81,7 +81,7 @@ constructor(configSetName?: string, baseDir?: string)
 
 - **`baseDir`** (optional): Base directory for configuration files
   - Defaults to the current working directory (`""`)
-  - Configuration files are loaded from `{baseDir}/.agent/breakdown/config/`
+  - Configuration files are loaded from `{baseDir}/.agent/clipmt/config/`
 
 #### Usage Examples
 
@@ -95,11 +95,11 @@ const prodConfig = new BreakdownConfig("production");
 
 // Default configuration set with custom base directory
 const customConfig = new BreakdownConfig(undefined, "/path/to/project");
-// Loads: /path/to/project/.agent/breakdown/config/app.yml
+// Loads: /path/to/project/.agent/clipmt/config/app.yml
 
 // Environment-specific + custom base directory
 const envConfig = new BreakdownConfig("staging", "/path/to/project");
-// Loads: /path/to/project/.agent/breakdown/config/staging-app.yml
+// Loads: /path/to/project/.agent/clipmt/config/staging-app.yml
 ```
 
 #### Breaking Change Notice (v1.2.0)
@@ -127,13 +127,13 @@ When no arguments are specified, BreakdownConfig loads configuration files from 
 ```typescript
 // With no arguments
 const config = new BreakdownConfig();
-// → Loads from current directory's ./.agent/breakdown/config/
+// → Loads from current directory's ./.agent/clipmt/config/
 ```
 
 **Files loaded**:
 
-- Application configuration: `./.agent/breakdown/config/app.yml` (required)
-- User configuration: `./.agent/breakdown/config/user.yml` (optional)
+- Application configuration: `./.agent/clipmt/config/app.yml` (required)
+- User configuration: `./.agent/clipmt/config/user.yml` (optional)
 
 #### Custom Base Directory
 
@@ -141,7 +141,7 @@ When a base directory is specified:
 
 ```typescript
 const config = new BreakdownConfig(undefined, "/path/to/project");
-// → Loads from /path/to/project/.agent/breakdown/config/
+// → Loads from /path/to/project/.agent/clipmt/config/
 ```
 
 #### Environment-Specific Configuration
@@ -150,28 +150,28 @@ When a configuration set name is specified:
 
 ```typescript
 const config = new BreakdownConfig("production");
-// → Loads from ./.agent/breakdown/config/production-app.yml and production-user.yml
+// → Loads from ./.agent/clipmt/config/production-app.yml and production-user.yml
 ```
 
 ### Configuration Structure
 
 #### Application Configuration (Required)
 
-**Default configuration**: `./.agent/breakdown/config/app.yml`
-**Environment-specific configuration**: `./.agent/breakdown/config/{prefix}-app.yml`
+**Default configuration**: `./.agent/clipmt/config/app.yml`
+**Environment-specific configuration**: `./.agent/clipmt/config/{prefix}-app.yml`
 
 ```yaml
-working_dir: "./.agent/breakdown"
+working_dir: "./.agent/clipmt"
 app_prompt:
-  base_dir: "./.agent/breakdown/prompts/app"
+  base_dir: "./.agent/clipmt/prompts/app"
 app_schema:
-  base_dir: "./.agent/breakdown/schema/app"
+  base_dir: "./.agent/clipmt/schema/app"
 ```
 
 #### User Configuration (Optional)
 
-**Default configuration**: `./.agent/breakdown/config/user.yml`
-**Environment-specific configuration**: `./.agent/breakdown/config/{prefix}-user.yml`
+**Default configuration**: `./.agent/clipmt/config/user.yml`
+**Environment-specific configuration**: `./.agent/clipmt/config/{prefix}-user.yml`
 
 ```yaml
 app_prompt:
@@ -182,7 +182,7 @@ app_schema:
 
 **Important**:
 
-- Both application and user configurations are placed in the same directory (`./.agent/breakdown/config/`)
+- Both application and user configurations are placed in the same directory (`./.agent/clipmt/config/`)
 - User configuration is always loaded from the fixed location, regardless of the working_dir setting value
 - If configuration files don't exist, application configuration is required and will cause an error, but user configuration is optional and will work normally
 
@@ -218,7 +218,7 @@ const devConfig = new BreakdownConfig("development");
 | "development"          | `development-app.yml`  | `development-user.yml`  |
 | "{custom}"             | `{custom}-app.yml`     | `{custom}-user.yml`     |
 
-All files are placed in the `./.agent/breakdown/config/` directory.
+All files are placed in the `./.agent/clipmt/config/` directory.
 
 ## Error Handling
 
@@ -296,14 +296,14 @@ const settings = agentConfig.getConfig();
 **Application configuration (app.yml):**
 
 ```yaml
-working_dir: "./.agent/breakdown"
+working_dir: "./.agent/clipmt"
 app_prompt:
-  base_dir: "./.agent/breakdown/prompts/app"
+  base_dir: "./.agent/clipmt/prompts/app"
   templates:
     - "system.md"
     - "user.md"
 app_schema:
-  base_dir: "./.agent/breakdown/schema/app"
+  base_dir: "./.agent/clipmt/schema/app"
   validation_rules:
     - "input.json"
     - "output.json"
@@ -440,9 +440,9 @@ await featureConfig.loadConfig();
 **Base configuration (base-app.yml):**
 
 ```yaml
-working_dir: "./.agent/breakdown"
+working_dir: "./.agent/clipmt"
 app_prompt:
-  base_dir: "./.agent/breakdown/prompts/base"
+  base_dir: "./.agent/clipmt/prompts/base"
   common_templates:
     - "header.md"
     - "footer.md"
@@ -451,9 +451,9 @@ app_prompt:
 **Feature configuration (feature-x-app.yml):**
 
 ```yaml
-working_dir: "./.agent/breakdown" # Inherited
+working_dir: "./.agent/clipmt" # Inherited
 app_prompt:
-  base_dir: "./.agent/breakdown/prompts/feature-x" # Override
+  base_dir: "./.agent/clipmt/prompts/feature-x" # Override
   common_templates: # Inherited from base
     - "header.md"
     - "footer.md"

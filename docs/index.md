@@ -71,9 +71,9 @@ BreakdownConfig executes configuration file loading processes in the following o
 
 1. **Profile identification during initialization**: Determines configuration profile name (default or named) in constructor
 2. **Base directory determination**: Identifies the base directory specified in the constructor's second argument, or the current working directory
-3. **Application configuration file loading**: Loads `{baseDirectory}/.agent/breakdown/config/app.yml` or `{baseDirectory}/.agent/breakdown/config/{profilePrefix}-app.yml` as a required file
+3. **Application configuration file loading**: Loads `{baseDirectory}/.agent/clipmt/config/app.yml` or `{baseDirectory}/.agent/clipmt/config/{profilePrefix}-app.yml` as a required file
 4. **working_dir identification**: Gets the `working_dir` value from the application configuration file to determine the reference path for user configuration files
-5. **User configuration file loading**: Loads `{working_dir}/.agent/breakdown/config/user.yml` or `{working_dir}/.agent/breakdown/config/{profilePrefix}-user.yml` as an optional file
+5. **User configuration file loading**: Loads `{working_dir}/.agent/clipmt/config/user.yml` or `{working_dir}/.agent/clipmt/config/{profilePrefix}-user.yml` as an optional file
 6. **Configuration value integration**: Based on the application configuration file, overwrites and integrates with values from the user configuration file for the same keys
 7. **Providing integration results**: Returns the final configuration object to the application
 
@@ -108,24 +108,24 @@ BreakdownConfig loads and integrates the corresponding combination of applicatio
 ```typescript
 // Loading default profile (as before)
 let config = new BreakdownConfig();
-// → Loads {baseDirectory}/.agent/breakdown/config/app.yml and {working_dir}/.agent/breakdown/config/user.yml
+// → Loads {baseDirectory}/.agent/clipmt/config/app.yml and {working_dir}/.agent/clipmt/config/user.yml
 
 // Loading named profile
 let devConfig = new BreakdownConfig("development");
-// → Loads {baseDirectory}/.agent/breakdown/config/development-app.yml and {working_dir}/.agent/breakdown/config/development-user.yml
+// → Loads {baseDirectory}/.agent/clipmt/config/development-app.yml and {working_dir}/.agent/clipmt/config/development-user.yml
 
 let prodConfig = new BreakdownConfig("production");
-// → Loads {baseDirectory}/.agent/breakdown/config/production-app.yml and {working_dir}/.agent/breakdown/config/production-user.yml
+// → Loads {baseDirectory}/.agent/clipmt/config/production-app.yml and {working_dir}/.agent/clipmt/config/production-user.yml
 ```
 
 #### File Naming Rules
 
 | Configuration Profile Name | Application Configuration File | User Configuration File |
 | -------------------------- | ------------------------------ | ----------------------- |
-| Unspecified (Default Profile) | `{baseDirectory}/.agent/breakdown/config/app.yml` | `{working_dir}/.agent/breakdown/config/user.yml` |
-| "development" | `{baseDirectory}/.agent/breakdown/config/development-app.yml` | `{working_dir}/.agent/breakdown/config/development-user.yml` |
-| "production" | `{baseDirectory}/.agent/breakdown/config/production-app.yml` | `{working_dir}/.agent/breakdown/config/production-user.yml` |
-| "{arbitrary name}" | `{baseDirectory}/.agent/breakdown/config/{arbitrary name}-app.yml` | `{working_dir}/.agent/breakdown/config/{arbitrary name}-user.yml` |
+| Unspecified (Default Profile) | `{baseDirectory}/.agent/clipmt/config/app.yml` | `{working_dir}/.agent/clipmt/config/user.yml` |
+| "development" | `{baseDirectory}/.agent/clipmt/config/development-app.yml` | `{working_dir}/.agent/clipmt/config/development-user.yml` |
+| "production" | `{baseDirectory}/.agent/clipmt/config/production-app.yml` | `{working_dir}/.agent/clipmt/config/production-user.yml` |
+| "{arbitrary name}" | `{baseDirectory}/.agent/clipmt/config/{arbitrary name}-app.yml` | `{working_dir}/.agent/clipmt/config/{arbitrary name}-user.yml` |
 
 #### Interpretation at Abstraction Level
 
@@ -144,11 +144,11 @@ For example:
 ```typescript
 // For default profile
 let config = new BreakdownConfig();
-// → Loads {baseDirectory}/.agent/breakdown/config/app.yml and {working_dir}/.agent/breakdown/config/user.yml
+// → Loads {baseDirectory}/.agent/clipmt/config/app.yml and {working_dir}/.agent/clipmt/config/user.yml
 
 // For named profile
 let devConfig = new BreakdownConfig("development");
-// → Loads {baseDirectory}/.agent/breakdown/config/development-app.yml and {working_dir}/.agent/breakdown/config/development-user.yml
+// → Loads {baseDirectory}/.agent/clipmt/config/development-app.yml and {working_dir}/.agent/clipmt/config/development-user.yml
 ```
 
 The declared config loads the application configuration file for the specified configuration profile, then loads the corresponding user configuration file.
@@ -167,14 +167,14 @@ Described in the following files:
 
 1. **Application configuration file (app.yml)**
 
-- Loaded from path `{baseDirectory}/.agent/breakdown/config/app.yml`
+- Loaded from path `{baseDirectory}/.agent/clipmt/config/app.yml`
 - Required. Cannot be omitted.
 - If configuration file does not exist, terminates with error.
 - The `working_dir` setting becomes the base directory for user configuration files.
 
 2. **User configuration file (user.yml)**
 
-- Loaded from path `{working_dir}/.agent/breakdown/config/user.yml`
+- Loaded from path `{working_dir}/.agent/clipmt/config/user.yml`
 - Normal processing even if it doesn't exist. (Only outputs warning)
 - Loads configuration values and overwrites application configuration values with the same keys.
   - User configuration files can describe only necessary settings. All items are optional.
@@ -183,7 +183,7 @@ Described in the following files:
 
 1. **Application configuration file ({profilePrefix}-app.yml)**
 
-- Loaded from path `{baseDirectory}/.agent/breakdown/config/{profilePrefix}-app.yml`
+- Loaded from path `{baseDirectory}/.agent/clipmt/config/{profilePrefix}-app.yml`
 - Required. Cannot be omitted.
 - If configuration file does not exist, terminates with error.
 - The `working_dir` setting becomes the base directory for user configuration files.
@@ -191,15 +191,15 @@ Described in the following files:
 
 2. **User configuration file ({profilePrefix}-user.yml)**
 
-- Loaded from path `{working_dir}/.agent/breakdown/config/{profilePrefix}-user.yml`
+- Loaded from path `{working_dir}/.agent/clipmt/config/{profilePrefix}-user.yml`
 - Normal processing even if it doesn't exist. (Only outputs warning)
 - Loads configuration values and overwrites application configuration values with the same keys.
   - User configuration files can describe only necessary settings. All items are optional.
 
 ## Configuration Profile Selection Rules
 
-- **When unspecified**: Uses default profile ({baseDirectory}/.agent/breakdown/config/app.yml, {working_dir}/.agent/breakdown/config/user.yml)
-- **When specified**: Uses named profile with specified profile prefix ({baseDirectory}/.agent/breakdown/config/{profilePrefix}-app.yml, {working_dir}/.agent/breakdown/config/{profilePrefix}-user.yml)
+- **When unspecified**: Uses default profile ({baseDirectory}/.agent/clipmt/config/app.yml, {working_dir}/.agent/clipmt/config/user.yml)
+- **When specified**: Uses named profile with specified profile prefix ({baseDirectory}/.agent/clipmt/config/{profilePrefix}-app.yml, {working_dir}/.agent/clipmt/config/{profilePrefix}-user.yml)
 - **Profile prefix constraints**: Only alphanumeric characters and hyphens allowed (e.g., development, prod-v2)
 
 ## Configuration File Creation Responsibility

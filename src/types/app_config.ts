@@ -3,7 +3,7 @@
  */
 export enum DefaultPaths {
   /** Default working directory */
-  WORKING_DIR = ".agent/breakdown",
+  WORKING_DIR = ".agent/clipmt",
   /** Default prompt base directory */
   PROMPT_BASE_DIR = "breakdown/prompts/app",
   /** Default schema base directory */

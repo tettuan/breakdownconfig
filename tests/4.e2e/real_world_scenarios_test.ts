@@ -26,14 +26,14 @@ Deno.test("E2E: Real-World Scenario - Large Configuration Processing", async (t)
 
     try {
       // Create large config file with proper structure
-      const configDir = resolve(baseDir, ".agent/breakdown/config");
+      const configDir = resolve(baseDir, ".agent/clipmt/config");
       await Deno.mkdir(configDir, { recursive: true });
 
       // Create a large config with many items
       const largeConfig: Record<string, unknown> = {
-        working_dir: ".agent/breakdown",
-        app_prompt: { base_dir: ".agent/breakdown/prompts/app" },
-        app_schema: { base_dir: ".agent/breakdown/schema/app" },
+        working_dir: ".agent/clipmt",
+        app_prompt: { base_dir: ".agent/clipmt/prompts/app" },
+        app_schema: { base_dir: ".agent/clipmt/schema/app" },
       };
 
       // Add many config items
@@ -106,11 +106,11 @@ ${item.metadata.tags.map((tag: string) => `      - "${tag}"`).join("\n")}`;
         }).join("\n");
 
       const yamlContent = `# Large configuration for testing
-working_dir: ".agent/breakdown"
+working_dir: ".agent/clipmt"
 app_prompt:
-  base_dir: ".agent/breakdown/prompts/app"
+  base_dir: ".agent/clipmt/prompts/app"
 app_schema:
-  base_dir: ".agent/breakdown/schema/app"
+  base_dir: ".agent/clipmt/schema/app"
 
 # Generated config items (${
         Object.keys(largeConfig).filter((k) => k.startsWith("config_item_")).length
@@ -192,13 +192,13 @@ ${configItemsYaml}
         tempDirs.push(tempDir);
 
         // Create config structure
-        const configDir = resolve(tempDir, ".agent/breakdown/config");
+        const configDir = resolve(tempDir, ".agent/clipmt/config");
         await Deno.mkdir(configDir, { recursive: true });
 
         const config = {
-          working_dir: ".agent/breakdown",
-          app_prompt: { base_dir: ".agent/breakdown/prompts/app" },
-          app_schema: { base_dir: ".agent/breakdown/schema/app" },
+          working_dir: ".agent/clipmt",
+          app_prompt: { base_dir: ".agent/clipmt/prompts/app" },
+          app_schema: { base_dir: ".agent/clipmt/schema/app" },
           profile: `profile-${i}`,
         };
 
@@ -388,16 +388,16 @@ Deno.test("E2E: Real-World Scenario - Multi-Environment Deployment", async (t) =
 
     try {
       // Create proper config structure
-      const configDir = resolve(baseDir, ".agent/breakdown/config");
+      const configDir = resolve(baseDir, ".agent/clipmt/config");
       await Deno.mkdir(configDir, { recursive: true });
 
       // Create test configuration in the correct location
       await Deno.writeTextFile(
         resolve(configDir, "app.yml"),
         JSON.stringify({
-          working_dir: ".agent/breakdown",
-          app_prompt: { base_dir: ".agent/breakdown/prompts/app" },
-          app_schema: { base_dir: ".agent/breakdown/schema/app" },
+          working_dir: ".agent/clipmt",
+          app_prompt: { base_dir: ".agent/clipmt/prompts/app" },
+          app_schema: { base_dir: ".agent/clipmt/schema/app" },
           concurrent_test: true,
         }),
       );
@@ -560,7 +560,7 @@ Deno.test("E2E: Performance Benchmarks", async (t) => {
         tempDirs.push(tempDir);
 
         // Create config with different sizes
-        const configDir = resolve(tempDir, ".agent/breakdown/config");
+        const configDir = resolve(tempDir, ".agent/clipmt/config");
         await Deno.mkdir(configDir, { recursive: true });
 
         const itemCount = size === "small"
@@ -572,9 +572,9 @@ Deno.test("E2E: Performance Benchmarks", async (t) => {
           : 5000;
 
         const config: Record<string, unknown> = {
-          working_dir: ".agent/breakdown",
-          app_prompt: { base_dir: ".agent/breakdown/prompts/app" },
-          app_schema: { base_dir: ".agent/breakdown/schema/app" },
+          working_dir: ".agent/clipmt",
+          app_prompt: { base_dir: ".agent/clipmt/prompts/app" },
+          app_schema: { base_dir: ".agent/clipmt/schema/app" },
         };
 
         // Add items based on size

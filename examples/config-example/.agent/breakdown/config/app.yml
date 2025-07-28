@@ -13,7 +13,7 @@ paths:
   data: "./data"
   logs: "./logs"
 
-working_dir: "./.agent/breakdown"
+working_dir: "./.agent/clipmt"
 app_prompt:
   base_dir: "./prompts/app"
 app_schema:

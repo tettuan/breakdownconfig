@@ -73,7 +73,7 @@ describe("Config Loading Integration Tests", () => {
 
     it("ユーザー設定が存在しない場合のアプリ設定のみでの動作", async () => {
       // ユーザー設定を削除
-      const userConfigPath = join(tempDir, ".agent", "breakdown", "config", "user.yml");
+      const userConfigPath = join(tempDir, ".agent", "climpt", "config", "user.yml");
       await Deno.remove(userConfigPath);
 
       const configResult = BreakdownConfig.create(undefined, tempDir);
@@ -108,7 +108,7 @@ describe("Config Loading Integration Tests", () => {
     it("アプリ設定とユーザー設定の深いマージ検証", async () => {
       // より複雑な設定を作成
       const complexAppConfig = {
-        working_dir: ".agent/breakdown",
+        working_dir: ".agent/clipmt",
         app_prompt: {
           base_dir: "prompts/default",
           templates: {
@@ -141,7 +141,7 @@ describe("Config Loading Integration Tests", () => {
       };
 
       // 設定ファイルを書き込み
-      const configDir = join(tempDir, ".agent", "breakdown", "config");
+      const configDir = join(tempDir, ".agent", "climpt", "config");
       await Deno.writeTextFile(
         join(configDir, "app.yml"),
         stringifyYaml(complexAppConfig),
@@ -307,7 +307,7 @@ describe("Config Loading Integration Tests", () => {
 
   describe("Result型エラーハンドリング検証", () => {
     it("YAMLパースエラーのResult型ハンドリング", async () => {
-      const configDir = join(tempDir, ".agent", "breakdown", "config");
+      const configDir = join(tempDir, ".agent", "climpt", "config");
       await Deno.writeTextFile(
         join(configDir, "app.yml"),
         `invalid yaml:
@@ -334,7 +334,7 @@ describe("Config Loading Integration Tests", () => {
     });
 
     it("バリデーションエラーのResult型ハンドリング", async () => {
-      const configDir = join(tempDir, ".agent", "breakdown", "config");
+      const configDir = join(tempDir, ".agent", "climpt", "config");
       await Deno.writeTextFile(
         join(configDir, "app.yml"),
         stringifyYaml({
@@ -388,7 +388,7 @@ describe("Config Loading Integration Tests", () => {
     });
 
     it("連鎖的エラーのResult型ハンドリング", async () => {
-      const configDir = join(tempDir, ".agent", "breakdown", "config");
+      const configDir = join(tempDir, ".agent", "climpt", "config");
 
       // アプリ設定に不正な値を設定
       await Deno.writeTextFile(

@@ -25,7 +25,7 @@ Deno.test("Structure: ConfigProfile Discriminated Union Integrity", async (t) =>
     // console.log("Verifying ConfigProfile discriminators");
 
     const mockAppConfig: AppConfig = {
-      working_dir: ".agent/breakdown",
+      working_dir: ".agent/clipmt",
       app_prompt: {
         base_dir: "breakdown/prompts/app",
       },
@@ -71,7 +71,7 @@ Deno.test("Structure: ConfigProfile Discriminated Union Integrity", async (t) =>
     // console.log("Verifying AppOnlyProfile structure");
 
     const mockAppConfig: AppConfig = {
-      working_dir: ".agent/breakdown",
+      working_dir: ".agent/clipmt",
       app_prompt: {
         base_dir: "breakdown/prompts/app",
       },
@@ -109,7 +109,7 @@ Deno.test("Structure: ConfigProfile Discriminated Union Integrity", async (t) =>
     // console.log("Verifying MergedProfile structure");
 
     const mockAppConfig: AppConfig = {
-      working_dir: ".agent/breakdown",
+      working_dir: ".agent/clipmt",
       app_prompt: {
         base_dir: "breakdown/prompts/app",
       },
@@ -162,7 +162,7 @@ Deno.test("Structure: ConfigProfileFactory Contract Validation", async (t) => {
     assertExists(ConfigProfileFactory.createMerged, "createMerged should exist");
 
     const mockAppConfig: AppConfig = {
-      working_dir: ".agent/breakdown",
+      working_dir: ".agent/clipmt",
       app_prompt: {
         base_dir: "breakdown/prompts/app",
       },
@@ -198,7 +198,7 @@ Deno.test("Structure: ConfigProfileFactory Contract Validation", async (t) => {
     // console.log("Testing factory parameter validation");
 
     const mockAppConfig: AppConfig = {
-      working_dir: ".agent/breakdown",
+      working_dir: ".agent/clipmt",
       app_prompt: {
         base_dir: "breakdown/prompts/app",
       },
@@ -247,7 +247,7 @@ Deno.test("Structure: ConfigProfileFactory Contract Validation", async (t) => {
     // console.log("Testing factory output consistency");
 
     const mockAppConfig: AppConfig = {
-      working_dir: ".agent/breakdown",
+      working_dir: ".agent/clipmt",
       app_prompt: {
         base_dir: "breakdown/prompts/app",
       },
@@ -300,7 +300,7 @@ Deno.test("Structure: MergedConfig Schema Validation", async (t) => {
     // console.log("Verifying config combination logic");
 
     const mockAppConfig: AppConfig = {
-      working_dir: ".agent/breakdown",
+      working_dir: ".agent/clipmt",
       app_prompt: {
         base_dir: "breakdown/prompts/app",
       },
@@ -328,7 +328,7 @@ Deno.test("Structure: MergedConfig Schema Validation", async (t) => {
       assertEquals(profile.kind, "merged", "Should be merged profile");
       assertEquals(
         profile.config.working_dir,
-        ".agent/breakdown",
+        ".agent/clipmt",
         "Should preserve AppConfig working_dir",
       );
       assertEquals(profile.source.userConfigExists, true, "Should have user config");
@@ -341,7 +341,7 @@ Deno.test("Structure: MergedConfig Schema Validation", async (t) => {
     // console.log("Testing directory resolution consistency");
 
     const mockAppConfig: AppConfig = {
-      working_dir: ".agent/breakdown",
+      working_dir: ".agent/clipmt",
       app_prompt: {
         base_dir: "breakdown/prompts/app",
       },
@@ -375,7 +375,7 @@ Deno.test("Structure: MergedConfig Schema Validation", async (t) => {
       );
       assertEquals(
         profile.config.working_dir,
-        ".agent/breakdown",
+        ".agent/clipmt",
         "Should preserve AppConfig working_dir",
       );
     }
@@ -387,7 +387,7 @@ Deno.test("Structure: MergedConfig Schema Validation", async (t) => {
     // console.log("Testing type safety in configuration merging");
 
     const mockAppConfig: AppConfig = {
-      working_dir: ".agent/breakdown",
+      working_dir: ".agent/clipmt",
       app_prompt: {
         base_dir: "breakdown/prompts/app",
       },
@@ -446,7 +446,7 @@ Deno.test("Structure: MergedConfig Schema Validation", async (t) => {
         );
         assertEquals(
           profile.config.working_dir,
-          ".agent/breakdown",
+          ".agent/clipmt",
           "AppConfig should be preserved",
         );
       }
@@ -463,7 +463,7 @@ Deno.test("Structure: Legacy Compatibility Structure", async (t) => {
     // console.log("Verifying backward compatibility");
 
     const mockAppConfig: AppConfig = {
-      working_dir: ".agent/breakdown",
+      working_dir: ".agent/clipmt",
       app_prompt: {
         base_dir: "breakdown/prompts/app",
       },
@@ -506,7 +506,7 @@ Deno.test("Structure: Legacy Compatibility Structure", async (t) => {
     // console.log("Testing profile evolution integrity");
 
     const mockAppConfig: AppConfig = {
-      working_dir: ".agent/breakdown",
+      working_dir: ".agent/clipmt",
       app_prompt: {
         base_dir: "breakdown/prompts/app",
       },

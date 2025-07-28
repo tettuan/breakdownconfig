@@ -29,7 +29,7 @@ config-example/
 ### app.yaml
 
 ```yaml
-working_dir: ./.agent/breakdown
+working_dir: ./.agent/clipmt
 app_prompt:
   base_dir: ./prompts/app
 app_schema:
@@ -61,7 +61,7 @@ deno run --allow-read --allow-env --allow-write main.ts
 
 ```
 === Configuration Example ===
-Working Directory: /path/to/.agent/breakdown
+Working Directory: /path/to/.agent/clipmt
 App Prompt Base Directory: /path/to/prompts/app
 App Schema Base Directory: /path/to/schema/app
 ```

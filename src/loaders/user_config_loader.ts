@@ -25,8 +25,8 @@ import {
  *
  * ## File Location Strategy
  * The loader searches for configuration files in this priority order:
- * 1. With profilePrefix: `{baseDir}/.agent/breakdown/config/{profilePrefix}-user.yml`
- * 2. Default: `{baseDir}/.agent/breakdown/config/user.yml`
+ * 1. With profilePrefix: `{baseDir}/.agent/clipmt/config/{profilePrefix}-user.yml`
+ * 2. Default: `{baseDir}/.agent/clipmt/config/user.yml`
  *
  * ## Error Handling
  * - Missing files: Returns empty UserConfig (graceful degradation)
@@ -123,8 +123,8 @@ export class UserConfigLoader {
    * 5. Return validated UserConfig object
    *
    * ## File Path Resolution
-   * - With profilePrefix: `{baseDir}/.agent/breakdown/config/{profilePrefix}-user.yml`
-   * - Without profilePrefix: `{baseDir}/.agent/breakdown/config/user.yml`
+   * - With profilePrefix: `{baseDir}/.agent/clipmt/config/{profilePrefix}-user.yml`
+   * - Without profilePrefix: `{baseDir}/.agent/clipmt/config/user.yml`
    *
    * @returns {Promise<ConfigResult<UserConfig | null>>} Result containing:
    *          - null if file doesn't exist (this is a success case)

@@ -20,7 +20,7 @@ import { DefaultPaths } from "../src/types/app_config.ts";
 const logger = new BreakdownLogger();
 
 // Test data constants
-export const TEST_WORKING_DIR = ".agent/breakdown";
+export const TEST_WORKING_DIR = ".agent/clipmt";
 
 // Valid configuration examples
 export const validAppConfig = {
@@ -99,7 +99,7 @@ async function createTestDirStructure(): Promise<{
   logger.debug("Test setup", { tempDir });
 
   const configDir = join(tempDir, DefaultPaths.WORKING_DIR, "config");
-  const userConfigDir = join(tempDir, ".agent", "breakdown", "config");
+  const userConfigDir = join(tempDir, ".agent", "climpt", "config");
 
   await Deno.mkdir(configDir, { recursive: true });
   await Deno.mkdir(userConfigDir, { recursive: true });

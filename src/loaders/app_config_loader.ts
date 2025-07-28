@@ -27,8 +27,8 @@ import { ConfigValidator } from "../validators/config_validator.ts";
  *
  * ## File Location Strategy
  * Configuration files must be located at:
- * - With profilePrefix: `{baseDir}/.agent/breakdown/config/{profilePrefix}-app.yml`
- * - Default: `{baseDir}/.agent/breakdown/config/app.yml`
+ * - With profilePrefix: `{baseDir}/.agent/clipmt/config/{profilePrefix}-app.yml`
+ * - Default: `{baseDir}/.agent/clipmt/config/app.yml`
  *
  * ## Error Handling
  * - Missing files: Throws ErrorCode.APP_CONFIG_NOT_FOUND
@@ -136,8 +136,8 @@ export class AppConfigLoader {
    * required fields are present and of the correct type.
    *
    * The configuration file location is determined as follows:
-   * - Without profilePrefix: `{baseDir}/.agent/breakdown/config/app.yml`
-   * - With profilePrefix: `{baseDir}/.agent/breakdown/config/{profilePrefix}-app.yml`
+   * - Without profilePrefix: `{baseDir}/.agent/clipmt/config/app.yml`
+   * - With profilePrefix: `{baseDir}/.agent/clipmt/config/{profilePrefix}-app.yml`
    *
    * @returns {Promise<AppConfig>} The loaded and validated application configuration
    * @throws {Error} With ErrorCode.APP_CONFIG_NOT_FOUND if file doesn't exist

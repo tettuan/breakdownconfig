@@ -25,12 +25,12 @@ describe("ConfigValidator Integration Tests", () => {
   describe("validateAppConfig - Core Validation", () => {
     it("should successfully validate a complete and valid AppConfig", () => {
       const validConfig: AppConfig = {
-        working_dir: "./.agent/breakdown",
+        working_dir: "./.agent/clipmt",
         app_prompt: {
-          base_dir: "./.agent/breakdown/prompts/app",
+          base_dir: "./.agent/clipmt/prompts/app",
         },
         app_schema: {
-          base_dir: "./.agent/breakdown/schema/app",
+          base_dir: "./.agent/clipmt/schema/app",
         },
       };
 
@@ -127,7 +127,7 @@ describe("ConfigValidator Integration Tests", () => {
 
     it("should fail validation when nested fields are invalid", () => {
       const invalidConfig = {
-        working_dir: "./.agent/breakdown",
+        working_dir: "./.agent/clipmt",
         app_prompt: {
           base_dir: 123, // Invalid: should be string
         },
@@ -181,12 +181,12 @@ describe("ConfigValidator Integration Tests", () => {
 
       for (const char of invalidChars) {
         const invalidConfig: AppConfig = {
-          working_dir: `./.agent/breakdown${char}test`,
+          working_dir: `./.agent/clipmt${char}test`,
           app_prompt: {
-            base_dir: `./.agent/breakdown/prompts${char}app`,
+            base_dir: `./.agent/clipmt/prompts${char}app`,
           },
           app_schema: {
-            base_dir: `./.agent/breakdown/schema${char}app`,
+            base_dir: `./.agent/clipmt/schema${char}app`,
           },
         };
 
@@ -206,10 +206,10 @@ describe("ConfigValidator Integration Tests", () => {
       const invalidConfig: AppConfig = {
         working_dir: "./.agent/../../../etc/passwd",
         app_prompt: {
-          base_dir: "./.agent/breakdown/../../../prompts",
+          base_dir: "./.agent/clipmt/../../../prompts",
         },
         app_schema: {
-          base_dir: "./.agent/breakdown/schema/../../..",
+          base_dir: "./.agent/clipmt/schema/../../..",
         },
       };
 
@@ -498,12 +498,12 @@ describe("ConfigValidator Integration Tests", () => {
   describe("Result Type Integration", () => {
     it("should support Result type chaining with map", () => {
       const validConfig: AppConfig = {
-        working_dir: "./.agent/breakdown",
+        working_dir: "./.agent/clipmt",
         app_prompt: {
-          base_dir: "./.agent/breakdown/prompts/app",
+          base_dir: "./.agent/clipmt/prompts/app",
         },
         app_schema: {
-          base_dir: "./.agent/breakdown/schema/app",
+          base_dir: "./.agent/clipmt/schema/app",
         },
       };
 
@@ -515,7 +515,7 @@ describe("ConfigValidator Integration Tests", () => {
       assertEquals(mappedResult.success, true);
       if (mappedResult.success) {
         assertEquals(mappedResult.data.dirs.length, 3);
-        assertEquals(mappedResult.data.dirs[0], "./.agent/breakdown");
+        assertEquals(mappedResult.data.dirs[0], "./.agent/clipmt");
       }
     });
 
@@ -539,12 +539,12 @@ describe("ConfigValidator Integration Tests", () => {
 
     it("should support Result type pattern matching", () => {
       const validConfig: AppConfig = {
-        working_dir: "./.agent/breakdown",
+        working_dir: "./.agent/clipmt",
         app_prompt: {
-          base_dir: "./.agent/breakdown/prompts/app",
+          base_dir: "./.agent/clipmt/prompts/app",
         },
         app_schema: {
-          base_dir: "./.agent/breakdown/schema/app",
+          base_dir: "./.agent/clipmt/schema/app",
         },
       };
 
@@ -554,7 +554,7 @@ describe("ConfigValidator Integration Tests", () => {
         (config) => `Valid config with working dir: ${config.working_dir}`,
         (errors) => `Validation failed with ${errors.length} errors`,
       );
-      assertEquals(validMessage, "Valid config with working dir: ./.agent/breakdown");
+      assertEquals(validMessage, "Valid config with working dir: ./.agent/clipmt");
 
       const invalidResult = ConfigValidator.validateAppConfig({});
       const invalidMessage = Result.match(

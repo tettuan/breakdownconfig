@@ -1,7 +1,7 @@
 # Application Configuration File Overview
 
 The application configuration file
-`{base_directory}/.agent/breakdown/config/app.yml`
+`{base_directory}/.agent/clipmt/config/app.yml`
 is loaded. Relative path from the project root (current directory at runtime).
 
 # Configuration Items
@@ -18,7 +18,7 @@ Written in YAML format from root.
 
 ## working_dir Configuration
 
-The configuration file contains `working_dir: "./.agent/breakdown"`.
+The configuration file contains `working_dir: "./.agent/clipmt"`.
 Specifies a single base directory that serves as the starting point for user configuration files.
 
 # Configuration Item Naming Rules
@@ -36,8 +36,8 @@ Specifies a single base directory that serves as the starting point for user con
 Default values are only returned when requested by the application side.
 This library uses only configuration files directly.
 
-- working_dir: "./.agent/breakdown"
+- working_dir: "./.agent/clipmt"
 - app_prompt:
-  - base_dir: "./.agent/breakdown/prompts/app"
+  - base_dir: "./.agent/clipmt/prompts/app"
 - app_schema:
-  - base_dir: "./.agent/breakdown/schema/app"
+  - base_dir: "./.agent/clipmt/schema/app"

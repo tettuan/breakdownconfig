@@ -75,7 +75,7 @@ describe("Complete Workflow E2E Tests", () => {
 
       try {
         // Step 1: Create project structure
-        const configDir = join(projectRoot, ".agent/breakdown/config");
+        const configDir = join(projectRoot, ".agent/clipmt/config");
         await ensureDir(configDir);
 
         // Step 2: Initialize BreakdownConfig
@@ -90,7 +90,7 @@ describe("Complete Workflow E2E Tests", () => {
 
         // Step 3: Generate default configuration
         const appConfig = {
-          working_dir: ".agent/breakdown",
+          working_dir: ".agent/clipmt",
           app_prompt: {
             base_dir: "prompts/app",
           },
@@ -127,23 +127,23 @@ app_schema:
       const projectRoot = await Deno.makeTempDir();
 
       try {
-        const configDir = join(projectRoot, ".agent/breakdown/config");
+        const configDir = join(projectRoot, ".agent/clipmt/config");
         await ensureDir(configDir);
 
         // Create profile configurations
         const profiles = {
           development: {
-            working_dir: ".agent/breakdown/dev",
+            working_dir: ".agent/clipmt/dev",
             app_prompt: { base_dir: "dev/prompts" },
             app_schema: { base_dir: "dev/schemas" },
           },
           staging: {
-            working_dir: ".agent/breakdown/staging",
+            working_dir: ".agent/clipmt/staging",
             app_prompt: { base_dir: "staging/prompts" },
             app_schema: { base_dir: "staging/schemas" },
           },
           production: {
-            working_dir: ".agent/breakdown/prod",
+            working_dir: ".agent/clipmt/prod",
             app_prompt: { base_dir: "prod/prompts" },
             app_schema: { base_dir: "prod/schemas" },
           },
@@ -197,7 +197,7 @@ app_schema:
       const projectRoot = await Deno.makeTempDir();
 
       try {
-        const configDir = join(projectRoot, ".agent/breakdown/config");
+        const configDir = join(projectRoot, ".agent/clipmt/config");
         await ensureDir(configDir);
 
         // Create configurations
@@ -205,7 +205,7 @@ app_schema:
         for (const profile of configs) {
           await Deno.writeTextFile(
             join(configDir, `${profile}-app.yml`),
-            `working_dir: .agent/breakdown/${profile}
+            `working_dir: .agent/clipmt/${profile}
 app_prompt:
   base_dir: ${profile}/prompts
 app_schema:
@@ -221,7 +221,7 @@ app_schema:
         const devConfig = devConfigResult.data;
         await devConfig.loadConfig();
         const devMerged = await devConfig.getConfig();
-        assertEquals(devMerged.working_dir, ".agent/breakdown/development");
+        assertEquals(devMerged.working_dir, ".agent/clipmt/development");
 
         // Switch to production
         const prodConfigResult = BreakdownConfig.create("production", projectRoot);
@@ -231,11 +231,11 @@ app_schema:
         const prodConfig = prodConfigResult.data;
         await prodConfig.loadConfig();
         const prodMerged = await prodConfig.getConfig();
-        assertEquals(prodMerged.working_dir, ".agent/breakdown/production");
+        assertEquals(prodMerged.working_dir, ".agent/clipmt/production");
 
         // Verify isolation - dev config should remain unchanged
         const devCheck = await devConfig.getConfig();
-        assertEquals(devCheck.working_dir, ".agent/breakdown/development");
+        assertEquals(devCheck.working_dir, ".agent/clipmt/development");
       } finally {
         await Deno.remove(projectRoot, { recursive: true });
       }
@@ -247,7 +247,7 @@ app_schema:
       const projectRoot = await Deno.makeTempDir();
 
       try {
-        const configDir = join(projectRoot, ".agent/breakdown/config");
+        const configDir = join(projectRoot, ".agent/clipmt/config");
         await ensureDir(configDir);
 
         // Simulate legacy configuration
@@ -268,7 +268,7 @@ profiles:
         // Create new format configuration
         await Deno.writeTextFile(
           join(configDir, "app.yml"),
-          `working_dir: .agent/breakdown
+          `working_dir: .agent/clipmt
 app_prompt:
   base_dir: breakdown/prompts/app
 app_schema:
@@ -286,7 +286,7 @@ app_schema:
         const mergedConfig = await config.getConfig();
 
         // Verify new format is loaded correctly
-        assertEquals(mergedConfig.working_dir, ".agent/breakdown");
+        assertEquals(mergedConfig.working_dir, ".agent/clipmt");
         assertExists(mergedConfig.app_prompt.base_dir);
         assertExists(mergedConfig.app_schema.base_dir);
       } finally {
@@ -302,12 +302,12 @@ app_schema:
         const environments = ["ci", "cd-staging", "cd-production"];
 
         for (const env of environments) {
-          const configDir = join(projectRoot, env, ".agent/breakdown/config");
+          const configDir = join(projectRoot, env, ".agent/clipmt/config");
           await ensureDir(configDir);
 
           // Environment-specific configuration
           const config = {
-            working_dir: `.agent/breakdown/${env}`,
+            working_dir: `.agent/clipmt/${env}`,
             app_prompt: {
               base_dir: `${env}/prompts`,
             },
@@ -351,7 +351,7 @@ app_schema:
       const projectRoot = await Deno.makeTempDir();
 
       try {
-        const configDir = join(projectRoot, ".agent/breakdown/config");
+        const configDir = join(projectRoot, ".agent/clipmt/config");
         await ensureDir(configDir);
 
         // Create invalid configuration
@@ -382,7 +382,7 @@ app_schema:
         // Recovery: Create valid configuration
         await Deno.writeTextFile(
           join(configDir, "app.yml"),
-          `working_dir: .agent/breakdown
+          `working_dir: .agent/clipmt
 app_prompt:
   base_dir: breakdown/prompts/app
 app_schema:
@@ -399,7 +399,7 @@ app_schema:
         await newConfig.loadConfig();
         const mergedConfig = await newConfig.getConfig();
 
-        assertEquals(mergedConfig.working_dir, ".agent/breakdown");
+        assertEquals(mergedConfig.working_dir, ".agent/clipmt");
       } finally {
         await Deno.remove(projectRoot, { recursive: true });
       }
@@ -409,13 +409,13 @@ app_schema:
       const projectRoot = await Deno.makeTempDir();
 
       try {
-        const configDir = join(projectRoot, ".agent/breakdown/config");
+        const configDir = join(projectRoot, ".agent/clipmt/config");
         await ensureDir(configDir);
 
         // Base configuration
         await Deno.writeTextFile(
           join(configDir, "app.yml"),
-          `working_dir: .agent/breakdown
+          `working_dir: .agent/clipmt
 app_prompt:
   base_dir: breakdown/prompts/app
 app_schema:
@@ -427,7 +427,7 @@ app_schema:
         for (const plugin of plugins) {
           await Deno.writeTextFile(
             join(configDir, `plugin-${plugin}-app.yml`),
-            `working_dir: .agent/breakdown/plugins/${plugin}
+            `working_dir: .agent/clipmt/plugins/${plugin}
 app_prompt:
   base_dir: plugins/${plugin}/prompts
 app_schema:
@@ -445,7 +445,7 @@ app_schema:
         await baseConfig.loadConfig();
         const baseMerged = await baseConfig.getConfig();
 
-        assertEquals(baseMerged.working_dir, ".agent/breakdown");
+        assertEquals(baseMerged.working_dir, ".agent/clipmt");
 
         // Load plugin configurations
         for (const plugin of plugins) {
@@ -460,7 +460,7 @@ app_schema:
 
           assertEquals(
             pluginMerged.working_dir,
-            `.agent/breakdown/plugins/${plugin}`,
+            `.agent/clipmt/plugins/${plugin}`,
             `Plugin ${plugin} should have correct working dir`,
           );
         }
@@ -481,13 +481,13 @@ app_schema:
 
         for (const service of services) {
           const serviceDir = join(projectRoot, service);
-          const configDir = join(serviceDir, ".agent/breakdown/config");
+          const configDir = join(serviceDir, ".agent/clipmt/config");
           await ensureDir(configDir);
 
           // Service-specific configuration
           await Deno.writeTextFile(
             join(configDir, "app.yml"),
-            `working_dir: .agent/breakdown/${service}
+            `working_dir: .agent/clipmt/${service}
 app_prompt:
   base_dir: ${service}/prompts
 app_schema:
@@ -506,9 +506,9 @@ app_schema:
         }
 
         // Verify service isolation
-        assertEquals(configs.api.working_dir, ".agent/breakdown/api");
-        assertEquals(configs.worker.working_dir, ".agent/breakdown/worker");
-        assertEquals(configs.scheduler.working_dir, ".agent/breakdown/scheduler");
+        assertEquals(configs.api.working_dir, ".agent/clipmt/api");
+        assertEquals(configs.worker.working_dir, ".agent/clipmt/worker");
+        assertEquals(configs.scheduler.working_dir, ".agent/clipmt/scheduler");
 
         // Verify unique prompt/schema paths
         for (const service of services) {
@@ -530,12 +530,12 @@ app_schema:
       const projectRoot = await Deno.makeTempDir();
 
       try {
-        const configDir = join(projectRoot, ".agent/breakdown/config");
+        const configDir = join(projectRoot, ".agent/clipmt/config");
         await ensureDir(configDir);
 
         // Initial configuration
         const initialConfig = {
-          working_dir: ".agent/breakdown/v1",
+          working_dir: ".agent/clipmt/v1",
           app_prompt: { base_dir: "v1/prompts" },
           app_schema: { base_dir: "v1/schemas" },
         };
@@ -563,7 +563,7 @@ app_schema:
 
         // Update configuration (simulate hot-reload)
         const updatedConfig = {
-          working_dir: ".agent/breakdown/v2",
+          working_dir: ".agent/clipmt/v2",
           app_prompt: { base_dir: "v2/prompts" },
           app_schema: { base_dir: "v2/schemas" },
         };

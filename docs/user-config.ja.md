@@ -1,9 +1,9 @@
 # ユーザー設定ファイルの概要
 
-ユーザー設定ファイルは固定パス `{working_dir}/.agent/breakdown/config/user.yml` から読み込む。
+ユーザー設定ファイルは固定パス `{working_dir}/.agent/clipmt/config/user.yml` から読み込む。
 
 設定ファイル
-`{working_dir}/.agent/breakdown/config/user.yml`
+`{working_dir}/.agent/clipmt/config/user.yml`
 を読み込む。
 
 # 設定項目

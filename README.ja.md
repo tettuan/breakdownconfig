@@ -164,7 +164,7 @@ static async loadConfig(configSetName?: string, baseDir?: string): Promise<Resul
 
 - **`baseDir`** (オプション): 設定ファイルのベースディレクトリ
   - デフォルトは現在の作業ディレクトリ (`""`)
-  - 設定ファイルは `{baseDir}/.agent/breakdown/config/` から読み込み
+  - 設定ファイルは `{baseDir}/.agent/clipmt/config/` から読み込み
 
 #### 戻り値
 
@@ -184,11 +184,11 @@ const prodResult = await BreakdownConfig.loadConfig("production");
 
 // カスタムベースディレクトリ
 const customResult = await BreakdownConfig.loadConfig(undefined, "/path/to/project");
-// 読み込み: /path/to/project/.agent/breakdown/config/app.yml
+// 読み込み: /path/to/project/.agent/clipmt/config/app.yml
 
 // 環境固有 + カスタムベースディレクトリ
 const envResult = await BreakdownConfig.loadConfig("staging", "/path/to/project");
-// 読み込み: /path/to/project/.agent/breakdown/config/staging-app.yml
+// 読み込み: /path/to/project/.agent/clipmt/config/staging-app.yml
 
 // エラーハンドリングの例
 if (Result.isOk(result)) {
@@ -243,13 +243,13 @@ BreakdownConfigは引数を指定しない場合、以下の固定パスから�
 ```typescript
 // 引数なしの場合
 const config = new BreakdownConfig();
-// → カレントディレクトリの ./.agent/breakdown/config/ から読み込み
+// → カレントディレクトリの ./.agent/clipmt/config/ から読み込み
 ```
 
 **読み込まれるファイル**:
 
-- アプリケーション設定: `./.agent/breakdown/config/app.yml` （必須）
-- ユーザー設定: `./.agent/breakdown/config/user.yml` （オプション）
+- アプリケーション設定: `./.agent/clipmt/config/app.yml` （必須）
+- ユーザー設定: `./.agent/clipmt/config/user.yml` （オプション）
 
 #### カスタムベースディレクトリ
 
@@ -257,7 +257,7 @@ const config = new BreakdownConfig();
 
 ```typescript
 const config = new BreakdownConfig(undefined, "/path/to/project");
-// → /path/to/project/.agent/breakdown/config/ から読み込み
+// → /path/to/project/.agent/clipmt/config/ から読み込み
 ```
 
 #### 環境固有設定
@@ -266,28 +266,28 @@ const config = new BreakdownConfig(undefined, "/path/to/project");
 
 ```typescript
 const config = new BreakdownConfig("production");
-// → ./.agent/breakdown/config/production-app.yml と production-user.yml から読み込み
+// → ./.agent/clipmt/config/production-app.yml と production-user.yml から読み込み
 ```
 
 ### 設定構造
 
 #### アプリケーション設定（必須）
 
-**デフォルト設定**: `./.agent/breakdown/config/app.yml`
-**環境固有設定**: `./.agent/breakdown/config/{prefix}-app.yml`
+**デフォルト設定**: `./.agent/clipmt/config/app.yml`
+**環境固有設定**: `./.agent/clipmt/config/{prefix}-app.yml`
 
 ```yaml
-working_dir: "./.agent/breakdown"
+working_dir: "./.agent/clipmt"
 app_prompt:
-  base_dir: "./.agent/breakdown/prompts/app"
+  base_dir: "./.agent/clipmt/prompts/app"
 app_schema:
-  base_dir: "./.agent/breakdown/schema/app"
+  base_dir: "./.agent/clipmt/schema/app"
 ```
 
 #### ユーザー設定（オプション）
 
-**デフォルト設定**: `./.agent/breakdown/config/user.yml`
-**環境固有設定**: `./.agent/breakdown/config/{prefix}-user.yml`
+**デフォルト設定**: `./.agent/clipmt/config/user.yml`
+**環境固有設定**: `./.agent/clipmt/config/{prefix}-user.yml`
 
 ```yaml
 app_prompt:
@@ -298,7 +298,7 @@ app_schema:
 
 **重要**:
 
-- アプリケーション設定とユーザー設定は同じディレクトリ（`./.agent/breakdown/config/`）に配置されます
+- アプリケーション設定とユーザー設定は同じディレクトリ（`./.agent/clipmt/config/`）に配置されます
 - ユーザー設定は、working_dirの設定値に関係なく、常に固定の場所から読み込まれます
 - 設定ファイルが存在しない場合、アプリケーション設定は必須のためエラーになりますが、ユーザー設定はオプションのため正常に動作します
 
@@ -334,7 +334,7 @@ const devConfig = new BreakdownConfig("development");
 | "development"        | `development-app.yml` | `development-user.yml` |
 | "{custom}"           | `{custom}-app.yml`    | `{custom}-user.yml`    |
 
-すべてのファイルは `./.agent/breakdown/config/` ディレクトリに配置されます。
+すべてのファイルは `./.agent/clipmt/config/` ディレクトリに配置されます。
 
 ## エラーハンドリング
 
@@ -484,14 +484,14 @@ if (Result.isOk(agentResult)) {
 **アプリケーション設定 (app.yml):**
 
 ```yaml
-working_dir: "./.agent/breakdown"
+working_dir: "./.agent/clipmt"
 app_prompt:
-  base_dir: "./.agent/breakdown/prompts/app"
+  base_dir: "./.agent/clipmt/prompts/app"
   templates:
     - "system.md"
     - "user.md"
 app_schema:
-  base_dir: "./.agent/breakdown/schema/app"
+  base_dir: "./.agent/clipmt/schema/app"
   validation_rules:
     - "input.json"
     - "output.json"
@@ -692,9 +692,9 @@ if (Result.isOk(baseResult) && Result.isOk(featureResult)) {
 **ベース設定 (base-app.yml):**
 
 ```yaml
-working_dir: "./.agent/breakdown"
+working_dir: "./.agent/clipmt"
 app_prompt:
-  base_dir: "./.agent/breakdown/prompts/base"
+  base_dir: "./.agent/clipmt/prompts/base"
   common_templates:
     - "header.md"
     - "footer.md"
@@ -703,9 +703,9 @@ app_prompt:
 **機能設定 (feature-x-app.yml):**
 
 ```yaml
-working_dir: "./.agent/breakdown" # 継承
+working_dir: "./.agent/clipmt" # 継承
 app_prompt:
-  base_dir: "./.agent/breakdown/prompts/feature-x" # 上書き
+  base_dir: "./.agent/clipmt/prompts/feature-x" # 上書き
   common_templates: # ベースから継承
     - "header.md"
     - "footer.md"
