@@ -1,7 +1,6 @@
 ---
 name: run-tests
 description: Run a specific test file with debug logging
-disable-model-invocation: true
 argument-hint: "[test-file-path]"
 ---
 

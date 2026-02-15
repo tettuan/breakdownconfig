@@ -1,7 +1,6 @@
 ---
 name: local-ci
 description: Run local CI checks before merge or push
-disable-model-invocation: true
 ---
 
 Run the local CI script to validate the project.
