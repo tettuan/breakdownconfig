@@ -2,9 +2,9 @@ name: Version Check
 
 on:
   push:
-    branches: [main]
+    branches: [main, "release/*"]
   pull_request:
-    branches: [main]
+    branches: [main, develop]
 
 jobs:
   version-check:
@@ -16,9 +16,9 @@ jobs:
           fetch-depth: 0
 
       - name: Setup Deno
-        uses: denoland/setup-deno@v1
+        uses: denoland/setup-deno@v2
         with:
-          deno-version: v2.1.9
+          deno-version: v2.x
 
       - name: Clear cache and regenerate lockfile
         run: |
@@ -40,10 +40,35 @@ jobs:
       - name: Get latest JSR version
         id: get_jsr_version
         run: |
-          JSR_VERSION=$(curl -s https://jsr.io/@tettuan/breakdownprompt/versions | grep -o '0\.[0-9]\+\.[0-9]\+' | head -n 1 || echo "0.0.0")
+          JSR_VERSION=$(curl -s https://jsr.io/@tettuan/breakdownconfig/meta.json | jq -r '.latestVersion // "0.0.0"')
           echo "jsr_version=${JSR_VERSION}" >> $GITHUB_OUTPUT
 
-      - name: Check version consistency
+      - name: Detect branch context
+        id: branch_context
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then
+            BRANCH="${GITHUB_REF#refs/heads/}"
+          else
+            BRANCH="${{ github.head_ref }}"
+          fi
+          echo "branch=${BRANCH}" >> $GITHUB_OUTPUT
+
+          if [[ "$BRANCH" == release/* ]]; then
+            echo "is_release=true" >> $GITHUB_OUTPUT
+            echo "release_version=${BRANCH#release/}" >> $GITHUB_OUTPUT
+          else
+            echo "is_release=false" >> $GITHUB_OUTPUT
+            echo "release_version=" >> $GITHUB_OUTPUT
+          fi
+
+          if [ "$BRANCH" = "main" ]; then
+            echo "is_main=true" >> $GITHUB_OUTPUT
+          else
+            echo "is_main=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Check version consistency (main only)
+        if: steps.branch_context.outputs.is_main == 'true'
         run: |
           if [ "v${{ steps.get_version.outputs.version }}" != "${{ steps.get_latest_tag.outputs.latest_tag }}" ]; then
             echo "Error: Version mismatch!"
@@ -60,3 +85,19 @@ jobs:
           fi
 
           echo "Version check passed! New version: ${{ steps.get_version.outputs.version }}"
+
+      - name: Check release branch version consistency
+        if: steps.branch_context.outputs.is_release == 'true'
+        run: |
+          BRANCH_VERSION="${{ steps.branch_context.outputs.release_version }}"
+          DENO_VERSION="${{ steps.get_version.outputs.version }}"
+
+          if [ "$BRANCH_VERSION" != "$DENO_VERSION" ]; then
+            echo "Error: Branch version mismatch!"
+            echo "Branch name version: $BRANCH_VERSION"
+            echo "deno.json version:   $DENO_VERSION"
+            echo "Run: scripts/bump_version.sh"
+            exit 1
+          fi
+
+          echo "Release branch version check passed: $DENO_VERSION"

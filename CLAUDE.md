@@ -6,7 +6,7 @@ alwaysApply: false
 
 - Project: Deno, JSR publish
 - use `LOG_LEVEL=debug deno test --allow-env --allow-write --allow-read` to debug, or other log level.
-- publish JSR with CI. see `https://jsr.io/@tettuan/breakdownprompt/publish`
+- publish JSR with CI. see `https://jsr.io/@tettuan/breakdownconfig/publish`
 - run `deno test <something.ts> --allow-env --allow-write --allow-read` before git commit.
 - run `scripts/local_ci.sh` before merge or push.
 - tests and fixtures must be in `tests/`.
@@ -24,8 +24,10 @@ alwaysApply: false
 
 # Git push
 
-- DO NOT push untile `scripts/local_ci.sh` pass all.
+- DO NOT push until `scripts/local_ci.sh` pass all.
 - run `LOG_LEVEL=debug scripts/local_ci.sh` if error.
+- NEVER push directly to `main` or `develop`. Always use PR.
+- Work on `feature/*`, `fix/*`, `refactor/*`, or `docs/*` branches (derived from `develop`).
 
 # Run Tests
 
@@ -69,10 +71,35 @@ alwaysApply: false
 
 - Write Comments when only test passes.
 
+# Branch Strategy
+
+全ての変更は以下のブランチ戦略に従って行うこと。直接 main/develop への push は禁止。
+
+## ブランチの役割
+
+| ブランチ | 役割 | 直接 push |
+|---------|------|----------|
+| `main` | 本番リリース。tag 付与対象 | 禁止 |
+| `develop` | 開発統合ブランチ | 禁止 |
+| `release/*` | リリース準備。develop から派生 | 可 |
+| `feature/*`, `fix/*`, `refactor/*`, `docs/*` | 作業ブランチ。develop から派生 | 可 |
+
+## 変更フロー
+
+1. `develop` から作業ブランチ（`feature/*` 等）を作成
+2. 作業ブランチで実装 → PR を `develop` へ作成 → マージ
+3. リリース時: `develop` から `release/x.y.z` を作成
+4. `scripts/bump_version.sh` でバージョン更新 → PR を `develop` へ作成 → マージ
+5. `develop` → `main` PR 作成 → マージ
+6. `main` で `scripts/create_release_tag.sh` → tag push → JSR publish 自動
+
+詳細は `/release-procedure` および `/branch-management` skill を参照。
+
 # release new version
 
 - run `scripts/bump_version.sh` when ordered.
   - do not speculate if it will release.
+- `bump_version.sh` updates deno.json only (no tag). Use `scripts/create_release_tag.sh` on main for tagging.
 
 # Claude Code Compay
 
