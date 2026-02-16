@@ -17,7 +17,8 @@ push前に `scripts/local_ci.sh` を通す。main/develop への直接pushは禁
 | `/local-ci` | CI実行・エラー対処 |
 | `/run-tests` | 個別テスト実行 |
 | `/fix-checklist` | 根本原因特定→修正 |
-| `/breakdown-logger` | テストログ出力 |
+| `/add-logger` | テストにログ実装を追加 |
+| `/check-logger` | ログ出力の検証・デバッグ実行 |
 | `/branch-management` | ブランチ戦略・PR作成 |
 | `/release-procedure` | リリースフロー |
 | `/bump-version` | バージョン更新 |
@@ -35,7 +36,7 @@ push前に `scripts/local_ci.sh` を通す。main/develop への直接pushは禁
 
 # テストでのデバッグログ
 
-実行プロセスのデバッグには BreakdownLogger を用いる。テストファイル作成時は `/breakdown-logger` スキルを参照し、以下を守る。
+実行プロセスのデバッグには BreakdownLogger を用いる。テストファイル作成時は `/add-logger` スキルを参照し、検証時は `/check-logger` を使う。以下を守る。
 
 - `LOG_LEVEL=debug LOG_KEY=<対象キー>` で実行し、処理の流れを追えるようにする
 - テスト対象の関数呼び出し前後に `logger.debug()` でステップを記録する
