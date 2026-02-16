@@ -2,6 +2,171 @@
   "version": 1,
   "executions": [
     {
+      "id": "mlpg3vra-a2178ca0",
+      "timestamp": "2026-02-16T17:25:48.550Z",
+      "success": true,
+      "totalDuration": 3559.698292,
+      "stages": [
+        {
+          "stage": "git-status-check",
+          "status": "success",
+          "duration": 18.747082999999996
+        },
+        {
+          "stage": "format-check",
+          "status": "success",
+          "duration": 28.592332999999996
+        },
+        {
+          "stage": "lockfile-init",
+          "status": "success",
+          "duration": 640.5521249999999
+        },
+        {
+          "stage": "type-check",
+          "status": "success",
+          "duration": 101.034625
+        },
+        {
+          "stage": "test-execution",
+          "status": "success",
+          "duration": 2112.289666,
+          "strategy": "all",
+          "testSummary": "\u001b[0m\u001b[32mok\u001b[0m | 89 passed (442 steps) | 0 failed \u001b[0m\u001b[38;5;245m(1s)\u001b[0m"
+        },
+        {
+          "stage": "lint-check",
+          "status": "success",
+          "duration": 36.83545800000047
+        },
+        {
+          "stage": "jsr-check",
+          "status": "success",
+          "duration": 612.8499999999999
+        }
+      ],
+      "config": {
+        "mode": "all",
+        "hierarchy": null,
+        "fallbackEnabled": true,
+        "batchSize": 2
+      },
+      "git": {
+        "branch": "release/1.2.4",
+        "commit": "7de93de"
+      }
+    },
+    {
+      "id": "mlpg3cu0-39b349ca",
+      "timestamp": "2026-02-16T17:25:24.024Z",
+      "success": false,
+      "totalDuration": 0.33695800000000276,
+      "stages": [],
+      "config": {
+        "mode": "all",
+        "hierarchy": "-v",
+        "fallbackEnabled": true,
+        "batchSize": 2
+      },
+      "git": {
+        "branch": "release/1.2.4",
+        "commit": "7de93de"
+      }
+    },
+    {
+      "id": "mlpg2pvp-4578e6c3",
+      "timestamp": "2026-02-16T17:24:54.278Z",
+      "success": false,
+      "totalDuration": 3810.753334,
+      "stages": [
+        {
+          "stage": "git-status-check",
+          "status": "success",
+          "duration": 20.536041999999995
+        },
+        {
+          "stage": "format-check",
+          "status": "success",
+          "duration": 42.61491699999999
+        },
+        {
+          "stage": "lockfile-init",
+          "status": "success",
+          "duration": 465.189834
+        },
+        {
+          "stage": "type-check",
+          "status": "success",
+          "duration": 987.618
+        },
+        {
+          "stage": "test-execution",
+          "status": "success",
+          "duration": 2188.659083,
+          "strategy": "all",
+          "testSummary": "\u001b[0m\u001b[32mok\u001b[0m | 89 passed (442 steps) | 0 failed \u001b[0m\u001b[38;5;245m(2s)\u001b[0m"
+        },
+        {
+          "stage": "lint-check",
+          "status": "failure",
+          "duration": 0,
+          "error": {
+            "kind": "lint-check",
+            "files": [
+              "36m/Users/tettuan/github/breakdownconfig/examples/prompt-manager/src/prompt_manager.ts",
+              "36m/Users/tettuan/github/breakdownconfig/examples/prompt-manager/src/schema_manager.ts",
+              "36m/Users/tettuan/github/breakdownconfig/examples/config-example/main.ts",
+              "36m/Users/tettuan/github/breakdownconfig/examples/multi-environment/main.ts",
+              "36m/Users/tettuan/github/breakdownconfig/examples/error-handling/main.ts",
+              "36m/Users/tettuan/github/breakdownconfig/examples/prompt-manager/main.ts"
+            ],
+            "message": "Fallback failed: {\"kind\":\"TypeCheckError\",\"files\":[\"36m/Users/tettuan/github/breakdownconfig/examples/prompt-manager/src/prompt_manager.ts\",\"36m/Users/tettuan/github/breakdownconfig/examples/prompt-manager/src/schema_manager.ts\",\"36m/Users/tettuan/github/breakdownconfig/examples/config-example/main.ts\",\"36m/Users/tettuan/github/breakdownconfig/examples/multi-environment/main.ts\",\"36m/Users/tettuan/github/breakdownconfig/examples/error-handling/main.ts\",\"36m/Users/tettuan/github/breakdownconfig/examples/prompt-manager/main.ts\"],\"details\":[\"\\u001b[0m\\u001b[1m\\u001b[31merror[verbatim-module-syntax]\\u001b[0m: \\u001b[0m\\u001b[1mAll import identifiers are used in types\\u001b[0m\",\"\\u001b[0m\\u001b[1m\\u001b[31merror[verbatim-module-syntax]\\u001b[0m: \\u001b[0m\\u001b[1mAll import identifiers are used in types\\u001b[0m\",\"\\u001b[0m\\u001b[1m\\u001b[31merror[no-console]\\u001b[0m: \\u001b[0m\\u001b[1m`console` usage is not allowed.\\u001b[0m\",\"\\u001b[0m\\u001b[1m\\u001b[31merror[no-console]\\u001b[0m: \\u001b[0m\\u001b[1m`console` usage is not allowed.\\u001b[0m\",\"\\u001b[0m\\u001b[1m\\u001b[31merror[no-console]\\u001b[0m: \\u001b[0m\\u001b[1m`console` usage is not allowed.\\u001b[0m\"]}"
+          }
+        }
+      ],
+      "config": {
+        "mode": "all",
+        "hierarchy": null,
+        "fallbackEnabled": true,
+        "batchSize": 2
+      },
+      "failedBatchInfo": {
+        "startIndex": 0,
+        "endIndex": 24,
+        "files": [
+          "/Users/tettuan/github/breakdownconfig/examples/config-example/main.ts",
+          "/Users/tettuan/github/breakdownconfig/examples/error-handling/main.ts",
+          "/Users/tettuan/github/breakdownconfig/examples/multi-environment/main.ts",
+          "/Users/tettuan/github/breakdownconfig/examples/prompt-manager/main.ts",
+          "/Users/tettuan/github/breakdownconfig/examples/prompt-manager/src/prompt_manager.ts",
+          "/Users/tettuan/github/breakdownconfig/examples/prompt-manager/src/schema_manager.ts",
+          "/Users/tettuan/github/breakdownconfig/mod.ts",
+          "/Users/tettuan/github/breakdownconfig/src/breakdown_config.ts",
+          "/Users/tettuan/github/breakdownconfig/src/breakdown_config_architecture_test.ts",
+          "/Users/tettuan/github/breakdownconfig/src/breakdown_config_structure_test.ts",
+          "/Users/tettuan/github/breakdownconfig/src/breakdown_config_units_test.ts",
+          "/Users/tettuan/github/breakdownconfig/src/config_manager.ts",
+          "/Users/tettuan/github/breakdownconfig/src/config_manager_architecture_test.ts",
+          "/Users/tettuan/github/breakdownconfig/src/error_manager.ts",
+          "/Users/tettuan/github/breakdownconfig/src/errors/config_manager_errors.ts",
+          "/Users/tettuan/github/breakdownconfig/src/errors/enhanced_i18n_system.ts",
+          "/Users/tettuan/github/breakdownconfig/src/errors/error_code_mapping.ts",
+          "/Users/tettuan/github/breakdownconfig/src/errors/error_handling_utils.ts",
+          "/Users/tettuan/github/breakdownconfig/src/errors/i18n_message_system.ts",
+          "/Users/tettuan/github/breakdownconfig/src/errors/mod.ts",
+          "/Users/tettuan/github/breakdownconfig/src/errors/polymorphic_error_system.ts",
+          "/Users/tettuan/github/breakdownconfig/src/errors/standardized_error_codes.ts",
+          "/Users/tettuan/github/breakdownconfig/src/errors/throw_to_result.ts",
+          "/Users/tettuan/github/breakdownconfig/src/errors/throw_to_result_units_test.ts",
+          "/Users/tettuan/github/breakdownconfig/src/errors/unified_error_final_exports.ts"
+        ]
+      },
+      "git": {
+        "branch": "release/1.2.4",
+        "commit": "cdfd3e2"
+      }
+    },
+    {
       "id": "mlpfvp74-7702bd4a",
       "timestamp": "2026-02-16T17:19:26.800Z",
       "success": false,

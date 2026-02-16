@@ -36,7 +36,8 @@
     ],
     "exclude": [
       "README.md",
-      "CHANGELOG.md"
+      "CHANGELOG.md",
+      "examples/"
     ],
     "rules": {
       "tags": [
