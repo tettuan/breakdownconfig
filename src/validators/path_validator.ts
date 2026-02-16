@@ -1,11 +1,7 @@
 import { isAbsolute, join, normalize } from "https://deno.land/std@0.224.0/path/mod.ts";
 import { exists } from "https://deno.land/std@0.224.0/fs/exists.ts";
-import {
-  type ConfigResult,
-  type PathError,
-  Result,
-  type UnknownError,
-} from "../types/config_result.ts";
+import { Result } from "../types/unified_result.ts";
+import { ErrorFactories, type UnifiedError } from "../errors/unified_errors.ts";
 import { ValidPath } from "../utils/valid_path.ts";
 
 /**
@@ -20,9 +16,9 @@ export class PathValidator {
   /**
    * Validates a path and returns a ValidPath instance
    * @param path - The path to validate
-   * @returns ConfigResult containing ValidPath or PathError
+   * @returns Result containing ValidPath or UnifiedError
    */
-  static validate(path: string): ConfigResult<ValidPath, PathError> {
+  static validate(path: string): Result<ValidPath, UnifiedError> {
     return ValidPath.create(path);
   }
 
@@ -30,19 +26,19 @@ export class PathValidator {
    * Safely joins multiple path segments
    * @param basePath - The base path (must be valid)
    * @param segments - Additional path segments to join
-   * @returns ConfigResult containing the joined ValidPath or PathError
+   * @returns Result containing the joined ValidPath or UnifiedError
    */
   static safeJoin(
     basePath: string | ValidPath,
     ...segments: string[]
-  ): ConfigResult<ValidPath, PathError> {
+  ): Result<ValidPath, UnifiedError> {
     // Extract the base path string
     const baseStr = typeof basePath === "string" ? basePath : basePath.getValue();
 
     // Validate the base path first
     if (typeof basePath === "string") {
       const baseValidation = ValidPath.create(baseStr);
-      if (!Result.isOk(baseValidation)) {
+      if (!baseValidation.success) {
         return baseValidation;
       }
     }
@@ -54,17 +50,14 @@ export class PathValidator {
     for (const segment of validSegments) {
       // Check for path traversal in segments
       if (segment.includes("..") || isAbsolute(segment)) {
-        return Result.err<PathError>({
-          kind: "pathError",
-          path: segment,
-          reason: "pathTraversal",
-          message: `Invalid segment in path join: ${segment}`,
-        });
+        return Result.err(
+          ErrorFactories.pathValidationError(segment, "PATH_TRAVERSAL", "segment"),
+        );
       }
 
       // Check for invalid characters in segments
       const segmentValidation = ValidPath.create(segment);
-      if (!Result.isOk(segmentValidation)) {
+      if (!segmentValidation.success) {
         return segmentValidation;
       }
     }
@@ -80,18 +73,18 @@ export class PathValidator {
   /**
    * Checks if a path exists and returns the result
    * @param path - The path to check (string or ValidPath)
-   * @returns ConfigResult containing boolean (true if exists) or error
+   * @returns Result containing boolean (true if exists) or error
    */
   static async checkExists(
     path: string | ValidPath,
-  ): Promise<ConfigResult<boolean, PathError | UnknownError>> {
+  ): Promise<Result<boolean, UnifiedError>> {
     // Extract the path string
     const pathStr = typeof path === "string" ? path : path.getValue();
 
     // Validate the path first if it's a string
     if (typeof path === "string") {
       const validation = ValidPath.create(pathStr);
-      if (!Result.isOk(validation)) {
+      if (!validation.success) {
         return validation;
       }
     }
@@ -100,27 +93,28 @@ export class PathValidator {
       const fileExists = await exists(pathStr);
       return Result.ok(fileExists);
     } catch (error: unknown) {
-      return Result.err<UnknownError>({
-        kind: "unknownError",
-        message: `Failed to check path existence: ${pathStr}`,
-        originalError: error instanceof Error ? error : new Error(String(error)),
-      });
+      return Result.err(
+        ErrorFactories.unknown(
+          error instanceof Error ? error : new Error(String(error)),
+          "pathValidator.checkExists",
+        ),
+      );
     }
   }
 
   /**
    * Validates that a path exists
    * @param path - The path to validate (string or ValidPath)
-   * @returns ConfigResult containing ValidPath if exists, or error
+   * @returns Result containing ValidPath if exists, or error
    */
   static async validateExists(
     path: string | ValidPath,
-  ): Promise<ConfigResult<ValidPath, PathError | UnknownError>> {
+  ): Promise<Result<ValidPath, UnifiedError>> {
     // First validate the path format
     let validPath: ValidPath;
     if (typeof path === "string") {
       const validation = ValidPath.create(path);
-      if (!Result.isOk(validation)) {
+      if (!validation.success) {
         return validation;
       }
       validPath = validation.data;
@@ -130,17 +124,18 @@ export class PathValidator {
 
     // Then check if it exists
     const existsResult = await this.checkExists(validPath);
-    if (!Result.isOk(existsResult)) {
+    if (!existsResult.success) {
       return Result.err(existsResult.error);
     }
 
     if (!existsResult.data) {
-      return Result.err<PathError>({
-        kind: "pathError",
-        path: validPath.getValue(),
-        reason: "pathTraversal", // Using closest available reason
-        message: `Path does not exist: ${validPath.getValue()}`,
-      });
+      return Result.err(
+        ErrorFactories.pathValidationError(
+          validPath.getValue(),
+          "PATH_TRAVERSAL",
+          "path",
+        ),
+      );
     }
 
     return Result.ok(validPath);
@@ -150,12 +145,12 @@ export class PathValidator {
    * Ensures a path is within a base directory (no escaping)
    * @param basePath - The base directory path
    * @param targetPath - The target path to check
-   * @returns ConfigResult containing ValidPath if valid, or PathError
+   * @returns Result containing ValidPath if valid, or UnifiedError
    */
   static ensureWithinBase(
     basePath: string | ValidPath,
     targetPath: string | ValidPath,
-  ): ConfigResult<ValidPath, PathError> {
+  ): Result<ValidPath, UnifiedError> {
     // Extract path strings
     const baseStr = typeof basePath === "string" ? basePath : basePath.getValue();
     const targetStr = typeof targetPath === "string" ? targetPath : targetPath.getValue();
@@ -163,7 +158,7 @@ export class PathValidator {
     // Validate both paths
     if (typeof basePath === "string") {
       const baseValidation = ValidPath.create(baseStr);
-      if (!Result.isOk(baseValidation)) {
+      if (!baseValidation.success) {
         return baseValidation;
       }
     }
@@ -171,7 +166,7 @@ export class PathValidator {
     let validTarget: ValidPath;
     if (typeof targetPath === "string") {
       const targetValidation = ValidPath.create(targetStr);
-      if (!Result.isOk(targetValidation)) {
+      if (!targetValidation.success) {
         return targetValidation;
       }
       validTarget = targetValidation.data;
@@ -185,12 +180,9 @@ export class PathValidator {
 
     // Check if target is within base
     if (!normalizedTarget.startsWith(normalizedBase)) {
-      return Result.err<PathError>({
-        kind: "pathError",
-        path: targetStr,
-        reason: "pathTraversal",
-        message: `Path '${targetStr}' is outside base directory '${baseStr}'`,
-      });
+      return Result.err(
+        ErrorFactories.pathValidationError(targetStr, "PATH_TRAVERSAL", "path"),
+      );
     }
 
     return Result.ok(validTarget);
@@ -200,12 +192,12 @@ export class PathValidator {
    * Gets the relative path from base to target
    * @param basePath - The base directory path
    * @param targetPath - The target path
-   * @returns ConfigResult containing the relative ValidPath or error
+   * @returns Result containing the relative ValidPath or error
    */
   static getRelativePath(
     basePath: string | ValidPath,
     targetPath: string | ValidPath,
-  ): ConfigResult<ValidPath, PathError> {
+  ): Result<ValidPath, UnifiedError> {
     // Extract path strings
     const baseStr = typeof basePath === "string" ? basePath : basePath.getValue();
     const targetStr = typeof targetPath === "string" ? targetPath : targetPath.getValue();
@@ -213,14 +205,14 @@ export class PathValidator {
     // Validate both paths
     if (typeof basePath === "string") {
       const baseValidation = ValidPath.create(baseStr);
-      if (!Result.isOk(baseValidation)) {
+      if (!baseValidation.success) {
         return baseValidation;
       }
     }
 
     if (typeof targetPath === "string") {
       const targetValidation = ValidPath.create(targetStr);
-      if (!Result.isOk(targetValidation)) {
+      if (!targetValidation.success) {
         return targetValidation;
       }
     }
@@ -231,12 +223,9 @@ export class PathValidator {
 
     // Calculate relative path
     if (!normalizedTarget.startsWith(normalizedBase)) {
-      return Result.err<PathError>({
-        kind: "pathError",
-        path: targetStr,
-        reason: "pathTraversal",
-        message: `Cannot get relative path: '${targetStr}' is not within '${baseStr}'`,
-      });
+      return Result.err(
+        ErrorFactories.pathValidationError(targetStr, "PATH_TRAVERSAL", "path"),
+      );
     }
 
     // Remove base path and all leading slashes

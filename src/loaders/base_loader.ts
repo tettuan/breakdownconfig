@@ -1,28 +1,21 @@
 import { parse as parseYaml } from "@std/yaml";
 import { join } from "@std/path";
-import {
-  type ConfigError,
-  type ConfigResult,
-  type FileNotFoundError,
-  type ParseError,
-  Result,
-  type UnknownError,
-  type ValidationError,
-} from "../types/config_result.ts";
+import { Result } from "../types/unified_result.ts";
+import { ErrorFactories, type UnifiedError } from "../errors/unified_errors.ts";
 
 /**
  * Common interface for all configuration loaders
  *
  * Defines the contract that all configuration loaders must implement.
- * Uses ConfigResult type for consistent error handling across all loaders.
+ * Uses Result type for consistent error handling across all loaders.
  */
 export interface Loader<T> {
   /**
    * Loads and validates configuration
    *
-   * @returns ConfigResult containing either the loaded configuration or an error
+   * @returns Result containing either the loaded configuration or an error
    */
-  load(): Promise<ConfigResult<T, ConfigError>>;
+  load(): Promise<Result<T, UnifiedError>>;
 }
 
 /**
@@ -57,7 +50,7 @@ export abstract class BaseLoader<T> implements Loader<T> {
    *
    * @returns Loaded and validated configuration or error
    */
-  async load(): Promise<ConfigResult<T, ConfigError>> {
+  async load(): Promise<Result<T, UnifiedError>> {
     // Resolve the full path
     const fullPath = this.resolvePath(this.configPath);
 
@@ -87,7 +80,7 @@ export abstract class BaseLoader<T> implements Loader<T> {
    * @param config - Parsed configuration object
    * @returns Validation result
    */
-  protected abstract validate(config: unknown): Promise<ConfigResult<T, ConfigError>>;
+  protected abstract validate(config: unknown): Promise<Result<T, UnifiedError>>;
 
   /**
    * Resolves a configuration file path
@@ -110,23 +103,19 @@ export abstract class BaseLoader<T> implements Loader<T> {
    */
   protected async readFile(
     path: string,
-  ): Promise<ConfigResult<string, FileNotFoundError | UnknownError>> {
+  ): Promise<Result<string, UnifiedError>> {
     try {
       const content = await Deno.readTextFile(path);
       return Result.ok(content);
     } catch (error) {
       if (error instanceof Deno.errors.NotFound) {
-        return Result.err<FileNotFoundError>({
-          kind: "fileNotFound",
-          path,
-          message: `Configuration file not found at: ${path}`,
-        });
+        return Result.err(
+          ErrorFactories.configFileNotFound(path, "app"),
+        );
       }
-      return Result.err<UnknownError>({
-        kind: "unknownError",
-        message: error instanceof Error ? error.message : "Unknown error reading file",
-        originalError: error,
-      });
+      return Result.err(
+        ErrorFactories.unknown(error, `readFile:${path}`),
+      );
     }
   }
 
@@ -140,20 +129,17 @@ export abstract class BaseLoader<T> implements Loader<T> {
   protected parseYaml(
     content: string,
     path: string,
-  ): ConfigResult<unknown, ParseError | UnknownError> {
+  ): Result<unknown, UnifiedError> {
     try {
       const parsed = parseYaml(content);
       return Result.ok(parsed);
     } catch (error) {
-      // Extract line and column from YAML parse error if available
       let line = 0;
       let column = 0;
       let message = "Invalid YAML format";
 
       if (error instanceof Error) {
         message = error.message;
-        // Try to extract line/column from error message
-        // Common YAML error format: "at line X, column Y"
         const lineMatch = error.message.match(/at line (\d+)/);
         const columnMatch = error.message.match(/column (\d+)/);
 
@@ -165,13 +151,9 @@ export abstract class BaseLoader<T> implements Loader<T> {
         }
       }
 
-      return Result.err<ParseError>({
-        kind: "parseError",
-        path,
-        line,
-        column,
-        message,
-      });
+      return Result.err(
+        ErrorFactories.configParseError(path, message, line, column),
+      );
     }
   }
 
@@ -189,13 +171,15 @@ export abstract class BaseLoader<T> implements Loader<T> {
     value: unknown,
     expectedType: string,
     message?: string,
-  ): ConfigResult<T, ValidationError> {
-    return Result.err({
-      kind: "validationError",
-      field,
-      value,
-      expectedType,
-      message: message || `Field '${field}' must be ${expectedType}`,
-    });
+  ): Result<T, UnifiedError> {
+    return Result.err(
+      ErrorFactories.configValidationError(this.configPath, [{
+        field,
+        value,
+        expectedType,
+        actualType: typeof value,
+        constraint: message || `Field '${field}' must be ${expectedType}`,
+      }]),
+    );
   }
 }

@@ -43,15 +43,6 @@ export { ConfigManagerErrors, ConfigManagerMessages } from "./config_manager_err
 
 export type { ConfigManagerContext } from "./config_manager_errors.ts";
 
-// レガシー互換性アダプター
-export {
-  convertConfigErrorToUnified,
-  convertUnifiedToConfigError,
-  isLegacyConfigError,
-  isUnifiedError,
-  normalizeError,
-} from "./legacy_adapter.ts";
-
 // レガシーErrorCode変換
 export { convertLegacyError, ErrorCodeMapping, isErrorCode } from "./error_code_mapping.ts";
 
@@ -61,22 +52,8 @@ export { ErrorCode, ErrorManager } from "../error_manager.ts";
 // Result型（UnifiedError統合済み）
 export { Result } from "../types/unified_result.ts";
 
-// Legacy Result型（互換性維持）
-export { type ConfigResult, type Failure, type Success } from "../types/config_result.ts";
-
 // throw_to_result utilities
 export { errorCodeToUnifiedError, userConfigErrorToResult } from "./throw_to_result.ts";
-
-/**
- * 廃止予定の互換性関数（移行期間用）
- * @deprecated Use ConfigManagerErrors instead
- */
-export { UnifiedErrorI18n, unifiedI18n } from "./unified_error_i18n.ts";
-
-/**
- * @deprecated Use errorManager instead
- */
-export { i18nError, I18nErrorManager } from "./i18n_message_system.ts";
 
 // Export ErrorHandlingUtils
 export * from "./error_handling_utils.ts";

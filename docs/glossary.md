@@ -97,7 +97,7 @@
 
 ### BreakdownLogger
 
-- **Definition**: Library-specific log output system (`@tettuan/breakdownlogger@^1.1.2`)
+- **Definition**: Library-specific log output system (`@tettuan/breakdownlogger@^1.1.3`)
 - **Purpose**: Debug test code, output structured logs
 - **Log Levels**: DEBUG (0), INFO (1), WARN (2), ERROR (3)
 - **Environment Variables**:

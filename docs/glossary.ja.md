@@ -97,7 +97,7 @@
 
 ### BreakdownLogger
 
-- **定義**: ライブラリ専用のログ出力システム (`@tettuan/breakdownlogger@^1.1.2`)
+- **定義**: ライブラリ専用のログ出力システム (`@tettuan/breakdownlogger@^1.1.3`)
 - **用途**: テストコードのデバッグ、構造化ログの出力
 - **ログレベル**: DEBUG (0), INFO (1), WARN (2), ERROR (3)
 - **環境変数**:

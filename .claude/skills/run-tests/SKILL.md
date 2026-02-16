@@ -4,16 +4,10 @@ description: Run a specific test file with debug logging
 argument-hint: "[test-file-path]"
 ---
 
-Run the specified test file with debug output.
+指定テストをデバッグ出力で実行する。引数なしなら全テスト実行。
 
 ```bash
 LOG_LEVEL=debug deno test $ARGUMENTS --allow-env --allow-write --allow-read
 ```
 
-If no argument is provided, run all tests:
-
-```bash
-LOG_LEVEL=debug deno test --allow-env --allow-write --allow-read
-```
-
-Tests and fixtures must be in `tests/`.
+テスト・フィクスチャは `tests/` に配置する。

@@ -4,125 +4,46 @@ description: Use when refactoring code, reorganizing modules, renaming types, de
 allowed-tools: [Read, Glob, Grep, Edit, Write, Bash, Task]
 ---
 
-# Refactoring
+新パスが旧パスの全契約を継承したことを証明してから削除する。証明できなければ削除しない。
 
-Prove the new path inherits every contract from the old path before deleting it. If you cannot prove it, do not delete.
+## 過去の事故
 
-## Past Incidents
+| 事故 | 原因 |
+|------|------|
+| ハンドラがthrowスタブ化 | 旧パス削除時に新パス未実装 |
+| キャッシュが古いバージョンを返す | `--reload` 未実行 |
+| importエラー | アダプタ未作成でV1 export削除 |
+| 設定互換性喪失 | 移行猶予なくレガシーエイリアス削除 |
 
-| Date | What happened | Why | Impact |
-|------|--------------|-----|--------|
-| 2/14 | externalState handler became a throw stub | New path was not implemented when old path was deleted | completionType functionality lost |
-| 2/14 | Deno cache served stale version | --reload not run, so fixed code was not picked up | Fix existed but bug reproduced |
-| 2/13 | V1 handler exports removed | Adapter not created, old interface compatibility lost | import errors |
-| 1/18 | Legacy completionType aliases removed | Old agent.json configs broken with no migration grace period | Config file incompatibility |
-| 1/9 | Dead code left behind (cli.ts, runner/cli.ts) | Old entry points not cleaned up after migration | Multiple paths caused confusion |
+## Phase 1: 棚卸し
 
-## Failure Patterns
+1. **削除対象の一覧** — 何を削除するか、誰が消費しているか、どのパラメータを受けるかを列挙する
+2. **ゲートウェイ監査** — エントリ→フィルタ→ランナー→ハンドラの経路を追跡し、新パスが全パラメータを通すことを確認する
+3. **消費者監査** — `grep` で全import/呼び出し箇所を特定し、移行先を決める。移行先のない消費者がいれば削除不可
 
-| Pattern | Why it breaks | Prevention |
-|---------|--------------|------------|
-| Old path deleted + new path incomplete | Contract breaks in the intermediate state | List all contracts in Before/After table before deleting |
-| Parameter gate declaration missing | Filter blocks undeclared arguments silently | Verify declarations at every gate from entry to consumer |
-| Build cache inconsistency | Cache serves old module instead of updated one | Run --reload or clear cache after every change |
-| Dead code left behind | Produces false positives in grep/search, causes confusion | Delete superseded code in the same PR |
-| Documentation not updated | Users cannot discover preconditions | Grep docs for changed names and update all references |
+## Phase 2: 契約と検証設計
 
----
+4. **Before/After表** — 旧パスの各動作に対し、新パスでの実現方法を記述する。After列が空なら未完了
+5. **検証設計** — パス特性に応じ、直線→コードレビュー / 分岐・フィルタ→自動テスト / 外部依存→E2Eで証明する
 
-## Phase 1: Inventory
+## Phase 3: 実行
 
-Map everything being removed or changed before writing any code.
+1コミット=1関心事（新パス追加→消費者移行→旧パス削除→docs更新）。各コミットでCI通過必須。デッドコードは同一PRで削除する。
 
-**1. Removal Inventory** — List what is being removed, who consumes it, and what parameters it receives.
-
-```markdown
-| Item | File | Consumers | Parameters |
-|------|------|-----------|------------|
-| createCompletionHandler | factory.ts:42 | builder.ts, runner.ts | args.issue, args.repo |
-```
-
-**2. Gateway Audit** — Trace every value from entry point to consumer, identifying filters and gates in between. Confirm the new path passes every parameter the old path consumed.
-
-```
-Entry (CLI) → Filter (run-agent.ts:196) → Runner → Factory → Handler
-                 ↑ blocked if not declared in definition.parameters
-```
-
-**3. Consumer Audit** — Grep imports and call sites to identify every consumer. Determine the migration target for each. If any consumer has no migration target, deletion is not allowed.
-
-## Phase 2: Contract & Verification Design
-
-Define what contracts to preserve and how to prove preservation before writing any code.
-
-**4. Before/After Table** — List each old-path behavior as a row and describe how the new path achieves it. Any row with an empty "After" column means the refactoring is not ready.
-
-```markdown
-| Behavior | Before | After | Verified |
-|----------|--------|-------|----------|
-| args.issue reaches handler | Direct path in createCompletionHandler | Registry + definition.parameters declaration | [ ] |
-```
-
-**5. Verification Design** — For each row in the Before/After table, decide what to verify, why, and how.
-
-**What (what to protect)**: The input/output and error contracts that callers depend on. Boundary behavior, not implementation details.
-
-**Why (why verify there)**: Past failures show that breakage occurs at boundaries, not at the point of change.
-
-| Fragile boundary | Why it breaks | Example |
-|-----------------|---------------|---------|
-| Parameter reachability | Intermediate filter blocks undeclared args | --issue lost because definition.parameters lacked declaration |
-| Interface compatibility | Old and new API method signatures differ | V2 refreshState/check vs V1 isComplete |
-| Export continuity | Removing re-exports breaks downstream imports | V1 exports bulk deletion |
-| Module resolution | Cache serves old version of the module | DENO_DIR split across two directories |
-
-**How (how to choose the proof method)**: Match proof method to path complexity. Tests are a means of proof, not a goal.
-
-| Path characteristic | Proof method |
-|--------------------|-------------|
-| Straight line, 1-2 hops | Code review is sufficient |
-| Contains branches, filters, or async | Automated test on boundary input/output pairs |
-| Depends on external state (cache, API) | E2E execution through the real environment |
-
-## Phase 3: Execute
-
-**6.** 1 commit = 1 concern. Separate into: add new path → migrate consumers → delete old path → update docs.
-
-**7.** Every commit must pass `deno task ci`. If the intermediate state breaks, the commit granularity is too coarse.
-
-**8.** Delete dead code in the same PR. "Cleanup later" never comes.
-
-## Phase 4: Verify
-
-**9. Cache clear** — On macOS, DENO_DIR can split across `~/.cache/deno` and `~/Library/Caches/deno`. Clear both.
+## Phase 4: 検証
 
 ```bash
-deno cache --reload <entry-point>
+deno cache --reload <entry-point>                          # キャッシュクリア
+grep -r "OldName" --include='*.ts' | grep -v test          # 消費者の残存確認（空であること）
+grep -r "OldName" --include='*.md'                         # docs内の参照確認（空であること）
 ```
 
-**10. E2E parameter trace** — Confirm changed parameters reach the endpoint by running the actual command.
-
-**11. Consumer grep** — Ensure zero remaining references. `grep -r "OldName" --include='*.ts' | grep -v test` must return empty.
-
-**12. Docs grep** — Ensure zero stale references in docs. `grep -r "OldName" --include='*.md'` must return empty. See `docs-consistency` skill for full procedure.
-
----
-
-## Anti-Patterns
+## アンチパターン
 
 | Bad | Good |
 |-----|------|
-| Delete old path, implement new path later | Make new path work first, then delete old |
-| Assume "nobody uses this" without grep | Show evidence via consumer audit |
-| Combine refactor and feature in one PR | Separate for bisectability |
-| Fix the throw site | Trace where the parameter was lost |
-| Skip cache clear after refactor | Always --reload after changes |
+| 旧パス削除→新パスは後で | 新パス完成→旧パス削除 |
+| 「誰も使ってない」と推測 | grepで消費者を証拠確認 |
+| リファクタと機能追加を同一PR | bisect可能に分離 |
 
-## Related Skills
-
-| Skill | When to use together |
-|-------|---------------------|
-| `fix-checklist` | Root cause analysis before deciding what to refactor |
-| `functional-testing` | Automated test design in Phase 2 |
-| `docs-consistency` | Documentation updates in Phase 4 |
-| `workflow` | Team delegation for large-scale refactors |
+関連: `/fix-checklist`（根本原因分析）、`/docs-consistency`（Phase 4のdocs更新）

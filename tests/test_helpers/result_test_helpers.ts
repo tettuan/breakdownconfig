@@ -2,23 +2,18 @@
  * Test helpers for Result-based testing patterns
  *
  * These helpers provide type-safe assertion functions for testing
- * ConfigResult patterns and UnifiedError handling.
+ * Result patterns and UnifiedError handling.
  */
 
-import { assert, assertEquals, type assertExists as _assertExists } from "@std/assert";
-import type { ConfigResult, Result as _Result } from "../../src/types/config_result.ts";
-import {
-  type Failure as _Failure,
-  Result as UnifiedResult,
-  type Success as _Success,
-} from "../../src/types/unified_result.ts";
+import { assert, assertEquals } from "@std/assert";
+import { Result } from "../../src/types/unified_result.ts";
 import type { UnifiedError } from "../../src/errors/unified_errors.ts";
 
 /**
  * Asserts that a Result is successful and returns the data
  */
 export function assertResultOk<T, E>(
-  result: ConfigResult<T, E>,
+  result: Result<T, E>,
   message?: string,
 ): T {
   assert(
@@ -30,10 +25,10 @@ export function assertResultOk<T, E>(
 }
 
 /**
- * Asserts that a UnifiedResult is successful
+ * Asserts that a Result is successful
  */
 export function assertResultSuccess<T>(
-  result: UnifiedResult<T, UnifiedError>,
+  result: Result<T, UnifiedError>,
   message?: string,
 ): T {
   assert(
@@ -48,7 +43,7 @@ export function assertResultSuccess<T>(
  * Asserts that a Result is an error and returns the error
  */
 export function assertResultErr<T, E>(
-  result: ConfigResult<T, E>,
+  result: Result<T, E>,
   message?: string,
 ): E {
   assert(
@@ -60,10 +55,10 @@ export function assertResultErr<T, E>(
 }
 
 /**
- * Asserts that a UnifiedResult is an error
+ * Asserts that a Result is an error
  */
 export function assertResultError<T>(
-  result: UnifiedResult<T, UnifiedError>,
+  result: Result<T, UnifiedError>,
   message?: string,
 ): UnifiedError {
   assert(
@@ -78,7 +73,7 @@ export function assertResultError<T>(
  * Asserts that a Result is an error with specific error kind
  */
 export function assertResultErrorKind<T>(
-  result: ConfigResult<T, UnifiedError>,
+  result: Result<T, UnifiedError>,
   expectedKind: string,
   message?: string,
 ): UnifiedError {
@@ -95,22 +90,15 @@ export function assertResultErrorKind<T>(
  * Asserts that a Result is an error with specific message content
  */
 export function assertResultErrorMessage<T>(
-  result: ConfigResult<T, UnifiedError>,
+  result: Result<T, UnifiedError>,
   expectedMessageContent: string,
   message?: string,
 ): UnifiedError {
   const error = assertResultErr(result, message);
-  if (error instanceof Error) {
-    assert(
-      error.message.includes(expectedMessageContent),
-      `Expected error message to contain '${expectedMessageContent}' but got: ${error.message}`,
-    );
-  } else {
-    assert(
-      error.message.includes(expectedMessageContent),
-      `Expected error message to contain '${expectedMessageContent}' but got: ${error.message}`,
-    );
-  }
+  assert(
+    error.message.includes(expectedMessageContent),
+    `Expected error message to contain '${expectedMessageContent}' but got: ${error.message}`,
+  );
   return error;
 }
 
@@ -118,7 +106,7 @@ export function assertResultErrorMessage<T>(
  * Asserts that a Result is a ConfigValidationError with specific details
  */
 export function assertConfigValidationError<T>(
-  result: ConfigResult<T, UnifiedError>,
+  result: Result<T, UnifiedError>,
   expectedPath?: string,
   expectedViolationCount?: number,
 ): UnifiedError {
@@ -150,7 +138,7 @@ export function assertConfigValidationError<T>(
  * Asserts that a Result is a ConfigFileNotFoundError with specific path
  */
 export function assertConfigFileNotFoundError<T>(
-  result: ConfigResult<T, UnifiedError>,
+  result: Result<T, UnifiedError>,
   expectedPath?: string,
   expectedConfigType?: "app" | "user",
 ): UnifiedError {
@@ -180,7 +168,7 @@ export function assertConfigFileNotFoundError<T>(
  * Asserts that a Result is a ConfigParseError with specific details
  */
 export function assertConfigParseError<T>(
-  result: ConfigResult<T, UnifiedError>,
+  result: Result<T, UnifiedError>,
   expectedPath?: string,
 ): UnifiedError {
   const error = assertResultErrorKind(result, "CONFIG_PARSE_ERROR");
@@ -200,7 +188,7 @@ export function assertConfigParseError<T>(
  * Asserts that a Result is a UserConfigInvalidError with specific reason
  */
 export function assertUserConfigInvalidError<T>(
-  result: ConfigResult<T, UnifiedError>,
+  result: Result<T, UnifiedError>,
   expectedReason?: "PARSE_ERROR" | "VALIDATION_ERROR" | "UNKNOWN_ERROR",
 ): UnifiedError {
   const error = assertResultErrorKind(result, "USER_CONFIG_INVALID");
@@ -220,7 +208,7 @@ export function assertUserConfigInvalidError<T>(
  * Asserts that a Result is a PathValidationError with specific reason
  */
 export function assertPathValidationError<T>(
-  result: ConfigResult<T, UnifiedError>,
+  result: Result<T, UnifiedError>,
   expectedReason?:
     | "PATH_TRAVERSAL"
     | "ABSOLUTE_PATH_NOT_ALLOWED"
@@ -260,8 +248,6 @@ export async function assertRejectsWithErrorKind(
     thrownError = error;
   }
 
-  // Parse the error message to extract UnifiedError information
-  // Assuming the error message contains the UnifiedError message
   if (expectedMessageContent && thrownError) {
     assert(
       thrownError.message.includes(expectedMessageContent),
@@ -273,7 +259,7 @@ export async function assertRejectsWithErrorKind(
 /**
  * Type guard to check if Result is success
  */
-export function isResultOk<T, E>(result: ConfigResult<T, E>): result is { success: true; data: T } {
+export function isResultOk<T, E>(result: Result<T, E>): result is { success: true; data: T } {
   return result.success;
 }
 
@@ -281,54 +267,27 @@ export function isResultOk<T, E>(result: ConfigResult<T, E>): result is { succes
  * Type guard to check if Result is error
  */
 export function isResultErr<T, E>(
-  result: ConfigResult<T, E>,
+  result: Result<T, E>,
 ): result is { success: false; error: E } {
   return !result.success;
 }
 
-// === Unified Result Test Helpers ===
+// === Unified Result Test Helpers (aliases) ===
 
-/**
- * Asserts that a UnifiedResult is successful and returns the data
- */
-export function assertUnifiedResultOk<T, E>(
-  result: UnifiedResult<T, E>,
-  message?: string,
-): T {
-  assert(
-    result.success,
-    message ||
-      `Expected success but got error: ${JSON.stringify(result.success ? null : result.error)}`,
-  );
-  return result.data;
-}
-
-/**
- * Asserts that a UnifiedResult is an error and returns the error
- */
-export function assertUnifiedResultErr<T, E>(
-  result: UnifiedResult<T, E>,
-  message?: string,
-): E {
-  assert(
-    !result.success,
-    message ||
-      `Expected error but got success: ${JSON.stringify(result.success ? result.data : null)}`,
-  );
-  return result.error;
-}
+export const assertUnifiedResultOk = assertResultOk;
+export const assertUnifiedResultErr = assertResultErr;
 
 /**
  * Test helper for asserting successful map operations
  */
 export function assertSuccessfulMap<T, U, E>(
-  originalResult: UnifiedResult<T, E>,
+  originalResult: Result<T, E>,
   mapFn: (data: T) => U,
   expectedData: U,
   message?: string,
 ): void {
-  const mappedResult = UnifiedResult.map(originalResult, mapFn);
-  const actualData = assertUnifiedResultOk(mappedResult, message);
+  const mappedResult = Result.map(originalResult, mapFn);
+  const actualData = assertResultOk(mappedResult, message);
   assertEquals(actualData, expectedData, message || `Map operation produced unexpected result`);
 }
 
@@ -336,12 +295,12 @@ export function assertSuccessfulMap<T, U, E>(
  * Test helper for asserting successful flatMap operations
  */
 export function assertSuccessfulFlatMap<T, U, E>(
-  originalResult: UnifiedResult<T, E>,
-  flatMapFn: (data: T) => UnifiedResult<U, E>,
+  originalResult: Result<T, E>,
+  flatMapFn: (data: T) => Result<U, E>,
   expectedData: U,
   message?: string,
 ): void {
-  const flatMappedResult = UnifiedResult.flatMap(originalResult, flatMapFn);
-  const actualData = assertUnifiedResultOk(flatMappedResult, message);
+  const flatMappedResult = Result.flatMap(originalResult, flatMapFn);
+  const actualData = assertResultOk(flatMappedResult, message);
   assertEquals(actualData, expectedData, message || `FlatMap operation produced unexpected result`);
 }

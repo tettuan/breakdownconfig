@@ -4,144 +4,40 @@ description: Use when user encounters CI errors, JSR connection issues, 'deno ta
 allowed-tools: [Bash, Read, Edit, Grep, Glob]
 ---
 
-# CI Troubleshooting
+CI失敗時の原因特定と解決を行う。CI実行は `/local-ci`、リリースは `/release-procedure` を参照。
 
-## CI Pipeline Stages
+## CIパイプライン順序
 
-`deno task ci` runs these stages in order:
+deps → check → jsr-check → test → lint → fmt
 
-1. **deps** - Cache dependencies (deno.lock)
-2. **check** - Type checking
-3. **jsr-check** - JSR publish dry-run
-4. **test** - Run tests
-5. **lint** - Deno lint
-6. **fmt** - Format check
+## JSR接続エラー
 
-## Network / Sandbox Issues
+sandbox制限でJSRに接続できない場合、`dangerouslyDisableSandbox: true` で実行する。
 
-### JSR Connection Failed
+## Lintエラー
 
-```
-error: JSR package manifest for '@std/path' failed to load.
-Import 'https://jsr.io/@std/path/meta.json' failed.
-```
+| ルール | 修正方法 |
+|--------|---------|
+| `no-console` | `// deno-lint-ignore no-console` を追加 |
+| `prefer-ascii` | 日本語→英語に変更（テストフィクスチャは例外） |
+| `no-await-in-loop` | ignore追加または `Promise.all` にリファクタ |
+| `explicit-function-return-type` | 戻り値型を明記 |
 
-**Solution**: See `/git-gh-sandbox` skill for sandbox bypass.
+ファイルレベル: `// deno-lint-ignore-file no-console prefer-ascii`（ファイル先頭）
+行レベル: `// deno-lint-ignore <rule>`（対象行の直前）
 
-```typescript
-Bash({
-  command: "deno task ci",
-  dangerouslyDisableSandbox: true,
-})
-```
+## テスト失敗
 
-## Lint Errors
+タイミング問題（フレーキーテスト）は並列→逐次実行に変更し、十分なdelayを入れる。型エラーはインターフェース変更後のフィクスチャ更新漏れを確認する。
 
-### Common Rules and Fixes
+## フォーマットエラー
 
-| Rule | Error | Fix |
-|------|-------|-----|
-| `no-console` | console.log in non-CLI code | Add `// deno-lint-ignore no-console` |
-| `prefer-ascii` | Japanese in comments | Change to English |
-| `no-await-in-loop` | await in for loop | Add ignore or refactor to Promise.all |
-| `eqeqeq` | `!=` instead of `!==` | Use strict equality |
-| `explicit-function-return-type` | Missing return type | Add `: ReturnType` |
-| `ban-unused-ignore` | Unused lint ignore | Remove or adjust ignore list |
+`deno fmt --check` で確認、`deno fmt` で修正する。
 
-### File-Level Lint Ignore
-
-Add at top of file (after shebang if present):
-
-```typescript
-#!/usr/bin/env -S deno run ...
-// deno-lint-ignore-file no-console prefer-ascii
-```
-
-### Line-Level Lint Ignore
-
-Add comment before the line:
-
-```typescript
-// deno-lint-ignore no-console
-console.log("Debug output");
-```
-
-### prefer-ascii (Japanese Text)
-
-Replace Japanese with English in:
-- Code comments
-- Doc references (e.g., `#command-schema` not `#command-スキーマ`)
-- Error messages in library code
-
-Exception: Japanese OK in test fixtures or user-facing CLI output.
-
-## Test Failures
-
-### Flaky Tests (Timing Issues)
-
-Example: ID uniqueness test failing due to timestamp collision
-
-**Problem**: Parallel execution with small delays
-```typescript
-// Bad: 2ms may not be enough for millisecond-precision timestamps
-const promises = Array.from({ length: 10 }, (_, i) =>
-  new Promise((r) => setTimeout(() => r(generateId()), i * 2))
-);
-```
-
-**Solution**: Sequential execution with adequate delay
-```typescript
-// Good: Sequential with 5ms delay
-for (let i = 0; i < 10; i++) {
-  ids.push(generateId());
-  await new Promise((r) => setTimeout(r, 5));
-}
-```
-
-### Type Errors in Tests
-
-Check for:
-- Missing type assertions (`as Type`)
-- Incorrect mock implementations
-- Outdated test fixtures after interface changes
-
-## Format Errors
-
-### Check Without Fixing
+## 個別ステージ実行
 
 ```bash
-deno fmt --check
+deno check src/**/*.ts    # 型チェックのみ
+deno lint                  # Lintのみ
+deno test path/to/test.ts  # 単一テスト
 ```
-
-### Fix All
-
-```bash
-deno fmt
-```
-
-## Quick Debugging
-
-### Run Single Stage
-
-```bash
-# Type check only
-deno check src/**/*.ts
-
-# Lint only
-deno lint
-
-# Single test file
-deno test path/to/test.ts
-```
-
-### Verbose Test Output
-
-```bash
-deno test --allow-all 2>&1 | head -100
-```
-
-## Related Skills
-
-- Network sandbox: `/git-gh-sandbox`
-- CI execution: `/local-ci`
-- Release flow: `/release-procedure`

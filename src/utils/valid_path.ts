@@ -1,11 +1,4 @@
-import {
-  type ConfigResult,
-  type PathError,
-  type PathErrorReason as _PathErrorReason,
-  Result,
-  type ValidationError as _ValidationError,
-} from "../types/config_result.ts";
-import { Result as UnifiedResult } from "../types/unified_result.ts";
+import { Result } from "../types/unified_result.ts";
 import { ErrorFactories, type UnifiedError } from "../errors/unified_errors.ts";
 
 /**
@@ -26,48 +19,40 @@ export class ValidPath {
   /**
    * Creates a ValidPath instance after validating the input
    * @param path - The path to validate
-   * @returns ConfigResult containing either a ValidPath instance or a PathError
+   * @returns Result containing either a ValidPath instance or a UnifiedError
    */
-  static create(path: string): ConfigResult<ValidPath, PathError> {
+  static create(path: string): Result<ValidPath, UnifiedError> {
     // Check for empty or whitespace-only paths
     if (!path || path.trim().length === 0) {
-      return Result.err<PathError>({
-        kind: "pathError",
-        path: path,
-        reason: "empty",
-        message: "Path cannot be empty",
-      });
+      return Result.err(
+        ErrorFactories.pathValidationError(path, "EMPTY_PATH", "path"),
+      );
     }
 
     // Check for path traversal attempts
     if (this.containsPathTraversal(path)) {
-      return Result.err<PathError>({
-        kind: "pathError",
-        path: path,
-        reason: "pathTraversal",
-        message: `Path traversal detected in: ${path}`,
-      });
+      return Result.err(
+        ErrorFactories.pathValidationError(path, "PATH_TRAVERSAL", "path"),
+      );
     }
 
     // Check for absolute paths
     if (this.isAbsolutePath(path)) {
-      return Result.err<PathError>({
-        kind: "pathError",
-        path: path,
-        reason: "absoluteNotAllowed",
-        message: `Absolute paths are not allowed: ${path}`,
-      });
+      return Result.err(
+        ErrorFactories.pathValidationError(
+          path,
+          "ABSOLUTE_PATH_NOT_ALLOWED",
+          "path",
+        ),
+      );
     }
 
     // Check for invalid characters
     const invalidChar = this.getInvalidCharacter(path);
     if (invalidChar) {
-      return Result.err<PathError>({
-        kind: "pathError",
-        path: path,
-        reason: "invalidCharacters",
-        message: `Invalid character '${invalidChar}' in path: ${path}`,
-      });
+      return Result.err(
+        ErrorFactories.pathValidationError(path, "INVALID_CHARACTERS", "path"),
+      );
     }
 
     return Result.ok(new ValidPath(path.trim()));
@@ -214,10 +199,10 @@ export class ValidProfilePrefix {
    * @param value - The profile to validate
    * @returns Result containing either a ValidProfilePrefix instance or a UnifiedError
    */
-  static create(value: string): UnifiedResult<ValidProfilePrefix, UnifiedError> {
+  static create(value: string): Result<ValidProfilePrefix, UnifiedError> {
     // Check for empty or whitespace-only
     if (!value || value.trim().length === 0) {
-      return UnifiedResult.err(
+      return Result.err(
         ErrorFactories.configValidationError(
           "profile",
           [{
@@ -233,7 +218,7 @@ export class ValidProfilePrefix {
 
     // Check pattern: only alphanumeric and hyphens
     if (!/^[a-zA-Z0-9-]+$/.test(value)) {
-      return UnifiedResult.err(
+      return Result.err(
         ErrorFactories.configValidationError(
           "profile",
           [{
@@ -247,7 +232,7 @@ export class ValidProfilePrefix {
       );
     }
 
-    return UnifiedResult.ok(new ValidProfilePrefix(value));
+    return Result.ok(new ValidProfilePrefix(value));
   }
 
   /**
