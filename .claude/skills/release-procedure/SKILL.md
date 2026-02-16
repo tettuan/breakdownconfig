@@ -18,7 +18,7 @@ develop → release/x.y.z → (bump & CI) → PR→develop → PR→main → tag
 
 1. `git checkout develop && git pull origin develop && git checkout -b release/x.y.z`
 2. `scripts/bump_version.sh` でバージョン更新（`grep '"version"' deno.json` で確認）
-3. `scripts/local_ci.sh` でCI確認
+3. `deno task ci` でCI確認
 4. `git push -u origin release/x.y.z`
 5. `gh pr create --base develop` → CI通過後 `gh pr merge --merge`
 6. `gh pr create --base main --head develop` → CI通過後 `gh pr merge --merge`

@@ -50,11 +50,14 @@ async function loadAndValidateConfig(baseUrl: URL): Promise<{
   schemaDir: URL;
 }> {
   console.log("⚙️ [TRACE] loadAndValidateConfig started with baseUrl:", baseUrl.href);
-  
+
   console.log("🏗️ [TRACE] Creating BreakdownConfig...");
   const configResult = BreakdownConfig.create();
-  console.log("📊 [TRACE] BreakdownConfig.create() result:", configResult.success ? "SUCCESS" : "FAILED");
-  
+  console.log(
+    "📊 [TRACE] BreakdownConfig.create() result:",
+    configResult.success ? "SUCCESS" : "FAILED",
+  );
+
   if (!configResult.success) {
     console.log("💥 [TRACE] Config creation failed:", configResult.error.message);
     throw new Error(`Config creation failed: ${configResult.error.message}`);
@@ -90,12 +93,12 @@ async function main() {
     console.log("📥 [TRACE] Starting loadAndValidateConfig...");
     const { workingDir, promptDir, schemaDir } = await loadAndValidateConfig(baseUrl);
     console.log("✅ [TRACE] loadAndValidateConfig completed successfully");
-    console.log("📁 [TRACE] Paths:", { 
+    console.log("📁 [TRACE] Paths:", {
       workingDir: workingDir.pathname,
       promptDir: promptDir.pathname,
-      schemaDir: schemaDir.pathname
+      schemaDir: schemaDir.pathname,
     });
-    
+
     console.log("🔍 [CONFIG] Configuration loaded successfully", {
       workingDir: workingDir.pathname,
       promptDir: promptDir.pathname,

@@ -1,0 +1,170 @@
+{
+  "version": 1,
+  "executions": [
+    {
+      "id": "mlpfvp74-7702bd4a",
+      "timestamp": "2026-02-16T17:19:26.800Z",
+      "success": false,
+      "totalDuration": 2265.186458,
+      "stages": [
+        {
+          "stage": "git-status-check",
+          "status": "success",
+          "duration": 18.744875000000008,
+          "fallback": {
+            "from": "all",
+            "to": "batch"
+          }
+        },
+        {
+          "stage": "format-check",
+          "status": "success",
+          "duration": 30.888208000000006,
+          "fallback": {
+            "from": "all",
+            "to": "batch"
+          }
+        },
+        {
+          "stage": "lockfile-init",
+          "status": "success",
+          "duration": 749.7005829999999,
+          "fallback": {
+            "from": "all",
+            "to": "batch"
+          }
+        },
+        {
+          "stage": "type-check",
+          "status": "failure",
+          "duration": 0,
+          "fallback": {
+            "from": "all",
+            "to": "batch"
+          },
+          "error": {
+            "kind": "type-check",
+            "files": [
+              "examples/config-example/main.ts",
+              "examples/error-handling/main.ts",
+              "examples/multi-environment/main.ts",
+              "examples/prompt-manager/main.ts",
+              "examples/prompt-manager/src/prompt_manager.ts",
+              "examples/prompt-manager/src/schema_manager.ts",
+              "mod.ts",
+              "src/breakdown_config.ts",
+              "src/breakdown_config_architecture_test.ts",
+              "src/breakdown_config_structure_test.ts",
+              "src/breakdown_config_units_test.ts",
+              "src/config_manager.ts",
+              "src/config_manager_architecture_test.ts",
+              "src/error_manager.ts",
+              "src/errors/config_manager_errors.ts",
+              "src/errors/enhanced_i18n_system.ts",
+              "src/errors/error_code_mapping.ts",
+              "src/errors/error_handling_utils.ts",
+              "src/errors/i18n_message_system.ts",
+              "src/errors/mod.ts",
+              "src/errors/polymorphic_error_system.ts",
+              "src/errors/standardized_error_codes.ts",
+              "src/errors/throw_to_result.ts",
+              "src/errors/throw_to_result_units_test.ts",
+              "src/errors/unified_error_final_exports.ts",
+              "src/errors/unified_error_implementation.ts",
+              "src/errors/unified_error_interface.ts",
+              "src/errors/unified_error_manager.ts",
+              "src/errors/unified_errors.ts",
+              "src/loaders/app_config_loader.ts",
+              "src/loaders/base_loader.ts",
+              "src/loaders/mod.ts",
+              "src/loaders/profile_config_loader.ts",
+              "src/loaders/safe_config_loader.ts",
+              "src/loaders/safe_config_loader_units_test.ts",
+              "src/loaders/user_config_loader.ts",
+              "src/mod.ts",
+              "src/types.ts",
+              "src/types/app_config.ts",
+              "src/types/merged_config.ts",
+              "src/types/merged_config_structure_test.ts",
+              "src/types/unified_result.ts",
+              "src/types/unified_result_patterns.ts",
+              "src/types/unified_result_units_test.ts",
+              "src/types/user_config.ts",
+              "src/types/user_config_structure_test.ts",
+              "src/types/valid_profile_prefix.ts",
+              "src/utils/config_cache.ts",
+              "src/utils/error_cache.ts",
+              "src/utils/path_resolver.ts",
+              "src/utils/valid_path.ts",
+              "src/utils/valid_path_units_test.ts",
+              "src/validators/config_validator.ts",
+              "src/validators/path_validator.ts",
+              "src/validators/schema_validator.ts",
+              "src/validators/schema_validator_units_test.ts",
+              "tests/3.integrated/breakdown_config_integration_test.ts",
+              "tests/3.integrated/config_loading_integration_test.ts",
+              "tests/3.integrated/default_profile_handling_test.ts",
+              "tests/3.integrated/error_handling_integration_test.ts",
+              "tests/3.integrated/profile_config_loader_integration_test.ts",
+              "tests/3.integrated/profile_integration_test.ts",
+              "tests/3.integrated/unified_error_exports_type_safety_test.ts",
+              "tests/3.integrated/unified_error_type_safety_test.ts",
+              "tests/3.integrated/validator_integration_test.ts",
+              "tests/4.e2e/complete_workflow_test.ts",
+              "tests/4.e2e/error_boundary_test.ts",
+              "tests/4.e2e/performance_test.ts",
+              "tests/4.e2e/real_world_scenarios_test.ts",
+              "tests/test_helpers/result_test_helpers.ts",
+              "tests/test_utils.ts",
+              "///Users/tettuan/github/breakdownconfig/examples/error-handling/main.ts",
+              "///Users/tettuan/github/breakdownconfig/src/errors/unified_errors.ts"
+            ],
+            "message": "Fallback failed: {\"kind\":\"TypeCheckError\",\"files\":[\"examples/config-example/main.ts\",\"examples/error-handling/main.ts\",\"examples/multi-environment/main.ts\",\"examples/prompt-manager/main.ts\",\"examples/prompt-manager/src/prompt_manager.ts\",\"examples/prompt-manager/src/schema_manager.ts\",\"mod.ts\",\"src/breakdown_config.ts\",\"src/breakdown_config_architecture_test.ts\",\"src/breakdown_config_structure_test.ts\",\"src/breakdown_config_units_test.ts\",\"src/config_manager.ts\",\"src/config_manager_architecture_test.ts\",\"src/error_manager.ts\",\"src/errors/config_manager_errors.ts\",\"src/errors/enhanced_i18n_system.ts\",\"src/errors/error_code_mapping.ts\",\"src/errors/error_handling_utils.ts\",\"src/errors/i18n_message_system.ts\",\"src/errors/mod.ts\",\"src/errors/polymorphic_error_system.ts\",\"src/errors/standardized_error_codes.ts\",\"src/errors/throw_to_result.ts\",\"src/errors/throw_to_result_units_test.ts\",\"src/errors/unified_error_final_exports.ts\",\"src/errors/unified_error_implementation.ts\",\"src/errors/unified_error_interface.ts\",\"src/errors/unified_error_manager.ts\",\"src/errors/unified_errors.ts\",\"src/loaders/app_config_loader.ts\",\"src/loaders/base_loader.ts\",\"src/loaders/mod.ts\",\"src/loaders/profile_config_loader.ts\",\"src/loaders/safe_config_loader.ts\",\"src/loaders/safe_config_loader_units_test.ts\",\"src/loaders/user_config_loader.ts\",\"src/mod.ts\",\"src/types.ts\",\"src/types/app_config.ts\",\"src/types/merged_config.ts\",\"src/types/merged_config_structure_test.ts\",\"src/types/unified_result.ts\",\"src/types/unified_result_patterns.ts\",\"src/types/unified_result_units_test.ts\",\"src/types/user_config.ts\",\"src/types/user_config_structure_test.ts\",\"src/types/valid_profile_prefix.ts\",\"src/utils/config_cache.ts\",\"src/utils/error_cache.ts\",\"src/utils/path_resolver.ts\",\"src/utils/valid_path.ts\",\"src/utils/valid_path_units_test.ts\",\"src/validators/config_validator.ts\",\"src/validators/path_validator.ts\",\"src/validators/schema_validator.ts\",\"src/validators/schema_validator_units_test.ts\",\"tests/3.integrated/breakdown_config_integration_test.ts\",\"tests/3.integrated/config_loading_integration_test.ts\",\"tests/3.integrated/default_profile_handling_test.ts\",\"tests/3.integrated/error_handling_integration_test.ts\",\"tests/3.integrated/profile_config_loader_integration_test.ts\",\"tests/3.integrated/profile_integration_test.ts\",\"tests/3.integrated/unified_error_exports_type_safety_test.ts\",\"tests/3.integrated/unified_error_type_safety_test.ts\",\"tests/3.integrated/validator_integration_test.ts\",\"tests/4.e2e/complete_workflow_test.ts\",\"tests/4.e2e/error_boundary_test.ts\",\"tests/4.e2e/performance_test.ts\",\"tests/4.e2e/real_world_scenarios_test.ts\",\"tests/test_helpers/result_test_helpers.ts\",\"tests/test_utils.ts\",\"///Users/tettuan/github/breakdownconfig/examples/error-handling/main.ts\",\"///Users/tettuan/github/breakdownconfig/src/errors/unified_errors.ts\"],\"details\":[\"\\u001b[0m\\u001b[32mCheck\\u001b[0m examples/error-handling/main.ts\",\"\\u001b[0m\\u001b[32mCheck\\u001b[0m src/error_manager.ts\",\"\\u001b[0m\\u001b[32mCheck\\u001b[0m src/errors/config_manager_errors.ts\",\"\\u001b[0m\\u001b[32mCheck\\u001b[0m src/errors/enhanced_i18n_system.ts\",\"\\u001b[0m\\u001b[32mCheck\\u001b[0m src/errors/error_code_mapping.ts\"]}"
+          }
+        }
+      ],
+      "config": {
+        "mode": "all",
+        "hierarchy": null,
+        "fallbackEnabled": true,
+        "batchSize": 2
+      },
+      "failedBatchInfo": {
+        "startIndex": 0,
+        "endIndex": 24,
+        "files": [
+          "/Users/tettuan/github/breakdownconfig/examples/config-example/main.ts",
+          "/Users/tettuan/github/breakdownconfig/examples/error-handling/main.ts",
+          "/Users/tettuan/github/breakdownconfig/examples/multi-environment/main.ts",
+          "/Users/tettuan/github/breakdownconfig/examples/prompt-manager/main.ts",
+          "/Users/tettuan/github/breakdownconfig/examples/prompt-manager/src/prompt_manager.ts",
+          "/Users/tettuan/github/breakdownconfig/examples/prompt-manager/src/schema_manager.ts",
+          "/Users/tettuan/github/breakdownconfig/mod.ts",
+          "/Users/tettuan/github/breakdownconfig/src/breakdown_config.ts",
+          "/Users/tettuan/github/breakdownconfig/src/breakdown_config_architecture_test.ts",
+          "/Users/tettuan/github/breakdownconfig/src/breakdown_config_structure_test.ts",
+          "/Users/tettuan/github/breakdownconfig/src/breakdown_config_units_test.ts",
+          "/Users/tettuan/github/breakdownconfig/src/config_manager.ts",
+          "/Users/tettuan/github/breakdownconfig/src/config_manager_architecture_test.ts",
+          "/Users/tettuan/github/breakdownconfig/src/error_manager.ts",
+          "/Users/tettuan/github/breakdownconfig/src/errors/config_manager_errors.ts",
+          "/Users/tettuan/github/breakdownconfig/src/errors/enhanced_i18n_system.ts",
+          "/Users/tettuan/github/breakdownconfig/src/errors/error_code_mapping.ts",
+          "/Users/tettuan/github/breakdownconfig/src/errors/error_handling_utils.ts",
+          "/Users/tettuan/github/breakdownconfig/src/errors/i18n_message_system.ts",
+          "/Users/tettuan/github/breakdownconfig/src/errors/mod.ts",
+          "/Users/tettuan/github/breakdownconfig/src/errors/polymorphic_error_system.ts",
+          "/Users/tettuan/github/breakdownconfig/src/errors/standardized_error_codes.ts",
+          "/Users/tettuan/github/breakdownconfig/src/errors/throw_to_result.ts",
+          "/Users/tettuan/github/breakdownconfig/src/errors/throw_to_result_units_test.ts",
+          "/Users/tettuan/github/breakdownconfig/src/errors/unified_error_final_exports.ts"
+        ]
+      },
+      "git": {
+        "branch": "release/1.2.4",
+        "commit": "a2f4cf0"
+      }
+    }
+  ],
+  "maxRecords": 50
+}

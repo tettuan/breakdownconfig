@@ -2,7 +2,7 @@ Deno + JSR publishプロジェクト。テスト・フィクスチャは `tests/
 
 型安全のため、`strict: true` と明示的型定義を使う。コードは `deno fmt` / `deno lint` に準拠する。
 
-push前に `scripts/local_ci.sh` を通す。main/develop への直接pushは禁止。
+push前に `deno task ci` を通す。main/develop への直接pushは禁止。
 
 # Skills
 
