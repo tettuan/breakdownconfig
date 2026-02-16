@@ -17,15 +17,15 @@ export enum DefaultPaths {
  */
 export interface AppConfig {
   /** Working directory for the application */
-  working_dir: string;
+  "working_dir": string;
   /** Prompt configuration settings */
-  app_prompt: {
+  "app_prompt": {
     /** Base directory for prompt files */
-    base_dir: string;
+    "base_dir": string;
   };
   /** Schema configuration settings */
-  app_schema: {
+  "app_schema": {
     /** Base directory for schema files */
-    base_dir: string;
+    "base_dir": string;
   };
 }

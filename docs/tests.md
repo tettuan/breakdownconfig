@@ -91,8 +91,8 @@ LOG_LEVEL=debug LOG_KEY="security" deno test          # Security verification
 LOG_LEVEL=debug LOG_KEY="stepbystep" deno test        # Step tracking
 LOG_LEVEL=debug LOG_KEY="dataflow,security" deno test # Multiple purposes
 
-# Limit: LOG_LENGTH=number
-LOG_LEVEL=debug LOG_LENGTH=200 deno test
+# Output length: LOG_LENGTH={S|L|W} (Short=160, Long=300, Whole=unlimited, default=80)
+LOG_LEVEL=debug LOG_LENGTH=L deno test
 
 # CI: DEBUG=true
 DEBUG=true LOG_KEY="error" scripts/local_ci.sh

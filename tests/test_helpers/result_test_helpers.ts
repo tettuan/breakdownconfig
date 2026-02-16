@@ -5,14 +5,14 @@
  * ConfigResult patterns and UnifiedError handling.
  */
 
-import { assert, assertEquals, assertExists as _assertExists } from "@std/assert";
-import { ConfigResult, Result as _Result } from "../../src/types/config_result.ts";
+import { assert, assertEquals, type assertExists as _assertExists } from "@std/assert";
+import type { ConfigResult, Result as _Result } from "../../src/types/config_result.ts";
 import {
-  Failure as _Failure,
+  type Failure as _Failure,
   Result as UnifiedResult,
-  Success as _Success,
+  type Success as _Success,
 } from "../../src/types/unified_result.ts";
-import { UnifiedError } from "../../src/errors/unified_errors.ts";
+import type { UnifiedError } from "../../src/errors/unified_errors.ts";
 
 /**
  * Asserts that a Result is successful and returns the data
@@ -253,7 +253,8 @@ export async function assertRejectsWithErrorKind(
 
   try {
     await fn();
-    assert(false, "Expected function to throw but it succeeded");
+    const EXPECTED_THROW = false;
+    assert(EXPECTED_THROW, "Expected function to throw but it succeeded");
   } catch (error) {
     assert(error instanceof Error, "Expected Error instance");
     thrownError = error;
@@ -261,12 +262,10 @@ export async function assertRejectsWithErrorKind(
 
   // Parse the error message to extract UnifiedError information
   // Assuming the error message contains the UnifiedError message
-  if (expectedMessageContent) {
+  if (expectedMessageContent && thrownError) {
     assert(
-      thrownError!.message.includes(expectedMessageContent),
-      `Expected error message to contain '${expectedMessageContent}' but got: ${
-        thrownError!.message
-      }`,
+      thrownError.message.includes(expectedMessageContent),
+      `Expected error message to contain '${expectedMessageContent}' but got: ${thrownError.message}`,
     );
   }
 }

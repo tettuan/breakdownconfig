@@ -1,6 +1,6 @@
 import { join } from "@std/path";
 import { parse as parseYaml } from "@std/yaml";
-import {
+import type {
   ErrorCode as _ErrorCodeLoader,
   ErrorManager as _ErrorManagerLoader,
 } from "../error_manager.ts";
@@ -8,12 +8,12 @@ import type { LegacyUserConfig, UserConfig } from "../types/user_config.ts";
 import { UserConfigFactory } from "../types/user_config.ts";
 import { DefaultPaths } from "../types/app_config.ts";
 import {
-  ConfigResult,
-  FileNotFoundError as _FileNotFoundErrorLoader,
-  ParseError,
+  type ConfigResult,
+  type FileNotFoundError as _FileNotFoundErrorLoader,
+  type ParseError,
   Result,
-  UnknownError,
-  ValidationError as _ValidationErrorLoader,
+  type UnknownError,
+  type ValidationError as _ValidationErrorLoader,
 } from "../types/config_result.ts";
 
 /**

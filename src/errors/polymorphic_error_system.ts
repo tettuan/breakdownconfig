@@ -6,17 +6,17 @@
  */
 
 import {
-  BaseErrorInterface,
-  ErrorAggregator as _ErrorAggregator,
+  type BaseErrorInterface,
+  type ErrorAggregator as _ErrorAggregator,
   ErrorCategory,
-  ErrorFactory,
-  ErrorHandler,
-  ErrorMetrics as _ErrorMetrics,
-  ErrorReporter as _ErrorReporter,
-  ErrorSerializer as _ErrorSerializer,
+  type ErrorFactory,
+  type ErrorHandler,
+  type ErrorMetrics as _ErrorMetrics,
+  type ErrorReporter as _ErrorReporter,
+  type ErrorSerializer as _ErrorSerializer,
   ErrorSeverity,
-  ErrorTransformer as _ErrorTransformer,
-  ErrorValidator as _ErrorValidator,
+  type ErrorTransformer as _ErrorTransformer,
+  type ErrorValidator as _ErrorValidator,
   StandardErrorCode,
 } from "./unified_error_interface.ts";
 
@@ -241,8 +241,8 @@ export class RequiredFieldMissingError extends ValidationError {
   constructor(
     field: string,
     public readonly parentObject?: string,
-    public readonly availableFields: string[] = [],
     context?: Record<string, unknown>,
+    public readonly availableFields: string[] = [],
   ) {
     super(
       `Required field is missing`,
@@ -542,9 +542,10 @@ export class PolymorphicErrorHandlerRegistry {
       this.handlers.set(errorKind, []);
     }
 
-    const handlers = this.handlers.get(errorKind)!;
+    const handlers = this.handlers.get(errorKind) ?? [];
     handlers.push(handler);
     handlers.sort((a, b) => b.priority - a.priority);
+    this.handlers.set(errorKind, handlers);
   }
 
   /**
@@ -565,6 +566,7 @@ export class PolymorphicErrorHandlerRegistry {
     for (const handler of kindHandlers) {
       if (handler.canHandle(error)) {
         try {
+          // deno-lint-ignore no-await-in-loop
           const result = await handler.handle(error);
           if (result === undefined) return; // Successfully handled
           if (result !== error) return result; // Transformed error
@@ -578,6 +580,7 @@ export class PolymorphicErrorHandlerRegistry {
     for (const handler of this.globalHandlers) {
       if (handler.canHandle(error)) {
         try {
+          // deno-lint-ignore no-await-in-loop
           const result = await handler.handle(error);
           if (result === undefined) return; // Successfully handled
           if (result !== error) return result; // Transformed error
@@ -773,7 +776,7 @@ export const createError = {
     new ConfigParseError(path, syntaxError, line, column),
 
   requiredFieldMissing: (field: string, parentObject?: string, availableFields?: string[]) =>
-    new RequiredFieldMissingError(field, parentObject, availableFields),
+    new RequiredFieldMissingError(field, parentObject, undefined, availableFields),
 
   typeMismatch: (field: string, expectedType: string, actualType: string, value: unknown) =>
     new TypeMismatchError(field, expectedType, actualType, value),

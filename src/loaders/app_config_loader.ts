@@ -1,7 +1,12 @@
 import { join } from "@std/path";
 import type { AppConfig } from "../types/app_config.ts";
 import { DefaultPaths } from "../types/app_config.ts";
-import { ConfigError, ConfigResult, Result, ValidationError } from "../types/config_result.ts";
+import {
+  type ConfigError,
+  type ConfigResult,
+  Result,
+  type ValidationError,
+} from "../types/config_result.ts";
 import { SafeConfigLoader } from "./safe_config_loader.ts";
 import { ConfigValidator } from "../validators/config_validator.ts";
 

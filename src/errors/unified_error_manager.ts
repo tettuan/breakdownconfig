@@ -8,7 +8,11 @@
  * - デバッグ情報とユーザー向け情報の分離
  */
 
-import { ErrorFactories, ErrorGuards as _ErrorGuards, UnifiedError } from "./unified_errors.ts";
+import {
+  ErrorFactories,
+  type ErrorGuards as _ErrorGuards,
+  type UnifiedError,
+} from "./unified_errors.ts";
 import { Result } from "../types/unified_result.ts";
 
 /**

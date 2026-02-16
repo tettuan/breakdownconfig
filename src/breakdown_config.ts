@@ -4,7 +4,7 @@ import { ConfigManager } from "./config_manager.ts";
 import { AppConfigLoader } from "./loaders/app_config_loader.ts";
 import { UserConfigLoader } from "./loaders/user_config_loader.ts";
 import { Result } from "./types/unified_result.ts";
-import { ErrorFactories, UnifiedError } from "./errors/unified_errors.ts";
+import { ErrorFactories, type UnifiedError } from "./errors/unified_errors.ts";
 
 /**
  * Main configuration class for managing application and user settings.

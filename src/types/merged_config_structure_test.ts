@@ -3,20 +3,23 @@
  * Level 1: Verifies configuration schema validation and profile type integrity
  */
 
-import { assertEquals, assertExists } from "@std/assert";
+import { assert, assertEquals, assertExists } from "@std/assert";
 // BreakdownLogger replaced with console for test stability
 import {
-  AppConfig,
-  AppOnlyProfile as _AppOnlyProfile,
-  ConfigProfile as _ConfigProfile,
+  type AppConfig,
+  type AppOnlyProfile as _AppOnlyProfile,
+  type ConfigProfile as _ConfigProfile,
   ConfigProfileFactory,
-  MergedConfig as _MergedConfig,
-  MergedProfile as _MergedProfile,
-  UserConfig as _UserConfig,
+  type MergedConfig as _MergedConfig,
+  type MergedProfile as _MergedProfile,
+  type UserConfig as _UserConfig,
 } from "./merged_config.ts";
 import { UserConfigFactory } from "./user_config.ts";
 
 // Logger removed for test stability
+
+const IS_NOT_IMMUTABLE = false;
+const IS_IMMUTABLE = true;
 
 Deno.test("Structure: ConfigProfile Discriminated Union Integrity", async (t) => {
   // console.log("Testing ConfigProfile discriminated union structure");
@@ -25,12 +28,12 @@ Deno.test("Structure: ConfigProfile Discriminated Union Integrity", async (t) =>
     // console.log("Verifying ConfigProfile discriminators");
 
     const mockAppConfig: AppConfig = {
-      working_dir: ".agent/climpt",
-      app_prompt: {
-        base_dir: "climpt/prompts/app",
+      "working_dir": ".agent/climpt",
+      "app_prompt": {
+        "base_dir": "climpt/prompts/app",
       },
-      app_schema: {
-        base_dir: "climpt/schema/app",
+      "app_schema": {
+        "base_dir": "climpt/schema/app",
       },
     };
 
@@ -39,7 +42,7 @@ Deno.test("Structure: ConfigProfile Discriminated Union Integrity", async (t) =>
       mockAppConfig,
       "test",
       "/test/base",
-      false,
+      IS_NOT_IMMUTABLE,
     );
     if (!appOnlyResult.success) {
       throw new Error("Failed to create AppOnlyProfile");
@@ -71,12 +74,12 @@ Deno.test("Structure: ConfigProfile Discriminated Union Integrity", async (t) =>
     // console.log("Verifying AppOnlyProfile structure");
 
     const mockAppConfig: AppConfig = {
-      working_dir: ".agent/climpt",
-      app_prompt: {
-        base_dir: "climpt/prompts/app",
+      "working_dir": ".agent/climpt",
+      "app_prompt": {
+        "base_dir": "climpt/prompts/app",
       },
-      app_schema: {
-        base_dir: "climpt/schema/app",
+      "app_schema": {
+        "base_dir": "climpt/schema/app",
       },
     };
 
@@ -84,7 +87,7 @@ Deno.test("Structure: ConfigProfile Discriminated Union Integrity", async (t) =>
       mockAppConfig,
       "test",
       "/test/app.config",
-      false,
+      IS_NOT_IMMUTABLE,
     );
 
     if (!appOnlyResult.success) {
@@ -100,7 +103,7 @@ Deno.test("Structure: ConfigProfile Discriminated Union Integrity", async (t) =>
       "/test/app.config",
       "Should have correct config path",
     );
-    assertEquals(appOnly.source.userConfigExists, false, "Should not have userConfig");
+    assert(!appOnly.source.userConfigExists, "Should not have userConfig");
 
     // console.log("AppOnlyProfile structure verified");
   });
@@ -109,12 +112,12 @@ Deno.test("Structure: ConfigProfile Discriminated Union Integrity", async (t) =>
     // console.log("Verifying MergedProfile structure");
 
     const mockAppConfig: AppConfig = {
-      working_dir: ".agent/climpt",
-      app_prompt: {
-        base_dir: "climpt/prompts/app",
+      "working_dir": ".agent/climpt",
+      "app_prompt": {
+        "base_dir": "climpt/prompts/app",
       },
-      app_schema: {
-        base_dir: "climpt/schema/app",
+      "app_schema": {
+        "base_dir": "climpt/schema/app",
       },
     };
 
@@ -145,7 +148,7 @@ Deno.test("Structure: ConfigProfile Discriminated Union Integrity", async (t) =>
       "/test/user.config",
       "Should have correct user config path",
     );
-    assertEquals(merged.source.userConfigExists, true, "Should have userConfig");
+    assert(merged.source.userConfigExists, "Should have userConfig");
 
     // console.log("MergedProfile structure verified");
   });
@@ -162,12 +165,12 @@ Deno.test("Structure: ConfigProfileFactory Contract Validation", async (t) => {
     assertExists(ConfigProfileFactory.createMerged, "createMerged should exist");
 
     const mockAppConfig: AppConfig = {
-      working_dir: ".agent/climpt",
-      app_prompt: {
-        base_dir: "climpt/prompts/app",
+      "working_dir": ".agent/climpt",
+      "app_prompt": {
+        "base_dir": "climpt/prompts/app",
       },
-      app_schema: {
-        base_dir: "climpt/schema/app",
+      "app_schema": {
+        "base_dir": "climpt/schema/app",
       },
     };
 
@@ -176,9 +179,9 @@ Deno.test("Structure: ConfigProfileFactory Contract Validation", async (t) => {
       mockAppConfig,
       "test",
       "/base/app.config",
-      false,
+      IS_NOT_IMMUTABLE,
     );
-    assertEquals(appOnlyResult.success, true, "createAppOnly should work with required parameters");
+    assert(appOnlyResult.success, "createAppOnly should work with required parameters");
 
     // Test createMerged signature
     const userConfig = UserConfigFactory.createEmpty();
@@ -189,7 +192,7 @@ Deno.test("Structure: ConfigProfileFactory Contract Validation", async (t) => {
       "/base/app.config",
       "/base/user.config",
     );
-    assertEquals(mergedResult.success, true, "createMerged should work with required parameters");
+    assert(mergedResult.success, "createMerged should work with required parameters");
 
     // console.log("Factory method signatures verified");
   });
@@ -198,12 +201,12 @@ Deno.test("Structure: ConfigProfileFactory Contract Validation", async (t) => {
     // console.log("Testing factory parameter validation");
 
     const mockAppConfig: AppConfig = {
-      working_dir: ".agent/climpt",
-      app_prompt: {
-        base_dir: "climpt/prompts/app",
+      "working_dir": ".agent/climpt",
+      "app_prompt": {
+        "base_dir": "climpt/prompts/app",
       },
-      app_schema: {
-        base_dir: "climpt/schema/app",
+      "app_schema": {
+        "base_dir": "climpt/schema/app",
       },
     };
 
@@ -212,9 +215,9 @@ Deno.test("Structure: ConfigProfileFactory Contract Validation", async (t) => {
       mockAppConfig,
       "test",
       "/valid/app.config",
-      true,
+      IS_IMMUTABLE,
     );
-    assertEquals(validAppOnlyResult.success, true, "Valid parameters should succeed");
+    assert(validAppOnlyResult.success, "Valid parameters should succeed");
     if (validAppOnlyResult.success) {
       assertEquals(
         validAppOnlyResult.data.kind,
@@ -231,7 +234,7 @@ Deno.test("Structure: ConfigProfileFactory Contract Validation", async (t) => {
       "/valid/app.config",
       "/valid/user.config",
     );
-    assertEquals(validMergedResult.success, true, "Valid parameters should succeed");
+    assert(validMergedResult.success, "Valid parameters should succeed");
     if (validMergedResult.success) {
       assertEquals(
         validMergedResult.data.kind,
@@ -247,12 +250,12 @@ Deno.test("Structure: ConfigProfileFactory Contract Validation", async (t) => {
     // console.log("Testing factory output consistency");
 
     const mockAppConfig: AppConfig = {
-      working_dir: ".agent/climpt",
-      app_prompt: {
-        base_dir: "climpt/prompts/app",
+      "working_dir": ".agent/climpt",
+      "app_prompt": {
+        "base_dir": "climpt/prompts/app",
       },
-      app_schema: {
-        base_dir: "climpt/schema/app",
+      "app_schema": {
+        "base_dir": "climpt/schema/app",
       },
     };
 
@@ -261,17 +264,17 @@ Deno.test("Structure: ConfigProfileFactory Contract Validation", async (t) => {
       mockAppConfig,
       "production",
       "/base1/app.config",
-      false,
+      IS_NOT_IMMUTABLE,
     );
     const appOnly2Result = ConfigProfileFactory.createAppOnly(
       mockAppConfig,
       "production",
       "/base2/app.config",
-      false,
+      IS_NOT_IMMUTABLE,
     );
 
-    assertEquals(appOnly1Result.success, true, "First profile creation should succeed");
-    assertEquals(appOnly2Result.success, true, "Second profile creation should succeed");
+    assert(appOnly1Result.success, "First profile creation should succeed");
+    assert(appOnly2Result.success, "Second profile creation should succeed");
 
     if (appOnly1Result.success && appOnly2Result.success) {
       const appOnly1 = appOnly1Result.data;
@@ -282,9 +285,8 @@ Deno.test("Structure: ConfigProfileFactory Contract Validation", async (t) => {
       assertEquals(appOnly1.profileName, appOnly2.profileName, "ProfileName should be consistent");
 
       // Only config paths should differ
-      assertEquals(
+      assert(
         appOnly1.source.appConfigPath !== appOnly2.source.appConfigPath,
-        true,
         "Config paths should differ when specified differently",
       );
     }
@@ -300,12 +302,12 @@ Deno.test("Structure: MergedConfig Schema Validation", async (t) => {
     // console.log("Verifying config combination logic");
 
     const mockAppConfig: AppConfig = {
-      working_dir: ".agent/climpt",
-      app_prompt: {
-        base_dir: "climpt/prompts/app",
+      "working_dir": ".agent/climpt",
+      "app_prompt": {
+        "base_dir": "climpt/prompts/app",
       },
-      app_schema: {
-        base_dir: "climpt/schema/app",
+      "app_schema": {
+        "base_dir": "climpt/schema/app",
       },
     };
 
@@ -319,7 +321,7 @@ Deno.test("Structure: MergedConfig Schema Validation", async (t) => {
       "/base/user.config",
     );
 
-    assertEquals(profileResult.success, true, "Profile creation should succeed");
+    assert(profileResult.success, "Profile creation should succeed");
 
     if (profileResult.success) {
       const profile = profileResult.data;
@@ -331,7 +333,7 @@ Deno.test("Structure: MergedConfig Schema Validation", async (t) => {
         ".agent/climpt",
         "Should preserve AppConfig working_dir",
       );
-      assertEquals(profile.source.userConfigExists, true, "Should have user config");
+      assert(profile.source.userConfigExists, "Should have user config");
     }
 
     // console.log("Config combination logic verified");
@@ -341,12 +343,12 @@ Deno.test("Structure: MergedConfig Schema Validation", async (t) => {
     // console.log("Testing directory resolution consistency");
 
     const mockAppConfig: AppConfig = {
-      working_dir: ".agent/climpt",
-      app_prompt: {
-        base_dir: "climpt/prompts/app",
+      "working_dir": ".agent/climpt",
+      "app_prompt": {
+        "base_dir": "climpt/prompts/app",
       },
-      app_schema: {
-        base_dir: "climpt/schema/app",
+      "app_schema": {
+        "base_dir": "climpt/schema/app",
       },
     };
 
@@ -354,10 +356,10 @@ Deno.test("Structure: MergedConfig Schema Validation", async (t) => {
       mockAppConfig,
       "development",
       "/override/app.config",
-      true,
+      IS_IMMUTABLE,
     );
 
-    assertEquals(profileResult.success, true, "Profile creation should succeed");
+    assert(profileResult.success, "Profile creation should succeed");
 
     if (profileResult.success) {
       const profile = profileResult.data;
@@ -387,12 +389,12 @@ Deno.test("Structure: MergedConfig Schema Validation", async (t) => {
     // console.log("Testing type safety in configuration merging");
 
     const mockAppConfig: AppConfig = {
-      working_dir: ".agent/climpt",
-      app_prompt: {
-        base_dir: "climpt/prompts/app",
+      "working_dir": ".agent/climpt",
+      "app_prompt": {
+        "base_dir": "climpt/prompts/app",
       },
-      app_schema: {
-        base_dir: "climpt/schema/app",
+      "app_schema": {
+        "base_dir": "climpt/schema/app",
       },
     };
 
@@ -435,13 +437,12 @@ Deno.test("Structure: MergedConfig Schema Validation", async (t) => {
 
     // All should be valid MergedProfiles
     for (const profileResult of profileResults) {
-      assertEquals(profileResult.success, true, "All profile creations should succeed");
+      assert(profileResult.success, "All profile creations should succeed");
       if (profileResult.success) {
         const profile = profileResult.data;
         assertEquals(profile.kind, "merged", "All merged profiles should have correct kind");
-        assertEquals(
+        assert(
           profile.source.userConfigExists,
-          true,
           "All merged profiles should have userConfig",
         );
         assertEquals(
@@ -463,12 +464,12 @@ Deno.test("Structure: Legacy Compatibility Structure", async (t) => {
     // console.log("Verifying backward compatibility");
 
     const mockAppConfig: AppConfig = {
-      working_dir: ".agent/climpt",
-      app_prompt: {
-        base_dir: "climpt/prompts/app",
+      "working_dir": ".agent/climpt",
+      "app_prompt": {
+        "base_dir": "climpt/prompts/app",
       },
-      app_schema: {
-        base_dir: "climpt/schema/app",
+      "app_schema": {
+        "base_dir": "climpt/schema/app",
       },
     };
 
@@ -476,10 +477,10 @@ Deno.test("Structure: Legacy Compatibility Structure", async (t) => {
       mockAppConfig,
       "legacy",
       "/base/app.config",
-      false,
+      IS_NOT_IMMUTABLE,
     );
 
-    assertEquals(profileResult.success, true, "Profile creation should succeed");
+    assert(profileResult.success, "Profile creation should succeed");
 
     if (profileResult.success) {
       const profile = profileResult.data;
@@ -506,12 +507,12 @@ Deno.test("Structure: Legacy Compatibility Structure", async (t) => {
     // console.log("Testing profile evolution integrity");
 
     const mockAppConfig: AppConfig = {
-      working_dir: ".agent/climpt",
-      app_prompt: {
-        base_dir: "climpt/prompts/app",
+      "working_dir": ".agent/climpt",
+      "app_prompt": {
+        "base_dir": "climpt/prompts/app",
       },
-      app_schema: {
-        base_dir: "climpt/schema/app",
+      "app_schema": {
+        "base_dir": "climpt/schema/app",
       },
     };
 
@@ -520,10 +521,10 @@ Deno.test("Structure: Legacy Compatibility Structure", async (t) => {
       mockAppConfig,
       "v1",
       "/current/app.config",
-      true,
+      IS_IMMUTABLE,
     );
 
-    assertEquals(profileResult.success, true, "Profile creation should succeed");
+    assert(profileResult.success, "Profile creation should succeed");
 
     if (profileResult.success) {
       const profile = profileResult.data;

@@ -3,10 +3,10 @@
  * Level 1: Verifies API contracts, method signatures, and type constraints
  */
 
-import { assertEquals, assertExists } from "@std/assert";
+import { assert, assertEquals, assertExists } from "@std/assert";
 import { BreakdownConfig } from "./breakdown_config.ts";
-import { Result as _Result } from "./types/unified_result.ts";
-import { UnifiedError as _UnifiedError } from "./errors/unified_errors.ts";
+import type { Result as _Result } from "./types/unified_result.ts";
+import type { UnifiedError as _UnifiedError } from "./errors/unified_errors.ts";
 
 // Logger removed for dependency simplification
 
@@ -47,19 +47,19 @@ Deno.test("Structure: BreakdownConfig API Contract Validation", async (t) => {
 
     // Safe methods should return Result types
     const loadResult = await config.loadConfigSafe();
-    assertEquals("success" in loadResult, true, "loadConfigSafe should return Result");
+    assert("success" in loadResult, "loadConfigSafe should return Result");
 
     const getResult = await config.getConfigSafe();
-    assertEquals("success" in getResult, true, "getConfigSafe should return Result");
+    assert("success" in getResult, "getConfigSafe should return Result");
 
     const workingDirResult = await config.getWorkingDirSafe();
-    assertEquals("success" in workingDirResult, true, "getWorkingDirSafe should return Result");
+    assert("success" in workingDirResult, "getWorkingDirSafe should return Result");
 
     const promptDirResult = await config.getPromptDirSafe();
-    assertEquals("success" in promptDirResult, true, "getPromptDirSafe should return Result");
+    assert("success" in promptDirResult, "getPromptDirSafe should return Result");
 
     const schemaDirResult = await config.getSchemaDirSafe();
-    assertEquals("success" in schemaDirResult, true, "getSchemaDirSafe should return Result");
+    assert("success" in schemaDirResult, "getSchemaDirSafe should return Result");
 
     // logger.debug("Instance method return types verified");
   });
@@ -90,21 +90,20 @@ Deno.test("Structure: BreakdownConfig Type Constraint Validation", async (t) => 
     const result = BreakdownConfig.create("test");
 
     // Result should have success property
-    assertEquals("success" in result, true, "Result should have success property");
+    assert("success" in result, "Result should have success property");
 
     if (result.success) {
       // Success result should have data property
       assertExists(result.data, "Success result should have data");
-      assertEquals(
+      assert(
         result.data instanceof BreakdownConfig,
-        true,
         "Data should be BreakdownConfig instance",
       );
     } else {
       // Error result should have error property
       assertExists(result.error, "Error result should have error");
-      assertEquals("kind" in result.error, true, "Error should have kind property");
-      assertEquals("message" in result.error, true, "Error should have message property");
+      assert("kind" in result.error, "Error should have kind property");
+      assert("message" in result.error, "Error should have message property");
     }
 
     // logger.debug("Result type constraints verified");
@@ -117,19 +116,19 @@ Deno.test("Structure: BreakdownConfig Type Constraint Validation", async (t) => 
     const validProfiles = ["test", "production", "development", "staging"];
     for (const profile of validProfiles) {
       const result = BreakdownConfig.create(profile);
-      assertEquals(result.success, true, `Profile "${profile}" should be valid`);
+      assert(result.success, `Profile "${profile}" should be valid`);
     }
 
     // Invalid profile names
     const invalidProfiles = ["test@invalid", "profile!", "test spaces"];
     for (const profile of invalidProfiles) {
       const result = BreakdownConfig.create(profile);
-      assertEquals(result.success, false, `Profile "${profile}" should be invalid`);
+      assert(!result.success, `Profile "${profile}" should be invalid`);
     }
 
     // Empty string is valid (defaults to no profile)
     const emptyResult = BreakdownConfig.create("");
-    assertEquals(emptyResult.success, true, "Empty profile should be valid (defaults)");
+    assert(emptyResult.success, "Empty profile should be valid (defaults)");
 
     // logger.debug("Profile name constraints verified");
   });
@@ -139,15 +138,14 @@ Deno.test("Structure: BreakdownConfig Type Constraint Validation", async (t) => 
 
     // Empty string should be handled gracefully
     const emptyDirResult = BreakdownConfig.create("test", "");
-    assertEquals(
+    assert(
       emptyDirResult.success,
-      true,
       "Empty base directory should default to current dir",
     );
 
     // Valid paths should work
     const validDirResult = BreakdownConfig.create("test", "/valid/path");
-    assertEquals(validDirResult.success, true, "Valid directory should be accepted");
+    assert(validDirResult.success, "Valid directory should be accepted");
 
     // logger.debug("Base directory constraints verified");
   });
@@ -212,8 +210,8 @@ Deno.test("Structure: BreakdownConfig Interface Consistency", async (t) => {
     const getResult = await config.getConfigSafe();
 
     // Both should return Results with same structure
-    assertEquals("success" in loadResult, true, "loadConfigSafe should return Result");
-    assertEquals("success" in getResult, true, "getConfigSafe should return Result");
+    assert("success" in loadResult, "loadConfigSafe should return Result");
+    assert("success" in getResult, "getConfigSafe should return Result");
 
     if (loadResult.success && getResult.success) {
       assertEquals(
@@ -235,7 +233,7 @@ Deno.test("Structure: BreakdownConfig Error Handling Structure", async (t) => {
 
     // Create error condition
     const errorResult = BreakdownConfig.create("invalid@profile");
-    assertEquals(errorResult.success, false, "Invalid profile should produce error");
+    assert(!errorResult.success, "Invalid profile should produce error");
 
     if (!errorResult.success) {
       const error: unknown = errorResult.error;

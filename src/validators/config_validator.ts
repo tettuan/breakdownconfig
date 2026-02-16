@@ -1,7 +1,7 @@
 import type { AppConfig } from "../types/app_config.ts";
 import type { UserConfig } from "../types/user_config.ts";
 import { hasPromptConfig, hasSchemaConfig } from "../types/user_config.ts";
-import { ConfigResult, Result, ValidationError } from "../types/config_result.ts";
+import { type ConfigResult, Result, type ValidationError } from "../types/config_result.ts";
 
 export class ConfigValidator {
   static validateAppConfig(config: unknown): ConfigResult<AppConfig, ValidationError[]> {

@@ -297,22 +297,24 @@ export const Result = {
   /**
    * Converts a Promise to a ConfigResult
    */
-  async fromPromise<T>(
-    promise: Promise<T>,
-    errorMapper?: (error: unknown) => ConfigError,
-  ): Promise<ConfigResult<T, ConfigError>> {
-    try {
-      const data = await promise;
-      return Result.ok(data);
-    } catch (error) {
-      const mappedError = errorMapper ? errorMapper(error) : {
-        kind: "unknownError" as const,
-        message: error && typeof error === "object" && "message" in error
-          ? String(error.message)
-          : String(error),
-        originalError: error,
-      };
-      return Result.err(mappedError);
-    }
-  },
+  fromPromise: fromPromiseImpl,
 };
+
+async function fromPromiseImpl<T>(
+  promise: Promise<T>,
+  errorMapper?: (error: unknown) => ConfigError,
+): Promise<ConfigResult<T, ConfigError>> {
+  try {
+    const data = await promise;
+    return Result.ok(data);
+  } catch (error) {
+    const mappedError = errorMapper ? errorMapper(error) : {
+      kind: "unknownError" as const,
+      message: error && typeof error === "object" && "message" in error
+        ? String(error.message)
+        : String(error),
+      originalError: error,
+    };
+    return Result.err(mappedError);
+  }
+}

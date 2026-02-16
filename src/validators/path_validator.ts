@@ -1,6 +1,11 @@
 import { isAbsolute, join, normalize } from "https://deno.land/std@0.224.0/path/mod.ts";
 import { exists } from "https://deno.land/std@0.224.0/fs/exists.ts";
-import { ConfigResult, PathError, Result, UnknownError } from "../types/config_result.ts";
+import {
+  type ConfigResult,
+  type PathError,
+  Result,
+  type UnknownError,
+} from "../types/config_result.ts";
 import { ValidPath } from "../utils/valid_path.ts";
 
 /**

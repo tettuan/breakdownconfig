@@ -5,8 +5,29 @@
  * These patterns provide advanced Result API operations for complex workflows
  */
 
-import { Failure as _Failure, Result, Success as _Success } from "./unified_result.ts";
-import { ErrorFactories, UnifiedError } from "../errors/unified_errors.ts";
+import { type Failure as _Failure, Result, type Success as _Success } from "./unified_result.ts";
+import { ErrorFactories, type UnifiedError } from "../errors/unified_errors.ts";
+
+/**
+ * Parallel execution with error aggregation
+ */
+async function parallelImpl<T, E>(
+  operations: (() => Promise<Result<T, E>>)[],
+): Promise<Result<T[], E[]>> {
+  const results = await Promise.all(operations.map((op) => op()));
+  const successes: T[] = [];
+  const errors: E[] = [];
+
+  for (const result of results) {
+    if (Result.isOk(result)) {
+      successes.push(result.data);
+    } else {
+      errors.push(result.error);
+    }
+  }
+
+  return errors.length === 0 ? Result.ok(successes) : Result.err(errors);
+}
 
 /**
  * Pattern 3: Advanced chaining operations
@@ -54,23 +75,7 @@ export const ResultChaining = {
   /**
    * Parallel execution with error aggregation
    */
-  async parallel<T, E>(
-    operations: (() => Promise<Result<T, E>>)[],
-  ): Promise<Result<T[], E[]>> {
-    const results = await Promise.all(operations.map((op) => op()));
-    const successes: T[] = [];
-    const errors: E[] = [];
-
-    for (const result of results) {
-      if (Result.isOk(result)) {
-        successes.push(result.data);
-      } else {
-        errors.push(result.error);
-      }
-    }
-
-    return errors.length === 0 ? Result.ok(successes) : Result.err(errors);
-  },
+  parallel: parallelImpl,
 
   /**
    * Conditional chaining based on predicate
@@ -88,80 +93,132 @@ export const ResultChaining = {
 };
 
 /**
+ * Retry operation with exponential backoff
+ */
+async function retryImpl<T>(
+  operation: () => Promise<Result<T, UnifiedError>>,
+  maxAttempts = 3,
+  baseDelayMs = 100,
+): Promise<Result<T, UnifiedError>> {
+  let lastError: UnifiedError | null = null;
+
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    if (attempt > 0) {
+      const delayMs = baseDelayMs * Math.pow(2, attempt - 1);
+      // deno-lint-ignore no-await-in-loop
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+    }
+
+    // deno-lint-ignore no-await-in-loop
+    const result = await operation();
+    if (Result.isOk(result)) {
+      return result;
+    }
+
+    lastError = result.error;
+
+    // Don't retry validation errors
+    if (result.error.kind === "CONFIG_VALIDATION_ERROR") {
+      return result;
+    }
+  }
+
+  if (lastError === null) {
+    return Result.err(ErrorFactories.unknown(new Error("No attempts made"), "retry"));
+  }
+  return Result.err(lastError);
+}
+
+/**
+ * Fallback chain with multiple recovery strategies
+ */
+async function fallbackChainImpl<T>(
+  primary: () => Promise<Result<T, UnifiedError>>,
+  fallbacks: (() => Promise<Result<T, UnifiedError>>)[],
+  defaultValue?: T,
+): Promise<Result<T, UnifiedError>> {
+  // Try primary
+  const primaryResult = await primary();
+  if (Result.isOk(primaryResult)) {
+    return primaryResult;
+  }
+
+  // Try fallbacks in order
+  for (const fallback of fallbacks) {
+    // deno-lint-ignore no-await-in-loop
+    const fallbackResult = await fallback();
+    if (Result.isOk(fallbackResult)) {
+      return fallbackResult;
+    }
+  }
+
+  // Use default if provided
+  if (defaultValue !== undefined) {
+    return Result.ok(defaultValue);
+  }
+
+  // Return the primary error if no fallbacks worked
+  return primaryResult;
+}
+
+/**
+ * Graceful degradation with partial success
+ */
+async function gracefulDegradeImpl<T, P>(
+  operations: {
+    essential: () => Promise<Result<T, UnifiedError>>;
+    optional: (() => Promise<Result<P, UnifiedError>>)[];
+  },
+): Promise<Result<{ essential: T; optional: P[] }, UnifiedError>> {
+  // Essential operation must succeed
+  const essentialResult = await operations.essential();
+  if (Result.isErr(essentialResult)) {
+    return essentialResult;
+  }
+
+  // Optional operations - collect successes, ignore failures
+  const optionalResults: P[] = [];
+  for (const optionalOp of operations.optional) {
+    try {
+      // deno-lint-ignore no-await-in-loop
+      const result = await optionalOp();
+      if (Result.isOk(result)) {
+        optionalResults.push(result.data);
+      }
+      // Silently ignore optional failures
+    } catch {
+      // Silently ignore optional errors
+    }
+  }
+
+  return Result.ok({
+    essential: essentialResult.data,
+    optional: optionalResults,
+  });
+}
+
+/**
  * Pattern 4: Error recovery strategies
  */
 export const ResultRecovery = {
   /**
    * Retry operation with exponential backoff
    */
-  async retry<T>(
-    operation: () => Promise<Result<T, UnifiedError>>,
-    maxAttempts: number = 3,
-    baseDelayMs: number = 100,
-  ): Promise<Result<T, UnifiedError>> {
-    let lastError: UnifiedError | null = null;
-
-    for (let attempt = 0; attempt < maxAttempts; attempt++) {
-      if (attempt > 0) {
-        const delayMs = baseDelayMs * Math.pow(2, attempt - 1);
-        await new Promise((resolve) => setTimeout(resolve, delayMs));
-      }
-
-      const result = await operation();
-      if (Result.isOk(result)) {
-        return result;
-      }
-
-      lastError = result.error;
-
-      // Don't retry validation errors
-      if (result.error.kind === "CONFIG_VALIDATION_ERROR") {
-        return result;
-      }
-    }
-
-    return Result.err(lastError!);
-  },
+  retry: retryImpl,
 
   /**
    * Fallback chain with multiple recovery strategies
    */
-  async fallbackChain<T>(
-    primary: () => Promise<Result<T, UnifiedError>>,
-    fallbacks: (() => Promise<Result<T, UnifiedError>>)[],
-    defaultValue?: T,
-  ): Promise<Result<T, UnifiedError>> {
-    // Try primary
-    const primaryResult = await primary();
-    if (Result.isOk(primaryResult)) {
-      return primaryResult;
-    }
-
-    // Try fallbacks in order
-    for (const fallback of fallbacks) {
-      const fallbackResult = await fallback();
-      if (Result.isOk(fallbackResult)) {
-        return fallbackResult;
-      }
-    }
-
-    // Use default if provided
-    if (defaultValue !== undefined) {
-      return Result.ok(defaultValue);
-    }
-
-    // Return the primary error if no fallbacks worked
-    return primaryResult;
-  },
+  fallbackChain: fallbackChainImpl,
 
   /**
    * Circuit breaker pattern
    */
   createCircuitBreaker<T>(
     operation: () => Promise<Result<T, UnifiedError>>,
-    failureThreshold: number = 5,
-    resetTimeoutMs: number = 60000,
-  ) {
+    failureThreshold = 5,
+    resetTimeoutMs = 60000,
+  ): () => Promise<Result<T, UnifiedError>> {
     let state: "closed" | "open" | "half-open" = "closed";
     let failures = 0;
     let lastFailureTime = 0;
@@ -218,37 +275,7 @@ export const ResultRecovery = {
   /**
    * Graceful degradation with partial success
    */
-  async gracefulDegrade<T, P>(
-    operations: {
-      essential: () => Promise<Result<T, UnifiedError>>;
-      optional: (() => Promise<Result<P, UnifiedError>>)[];
-    },
-  ): Promise<Result<{ essential: T; optional: P[] }, UnifiedError>> {
-    // Essential operation must succeed
-    const essentialResult = await operations.essential();
-    if (Result.isErr(essentialResult)) {
-      return essentialResult;
-    }
-
-    // Optional operations - collect successes, ignore failures
-    const optionalResults: P[] = [];
-    for (const optionalOp of operations.optional) {
-      try {
-        const result = await optionalOp();
-        if (Result.isOk(result)) {
-          optionalResults.push(result.data);
-        }
-        // Silently ignore optional failures
-      } catch {
-        // Silently ignore optional errors
-      }
-    }
-
-    return Result.ok({
-      essential: essentialResult.data,
-      optional: optionalResults,
-    });
-  },
+  gracefulDegrade: gracefulDegradeImpl,
 
   /**
    * Error recovery with context preservation

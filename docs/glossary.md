@@ -97,10 +97,13 @@
 
 ### BreakdownLogger
 
-- **Definition**: Library-specific log output system
+- **Definition**: Library-specific log output system (`@tettuan/breakdownlogger@^1.1.2`)
 - **Purpose**: Debug test code, output structured logs
-- **Log Levels**: DEBUG, INFO, WARN, ERROR
-- **Control**: Controllable by environment variable `LOG_LEVEL`
+- **Log Levels**: DEBUG (0), INFO (1), WARN (2), ERROR (3)
+- **Environment Variables**:
+  - `LOG_LEVEL`: Severity threshold (`debug`, `info`, `warn`, `error`)
+  - `LOG_KEY`: Filter by logger key (comma-separated, e.g. `dataflow,security`)
+  - `LOG_LENGTH`: Output length (`S`=160, `L`=300, `W`=unlimited, default=80)
 
 ### ErrorManager
 

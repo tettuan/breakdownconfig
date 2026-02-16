@@ -6,41 +6,40 @@
  * to configuration loading and usage in real-world scenarios.
  *
  * Test Coverage:
- * 1. Full initialization → config load → usage cycle
+ * 1. Full initialization -> config load -> usage cycle
  * 2. Multiple profile management (dev, staging, production)
  * 3. Configuration migration scenarios
  * 4. Error recovery in production environments
  * 5. Real-world usage patterns
  */
 
-import { assertEquals, assertExists, assertRejects as _assertRejects } from "@std/assert";
+import {
+  assert,
+  assertEquals,
+  assertExists,
+  type assertRejects as _assertRejects,
+} from "@std/assert";
 import { describe, it } from "@std/testing/bdd";
 import { join } from "@std/path";
 import { ensureDir } from "@std/fs";
 import { BreakdownConfig } from "../../mod.ts";
-import { Result as _Result } from "../../src/types/unified_result.ts";
+import type { Result as _Result } from "../../src/types/unified_result.ts";
 import type { MergedConfig } from "../../src/types/merged_config.ts";
 import {
-  assertConfigValidationError as _assertConfigValidationError,
+  type assertConfigValidationError as _assertConfigValidationError,
   assertResultErrorKind,
-  assertUnifiedResultOk as _assertUnifiedResultOk,
+  type assertUnifiedResultOk as _assertUnifiedResultOk,
 } from "../test_helpers/result_test_helpers.ts";
+
+const RECURSIVE_OPTIONS = { recursive: true };
 
 describe("Complete Workflow E2E Tests", () => {
   describe("Full Application Lifecycle", () => {
-    it("should handle complete initialization → load → use workflow", async () => {
+    it("should handle complete initialization -> load -> use workflow", async () => {
       // Step 1: Initialize with default configuration
       const configResult = BreakdownConfig.create();
       assertExists(configResult.success);
-      assertEquals(configResult.success, true);
-
-      if (!configResult.success) {
-        if (configResult.error instanceof Error) {
-          throw new Error(`Config creation failed: ${configResult.error.message}`);
-        } else {
-          throw new Error(`Config creation failed: ${configResult.error.message}`);
-        }
-      }
+      assert(configResult.success);
 
       const config = configResult.data;
 
@@ -80,22 +79,18 @@ describe("Complete Workflow E2E Tests", () => {
 
         // Step 2: Initialize BreakdownConfig
         const configResult = BreakdownConfig.create(undefined, projectRoot);
-        assertEquals(configResult.success, true);
-
-        if (!configResult.success) {
-          throw new Error(`Config creation failed: ${configResult.error.message}`);
-        }
+        assert(configResult.success);
 
         const config = configResult.data;
 
         // Step 3: Generate default configuration
         const appConfig = {
-          working_dir: ".agent/climpt",
-          app_prompt: {
-            base_dir: "prompts/app",
+          "working_dir": ".agent/climpt",
+          "app_prompt": {
+            "base_dir": "prompts/app",
           },
-          app_schema: {
-            base_dir: "schemas/app",
+          "app_schema": {
+            "base_dir": "schemas/app",
           },
         };
 
@@ -117,7 +112,7 @@ app_schema:
         assertEquals(mergedConfig.app_prompt.base_dir, appConfig.app_prompt.base_dir);
         assertEquals(mergedConfig.app_schema.base_dir, appConfig.app_schema.base_dir);
       } finally {
-        await Deno.remove(projectRoot, { recursive: true });
+        await Deno.remove(projectRoot, RECURSIVE_OPTIONS);
       }
     });
   });
@@ -133,24 +128,25 @@ app_schema:
         // Create profile configurations
         const profiles = {
           development: {
-            working_dir: ".agent/climpt/dev",
-            app_prompt: { base_dir: "dev/prompts" },
-            app_schema: { base_dir: "dev/schemas" },
+            "working_dir": ".agent/climpt/dev",
+            "app_prompt": { "base_dir": "dev/prompts" },
+            "app_schema": { "base_dir": "dev/schemas" },
           },
           staging: {
-            working_dir: ".agent/climpt/staging",
-            app_prompt: { base_dir: "staging/prompts" },
-            app_schema: { base_dir: "staging/schemas" },
+            "working_dir": ".agent/climpt/staging",
+            "app_prompt": { "base_dir": "staging/prompts" },
+            "app_schema": { "base_dir": "staging/schemas" },
           },
           production: {
-            working_dir: ".agent/climpt/prod",
-            app_prompt: { base_dir: "prod/prompts" },
-            app_schema: { base_dir: "prod/schemas" },
+            "working_dir": ".agent/climpt/prod",
+            "app_prompt": { "base_dir": "prod/prompts" },
+            "app_schema": { "base_dir": "prod/schemas" },
           },
         };
 
         // Write profile configurations
         for (const [profile, config] of Object.entries(profiles)) {
+          // deno-lint-ignore no-await-in-loop
           await Deno.writeTextFile(
             join(configDir, `${profile}-app.yml`),
             `working_dir: ${config.working_dir}
@@ -164,12 +160,14 @@ app_schema:
         // Test each profile
         for (const [profile, expectedConfig] of Object.entries(profiles)) {
           const configResult = BreakdownConfig.create(profile, projectRoot);
-          assertEquals(configResult.success, true);
+          assert(configResult.success);
 
           if (!configResult.success) continue;
 
           const config = configResult.data;
+          // deno-lint-ignore no-await-in-loop
           await config.loadConfig();
+          // deno-lint-ignore no-await-in-loop
           const mergedConfig = await config.getConfig();
 
           assertEquals(
@@ -189,7 +187,7 @@ app_schema:
           );
         }
       } finally {
-        await Deno.remove(projectRoot, { recursive: true });
+        await Deno.remove(projectRoot, RECURSIVE_OPTIONS);
       }
     });
 
@@ -203,6 +201,7 @@ app_schema:
         // Create configurations
         const configs = ["development", "production"];
         for (const profile of configs) {
+          // deno-lint-ignore no-await-in-loop
           await Deno.writeTextFile(
             join(configDir, `${profile}-app.yml`),
             `working_dir: .agent/climpt/${profile}
@@ -215,7 +214,7 @@ app_schema:
 
         // Start with development
         const devConfigResult = BreakdownConfig.create("development", projectRoot);
-        assertEquals(devConfigResult.success, true);
+        assert(devConfigResult.success);
         if (!devConfigResult.success) throw new Error("Dev config failed");
 
         const devConfig = devConfigResult.data;
@@ -225,7 +224,7 @@ app_schema:
 
         // Switch to production
         const prodConfigResult = BreakdownConfig.create("production", projectRoot);
-        assertEquals(prodConfigResult.success, true);
+        assert(prodConfigResult.success);
         if (!prodConfigResult.success) throw new Error("Prod config failed");
 
         const prodConfig = prodConfigResult.data;
@@ -237,7 +236,7 @@ app_schema:
         const devCheck = await devConfig.getConfig();
         assertEquals(devCheck.working_dir, ".agent/climpt/development");
       } finally {
-        await Deno.remove(projectRoot, { recursive: true });
+        await Deno.remove(projectRoot, RECURSIVE_OPTIONS);
       }
     });
   });
@@ -277,7 +276,7 @@ app_schema:
 
         // Load with new system
         const configResult = BreakdownConfig.create(undefined, projectRoot);
-        assertEquals(configResult.success, true);
+        assert(configResult.success);
 
         if (!configResult.success) throw new Error("Config creation failed");
 
@@ -290,7 +289,7 @@ app_schema:
         assertExists(mergedConfig.app_prompt.base_dir);
         assertExists(mergedConfig.app_schema.base_dir);
       } finally {
-        await Deno.remove(projectRoot, { recursive: true });
+        await Deno.remove(projectRoot, RECURSIVE_OPTIONS);
       }
     });
 
@@ -303,19 +302,21 @@ app_schema:
 
         for (const env of environments) {
           const configDir = join(projectRoot, env, ".agent/climpt/config");
+          // deno-lint-ignore no-await-in-loop
           await ensureDir(configDir);
 
           // Environment-specific configuration
           const config = {
-            working_dir: `.agent/climpt/${env}`,
-            app_prompt: {
-              base_dir: `${env}/prompts`,
+            "working_dir": `.agent/climpt/${env}`,
+            "app_prompt": {
+              "base_dir": `${env}/prompts`,
             },
-            app_schema: {
-              base_dir: `${env}/schemas`,
+            "app_schema": {
+              "base_dir": `${env}/schemas`,
             },
           };
 
+          // deno-lint-ignore no-await-in-loop
           await Deno.writeTextFile(
             join(configDir, "app.yml"),
             `working_dir: ${config.working_dir}
@@ -329,11 +330,13 @@ app_schema:
           const envRoot = join(projectRoot, env);
           const configResult = BreakdownConfig.create(undefined, envRoot);
 
-          assertEquals(configResult.success, true);
+          assert(configResult.success);
           if (!configResult.success) continue;
 
           const breakdownConfig = configResult.data;
+          // deno-lint-ignore no-await-in-loop
           await breakdownConfig.loadConfig();
+          // deno-lint-ignore no-await-in-loop
           const mergedConfig = await breakdownConfig.getConfig();
 
           assertEquals(
@@ -343,7 +346,7 @@ app_schema:
           );
         }
       } finally {
-        await Deno.remove(projectRoot, { recursive: true });
+        await Deno.remove(projectRoot, RECURSIVE_OPTIONS);
       }
     });
 
@@ -365,7 +368,7 @@ app_schema:
         );
 
         const configResult = BreakdownConfig.create(undefined, projectRoot);
-        assertEquals(configResult.success, true);
+        assert(configResult.success);
 
         if (!configResult.success) throw new Error("Config creation failed");
 
@@ -373,7 +376,7 @@ app_schema:
         const loadResult = await config.loadConfigSafe();
 
         // Should fail validation
-        assertEquals(loadResult.success, false);
+        assert(!loadResult.success);
         if (!loadResult.success) {
           // Multiple validation errors expected for empty string and invalid types
           assertResultErrorKind(loadResult, "CONFIG_VALIDATION_ERROR");
@@ -391,7 +394,7 @@ app_schema:
 
         // Reload configuration
         const recoveredConfig = BreakdownConfig.create(undefined, projectRoot);
-        assertEquals(recoveredConfig.success, true);
+        assert(recoveredConfig.success);
 
         if (!recoveredConfig.success) throw new Error("Recovery failed");
 
@@ -401,7 +404,7 @@ app_schema:
 
         assertEquals(mergedConfig.working_dir, ".agent/climpt");
       } finally {
-        await Deno.remove(projectRoot, { recursive: true });
+        await Deno.remove(projectRoot, RECURSIVE_OPTIONS);
       }
     });
 
@@ -425,6 +428,7 @@ app_schema:
         // Plugin configurations
         const plugins = ["auth", "logging", "caching"];
         for (const plugin of plugins) {
+          // deno-lint-ignore no-await-in-loop
           await Deno.writeTextFile(
             join(configDir, `plugin-${plugin}-app.yml`),
             `working_dir: .agent/climpt/plugins/${plugin}
@@ -437,7 +441,7 @@ app_schema:
 
         // Load base configuration
         const baseResult = BreakdownConfig.create(undefined, projectRoot);
-        assertEquals(baseResult.success, true);
+        assert(baseResult.success);
 
         if (!baseResult.success) throw new Error("Base config failed");
 
@@ -450,12 +454,14 @@ app_schema:
         // Load plugin configurations
         for (const plugin of plugins) {
           const pluginResult = BreakdownConfig.create(`plugin-${plugin}`, projectRoot);
-          assertEquals(pluginResult.success, true);
+          assert(pluginResult.success);
 
           if (!pluginResult.success) continue;
 
           const pluginConfig = pluginResult.data;
+          // deno-lint-ignore no-await-in-loop
           await pluginConfig.loadConfig();
+          // deno-lint-ignore no-await-in-loop
           const pluginMerged = await pluginConfig.getConfig();
 
           assertEquals(
@@ -465,7 +471,7 @@ app_schema:
           );
         }
       } finally {
-        await Deno.remove(projectRoot, { recursive: true });
+        await Deno.remove(projectRoot, RECURSIVE_OPTIONS);
       }
     });
   });
@@ -482,9 +488,11 @@ app_schema:
         for (const service of services) {
           const serviceDir = join(projectRoot, service);
           const configDir = join(serviceDir, ".agent/climpt/config");
+          // deno-lint-ignore no-await-in-loop
           await ensureDir(configDir);
 
           // Service-specific configuration
+          // deno-lint-ignore no-await-in-loop
           await Deno.writeTextFile(
             join(configDir, "app.yml"),
             `working_dir: .agent/climpt/${service}
@@ -496,12 +504,14 @@ app_schema:
 
           // Load configuration
           const configResult = BreakdownConfig.create(undefined, serviceDir);
-          assertEquals(configResult.success, true);
+          assert(configResult.success);
 
           if (!configResult.success) continue;
 
           const config = configResult.data;
+          // deno-lint-ignore no-await-in-loop
           await config.loadConfig();
+          // deno-lint-ignore no-await-in-loop
           configs[service] = await config.getConfig();
         }
 
@@ -522,7 +532,7 @@ app_schema:
           );
         }
       } finally {
-        await Deno.remove(projectRoot, { recursive: true });
+        await Deno.remove(projectRoot, RECURSIVE_OPTIONS);
       }
     });
 
@@ -535,9 +545,9 @@ app_schema:
 
         // Initial configuration
         const initialConfig = {
-          working_dir: ".agent/climpt/v1",
-          app_prompt: { base_dir: "v1/prompts" },
-          app_schema: { base_dir: "v1/schemas" },
+          "working_dir": ".agent/climpt/v1",
+          "app_prompt": { "base_dir": "v1/prompts" },
+          "app_schema": { "base_dir": "v1/schemas" },
         };
 
         await Deno.writeTextFile(
@@ -551,7 +561,7 @@ app_schema:
 
         // Load initial configuration
         const configResult1 = BreakdownConfig.create(undefined, projectRoot);
-        assertEquals(configResult1.success, true);
+        assert(configResult1.success);
 
         if (!configResult1.success) throw new Error("Initial config failed");
 
@@ -563,9 +573,9 @@ app_schema:
 
         // Update configuration (simulate hot-reload)
         const updatedConfig = {
-          working_dir: ".agent/climpt/v2",
-          app_prompt: { base_dir: "v2/prompts" },
-          app_schema: { base_dir: "v2/schemas" },
+          "working_dir": ".agent/climpt/v2",
+          "app_prompt": { "base_dir": "v2/prompts" },
+          "app_schema": { "base_dir": "v2/schemas" },
         };
 
         await Deno.writeTextFile(
@@ -579,7 +589,7 @@ app_schema:
 
         // Create new instance to simulate reload
         const configResult2 = BreakdownConfig.create(undefined, projectRoot);
-        assertEquals(configResult2.success, true);
+        assert(configResult2.success);
 
         if (!configResult2.success) throw new Error("Updated config failed");
 
@@ -593,7 +603,7 @@ app_schema:
         const check1 = await config1.getConfig();
         assertEquals(check1.working_dir, initialConfig.working_dir);
       } finally {
-        await Deno.remove(projectRoot, { recursive: true });
+        await Deno.remove(projectRoot, RECURSIVE_OPTIONS);
       }
     });
   });

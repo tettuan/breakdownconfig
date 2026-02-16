@@ -13,7 +13,7 @@ import { assert, assertEquals, assertExists, assertRejects } from "@std/assert";
 import { describe, it } from "@std/testing/bdd";
 import { BreakdownConfig } from "../../mod.ts";
 import { Result } from "../../src/types/unified_result.ts";
-import { ErrorFactories, UnifiedError } from "../../src/errors/unified_errors.ts";
+import { ErrorFactories, type UnifiedError } from "../../src/errors/unified_errors.ts";
 import { cleanupTestConfigs, setupInvalidConfig, setupMergeConfigs } from "../test_utils.ts";
 import {
   assertResultError,
@@ -128,9 +128,9 @@ describe("Total Function Error Handling Integration", () => {
   describe("UnifiedError Type Consistency", () => {
     it("should maintain error type discrimination across operations", async () => {
       const tempDir = await setupInvalidConfig({
-        working_dir: "",
-        app_prompt: { base_dir: "../../../etc" },
-        app_schema: { base_dir: "a".repeat(300) },
+        "working_dir": "",
+        "app_prompt": { "base_dir": "../../../etc" },
+        "app_schema": { "base_dir": "a".repeat(300) },
       });
 
       try {
@@ -230,14 +230,17 @@ describe("Total Function Error Handling Integration", () => {
           const config = configResult.data;
 
           // Safe operations should never throw
+          // deno-lint-ignore no-await-in-loop
           const loadResult = await config.loadConfigSafe();
           assertExists(loadResult);
           assertExists(loadResult.success);
 
+          // deno-lint-ignore no-await-in-loop
           const getConfigResult = await config.getConfigSafe();
           assertExists(getConfigResult);
           assertExists(getConfigResult.success);
 
+          // deno-lint-ignore no-await-in-loop
           const workingDirResult = await config.getWorkingDirSafe();
           assertExists(workingDirResult);
           assertExists(workingDirResult.success);
@@ -267,7 +270,7 @@ describe("Total Function Error Handling Integration", () => {
       results.forEach((result: Result<unknown, UnifiedError>) => {
         assertExists(result);
         assertExists(result.success);
-        assertEquals(result.success, false);
+        assert(!result.success);
       });
 
       // loadConfigSafe should have CONFIG_FILE_NOT_FOUND
@@ -304,9 +307,9 @@ describe("Total Function Error Handling Integration", () => {
 
     it("should support error transformation and recovery", async () => {
       const tempDir = await setupInvalidConfig({
-        working_dir: "",
-        app_prompt: { base_dir: "prompts" },
-        app_schema: { base_dir: "schemas" },
+        "working_dir": "",
+        "app_prompt": { "base_dir": "prompts" },
+        "app_schema": { "base_dir": "schemas" },
       });
 
       try {
@@ -352,8 +355,9 @@ describe("Total Function Error Handling Integration", () => {
       };
 
       // Test success case
+      const SHOULD_NOT_FAIL = false;
       const successResult = await Result.fromPromise(
-        asyncOperation(false),
+        asyncOperation(SHOULD_NOT_FAIL),
         (error) =>
           ErrorFactories.unknown(
             error instanceof Error ? error.message : "Unknown async error",
@@ -366,8 +370,9 @@ describe("Total Function Error Handling Integration", () => {
       assertEquals(successResult.data, "Success");
 
       // Test failure case
+      const SHOULD_FAIL = true;
       const failureResult = await Result.fromPromise(
-        asyncOperation(true),
+        asyncOperation(SHOULD_FAIL),
         (error) =>
           ErrorFactories.unknown(
             error instanceof Error ? error.message : "Unknown async error",

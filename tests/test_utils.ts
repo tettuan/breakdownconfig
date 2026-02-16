@@ -24,65 +24,65 @@ export const TEST_WORKING_DIR = ".agent/climpt";
 
 // Valid configuration examples
 export const validAppConfig = {
-  working_dir: DefaultPaths.WORKING_DIR,
-  app_prompt: {
-    base_dir: DefaultPaths.PROMPT_BASE_DIR,
+  "working_dir": DefaultPaths.WORKING_DIR,
+  "app_prompt": {
+    "base_dir": DefaultPaths.PROMPT_BASE_DIR,
   },
-  app_schema: {
-    base_dir: DefaultPaths.SCHEMA_BASE_DIR,
+  "app_schema": {
+    "base_dir": DefaultPaths.SCHEMA_BASE_DIR,
   },
 };
 
 export const validUserConfig = {
-  app_prompt: {
-    base_dir: "custom/prompts",
+  "app_prompt": {
+    "base_dir": "custom/prompts",
   },
 };
 
 // Invalid configuration examples
 export const invalidAppConfigs = {
   missingWorkingDir: {
-    app_prompt: { base_dir: DefaultPaths.PROMPT_BASE_DIR },
-    app_schema: { base_dir: DefaultPaths.SCHEMA_BASE_DIR },
+    "app_prompt": { "base_dir": DefaultPaths.PROMPT_BASE_DIR },
+    "app_schema": { "base_dir": DefaultPaths.SCHEMA_BASE_DIR },
   },
   missingPrompt: {
-    working_dir: DefaultPaths.WORKING_DIR,
-    app_schema: { base_dir: DefaultPaths.SCHEMA_BASE_DIR },
+    "working_dir": DefaultPaths.WORKING_DIR,
+    "app_schema": { "base_dir": DefaultPaths.SCHEMA_BASE_DIR },
   },
   missingSchema: {
-    working_dir: DefaultPaths.WORKING_DIR,
-    app_prompt: { base_dir: DefaultPaths.PROMPT_BASE_DIR },
+    "working_dir": DefaultPaths.WORKING_DIR,
+    "app_prompt": { "base_dir": DefaultPaths.PROMPT_BASE_DIR },
   },
   invalidTypes: {
-    working_dir: 123,
-    app_prompt: { base_dir: true },
-    app_schema: { base_dir: null },
+    "working_dir": 123,
+    "app_prompt": { "base_dir": true },
+    "app_schema": { "base_dir": null },
   },
   emptyStrings: {
-    working_dir: "",
-    app_prompt: { base_dir: DefaultPaths.PROMPT_BASE_DIR },
-    app_schema: { base_dir: DefaultPaths.SCHEMA_BASE_DIR },
+    "working_dir": "",
+    "app_prompt": { "base_dir": DefaultPaths.PROMPT_BASE_DIR },
+    "app_schema": { "base_dir": DefaultPaths.SCHEMA_BASE_DIR },
   },
   emptyWorkingDir: {
-    working_dir: "",
-    app_prompt: { base_dir: DefaultPaths.PROMPT_BASE_DIR },
-    app_schema: { base_dir: DefaultPaths.SCHEMA_BASE_DIR },
+    "working_dir": "",
+    "app_prompt": { "base_dir": DefaultPaths.PROMPT_BASE_DIR },
+    "app_schema": { "base_dir": DefaultPaths.SCHEMA_BASE_DIR },
   },
 };
 
 // Extra field configurations for testing
 export const extraFieldConfigs = {
   rootLevel: {
-    working_dir: DefaultPaths.WORKING_DIR,
-    app_prompt: {
-      base_dir: DefaultPaths.PROMPT_BASE_DIR,
-      extra_field: "extra",
+    "working_dir": DefaultPaths.WORKING_DIR,
+    "app_prompt": {
+      "base_dir": DefaultPaths.PROMPT_BASE_DIR,
+      "extra_field": "extra",
     },
-    app_schema: {
-      base_dir: DefaultPaths.SCHEMA_BASE_DIR,
-      extra_field: "extra",
+    "app_schema": {
+      "base_dir": DefaultPaths.SCHEMA_BASE_DIR,
+      "extra_field": "extra",
     },
-    extra_root_field: "extra",
+    "extra_root_field": "extra",
   },
 };
 
@@ -195,12 +195,12 @@ export async function setupCustomConfigSet(prefix: string): Promise<string> {
   // Create custom app config
   const appConfigPath = join(configDir, `${prefix}-app.yml`);
   const customAppConfig = {
-    working_dir: DefaultPaths.WORKING_DIR,
-    app_prompt: {
-      base_dir: `${prefix}/prompts`,
+    "working_dir": DefaultPaths.WORKING_DIR,
+    "app_prompt": {
+      "base_dir": `${prefix}/prompts`,
     },
-    app_schema: {
-      base_dir: `${prefix}/schemas`,
+    "app_schema": {
+      "base_dir": `${prefix}/schemas`,
     },
   };
   await Deno.writeTextFile(appConfigPath, stringifyYaml(customAppConfig));
@@ -209,8 +209,8 @@ export async function setupCustomConfigSet(prefix: string): Promise<string> {
   // Create custom user config
   const userConfigPath = join(configDir, `${prefix}-user.yml`);
   const customUserConfig = {
-    app_prompt: {
-      base_dir: `${prefix}/user-prompts`,
+    "app_prompt": {
+      "base_dir": `${prefix}/user-prompts`,
     },
   };
   await Deno.writeTextFile(userConfigPath, stringifyYaml(customUserConfig));

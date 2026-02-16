@@ -25,8 +25,8 @@ export interface EmptyUserConfig extends BaseUserConfig {
  */
 export interface PromptOnlyUserConfig extends BaseUserConfig {
   readonly kind: "prompt-only";
-  readonly app_prompt: {
-    readonly base_dir: string;
+  readonly "app_prompt": {
+    readonly "base_dir": string;
     readonly [key: string]: unknown;
   };
 }
@@ -36,8 +36,8 @@ export interface PromptOnlyUserConfig extends BaseUserConfig {
  */
 export interface SchemaOnlyUserConfig extends BaseUserConfig {
   readonly kind: "schema-only";
-  readonly app_schema: {
-    readonly base_dir: string;
+  readonly "app_schema": {
+    readonly "base_dir": string;
     readonly [key: string]: unknown;
   };
 }
@@ -47,12 +47,12 @@ export interface SchemaOnlyUserConfig extends BaseUserConfig {
  */
 export interface CompleteUserConfig extends BaseUserConfig {
   readonly kind: "complete";
-  readonly app_prompt: {
-    readonly base_dir: string;
+  readonly "app_prompt": {
+    readonly "base_dir": string;
     readonly [key: string]: unknown;
   };
-  readonly app_schema: {
-    readonly base_dir: string;
+  readonly "app_schema": {
+    readonly "base_dir": string;
     readonly [key: string]: unknown;
   };
 }
@@ -73,14 +73,14 @@ export type UserConfig =
  */
 export interface LegacyUserConfig {
   /** Optional prompt configuration overrides */
-  app_prompt?: {
+  "app_prompt"?: {
     /** Base directory for prompt files */
-    base_dir: string;
+    "base_dir": string;
   };
   /** Optional schema configuration overrides */
-  app_schema?: {
+  "app_schema"?: {
     /** Base directory for schema files */
-    base_dir: string;
+    "base_dir": string;
   };
   /** Additional custom configuration fields */
   [key: string]:

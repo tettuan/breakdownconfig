@@ -1,5 +1,5 @@
 import { Result } from "../types/unified_result.ts";
-import { UnifiedError } from "../errors/unified_errors.ts";
+import type { UnifiedError } from "../errors/unified_errors.ts";
 import type { MergedConfig } from "../types/merged_config.ts";
 
 /**
