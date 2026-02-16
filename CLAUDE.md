@@ -45,3 +45,7 @@ push前に `scripts/local_ci.sh` を通す。main/develop への直接pushは禁
 # コメント
 
 テストが通った時のみコメントを書く。
+
+# コンテキスト管理
+
+複雑なタスクでは必ず team / sub-agent を使い、main の Token をクリーンに保つこと。
