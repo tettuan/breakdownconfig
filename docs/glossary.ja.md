@@ -97,10 +97,13 @@
 
 ### BreakdownLogger
 
-- **定義**: ライブラリ専用のログ出力システム
+- **定義**: ライブラリ専用のログ出力システム (`@tettuan/breakdownlogger@^1.1.2`)
 - **用途**: テストコードのデバッグ、構造化ログの出力
-- **ログレベル**: DEBUG, INFO, WARN, ERROR
-- **制御**: 環境変数 `LOG_LEVEL` で制御可能
+- **ログレベル**: DEBUG (0), INFO (1), WARN (2), ERROR (3)
+- **環境変数**:
+  - `LOG_LEVEL`: 重要度の閾値 (`debug`, `info`, `warn`, `error`)
+  - `LOG_KEY`: ロガーキーでフィルタ (カンマ区切り、例: `dataflow,security`)
+  - `LOG_LENGTH`: 出力長 (`S`=160文字, `L`=300文字, `W`=無制限, デフォルト=80文字)
 
 ### ErrorManager
 

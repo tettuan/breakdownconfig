@@ -249,10 +249,13 @@ let devConfig = new BreakdownConfig("development");
 ## ログ出力の仕様
 
 - エラー管理（ErrorManager）でログ出力を行う
-- ログレベルは以下の通り
-  - DEBUG: デバッグ情報（テスト環境のみ）
-  - INFO: 通常の情報
-  - WARN: 警告情報
-  - ERROR: エラー情報
-- ログ出力は構造化データとして出力される
-- 環境変数 `LOG_LEVEL` でログレベルを制御可能
+- ログレベル（値が大きいほど重要度が高い）:
+  - DEBUG (0): デバッグ情報（テスト環境のみ）
+  - INFO (1): 通常の情報（デフォルト）
+  - WARN (2): 警告情報
+  - ERROR (3): エラー情報（常に表示、stderr出力）
+- ログ出力は構造化データとして出力される（LogEntry: timestamp, key, level, message, data）
+- 環境変数による制御:
+  - `LOG_LEVEL`: 重要度の閾値 (`debug`, `info`, `warn`, `error`)
+  - `LOG_KEY`: ロガーキーでフィルタ (カンマ区切り、例: `dataflow,security`)
+  - `LOG_LENGTH`: 出力長 (`S`=160文字, `L`=300文字, `W`=無制限, デフォルト=80文字)

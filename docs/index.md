@@ -250,10 +250,13 @@ After loading configuration files, validates configuration file values.
 ## Log Output Specifications
 
 - Log output is performed by Error Manager (ErrorManager)
-- Log levels are as follows:
-  - DEBUG: Debug information (test environment only)
-  - INFO: Normal information
-  - WARN: Warning information
-  - ERROR: Error information
-- Log output is output as structured data
-- Log level can be controlled by environment variable `LOG_LEVEL`
+- Log levels (higher value = higher severity):
+  - DEBUG (0): Debug information (test environment only)
+  - INFO (1): Normal information (default)
+  - WARN (2): Warning information
+  - ERROR (3): Error information (always shown, stderr)
+- Log output is output as structured data (LogEntry with timestamp, key, level, message, data)
+- Environment variable controls:
+  - `LOG_LEVEL`: Severity threshold (`debug`, `info`, `warn`, `error`)
+  - `LOG_KEY`: Filter by logger key (comma-separated, e.g. `dataflow,security`)
+  - `LOG_LENGTH`: Output length (`S`=160, `L`=300, `W`=unlimited, default=80)
