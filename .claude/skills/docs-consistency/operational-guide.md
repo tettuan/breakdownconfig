@@ -1,103 +1,47 @@
 # Docs Consistency Operational Guide
 
-## Concrete Example: docs-distribution Feature
+docs-distributionを例に、各フェーズの具体的な出力と手順を示す。
 
-### Phase 1 output — intent memo
+## Phase 1 出力例 — intent memo
 
 ```markdown
 # tmp/docs-review/docs-distribution-intent.md
-
-## What
-JSR-based local installation of versioned documentation.
-
-## Why
-- Offline reference access
-- AI context window inclusion
-- Version-managed docs retrieval
-
-## Design decisions
-- manifest.json manages all doc entries
-- 3 output modes: preserve / flatten / single
-- Version auto-detected from meta.json
-
-## Users need to know
-- Install command and options
-- Filter options (category, lang)
-- Difference between output modes
+What: JSRベースのバージョン管理ドキュメントのローカルインストール
+Why: オフライン参照・AIコンテキスト投入・バージョン管理
+Design decisions: manifest.json管理、3出力モード(preserve/flatten/single)、meta.jsonからバージョン自動検出
+Users need to know: インストールコマンド・オプション、フィルタ(category/lang)、出力モードの違い
 ```
 
-### Phase 2 output — implementation memo
+## Phase 2 出力例 — implementation memo
 
 ```markdown
 # tmp/docs-review/docs-distribution-implementation.md
-
-## Files
-- src/docs/mod.ts, src/docs/cli.ts
-
-## Public API
-- install(options): Promise<Result>
-- list(): Promise<Manifest>
-
-## Flow
-1. Fetch meta.json from JSR → identify latest version
-2. Fetch manifest.json → list doc entries
-3. Download each markdown file → save locally
-
-## Defaults
-- output: "./climpt-docs"
-- mode: "preserve"
-
-## Edge cases
-- Network error: retry with backoff
-- Existing file overwrite: preserve by default
+Files: src/docs/mod.ts, src/docs/cli.ts
+Public API: install(options): Promise<Result>, list(): Promise<Manifest>
+Defaults: output="./climpt-docs", mode="preserve"
+Edge cases: ネットワークエラー→リトライ、既存ファイル→preserve
 ```
 
-## Investigation Commands
+## 調査コマンド
 
 ```bash
-# Phase 1: find design docs
-ls docs/internal/
-
-# Phase 2: find implementation
-grep -r "install\|list" src/docs/ --include="*.ts" -l
-
-# Phase 3: check current docs
-grep -A 20 "Documentation" README.md
-
-# Phase 5: format check
-deno task verify-docs
-deno task generate-docs-manifest  # when files added/removed
+ls docs/internal/                                      # Phase 1: 設計docs
+grep -r "install\|list" src/docs/ --include="*.ts" -l  # Phase 2: 実装
+grep -A 20 "Documentation" README.md                   # Phase 3: 現行docs
+deno task verify-docs                                  # Phase 5: 検証
+deno task generate-docs-manifest                       # ファイル追加・削除時
 ```
 
-## Distribution Scope
+## 配布範囲
 
-| Included (distributed via JSR) | Excluded |
-|-------------------------------|----------|
-| `docs/guides/en/` | `docs/guides/ja/` |
-| `docs/internal/` | `docs/reference/` |
-| Top-level `docs/*.md` | `*.ja.md` files |
+| 配布対象 | 除外 |
+|---------|------|
+| `docs/guides/en/`, `docs/internal/`, top-level `docs/*.md` | `docs/guides/ja/`, `docs/reference/`, `*.ja.md` |
 
-## Memo Lifecycle
+## 言語ルール
 
-| After fix | Action |
-|-----------|--------|
-| Simple fix, low reuse value | Delete `tmp/docs-review/` |
-| Useful background for PR | Quote in PR description |
-| Design decision worth preserving | Promote to `docs/internal/changes/` |
+`*.md` は英語必須（JSR配布対象）、`*.ja.md` は日本語（配布対象外）。日本語のみの `.md` → `.ja.md` にリネーム → 英語版作成 → `deno task generate-docs-manifest`。
 
-## Language Rules
+## メモ後処理
 
-| Pattern | Language | Distribution |
-|---------|---------|-------------|
-| `*.md` | English (required) | Included in JSR |
-| `*.ja.md` | Japanese (optional) | Excluded from JSR |
-
-Translation: keep code, commands, and technical terms verbatim. Translate explanatory text only. Preserve heading structure.
-
-### Fix Japanese-only files
-
-```bash
-mv docs/foo.md docs/foo.ja.md       # 1. rename
-# Create English docs/foo.md         # 2. translate
-deno task generate-docs-manifest     # 3. regenerate
-```
+低価値→削除。PR有用→引用。設計記録→`docs/internal/changes/` に昇格。

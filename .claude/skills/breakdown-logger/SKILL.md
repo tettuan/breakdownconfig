@@ -3,118 +3,75 @@ name: breakdown-logger
 description: Guide for using BreakdownLogger in test code. Use when writing tests, debugging test failures, or when user mentions 'logger', 'BreakdownLogger', 'LOG_LEVEL', 'LOG_KEY', 'LOG_LENGTH'.
 ---
 
-# BreakdownLogger Usage Guide
+テストコードでのみデバッグ出力するため、`@tettuan/breakdownlogger@^1.1.3` の BreakdownLogger を使う。本番コード（`src/`）での使用は禁止。
 
-Package: `@tettuan/breakdownlogger@^1.1.2` (JSR)
-
-## Rules
-
-- BreakdownLogger is for **test files only**. Never use in production/library code (`src/`).
-- Production code is debugged through tests. If debugging production code is needed, add test code.
-
-## API Reference
-
-### Constructor
+## API
 
 ```typescript
 import { BreakdownLogger } from "@tettuan/breakdownlogger";
 const logger = new BreakdownLogger(key?: string);
 ```
 
-- `key`: Optional identifier for filtering logs (e.g. `"dataflow"`, `"security"`)
+| メソッド | 表示条件 |
+|---------|---------|
+| `debug(msg, data?)` | `LOG_LEVEL=debug` |
+| `info(msg, data?)` | デフォルト以上 |
+| `warn(msg, data?)` | `LOG_LEVEL=warn` 以上 |
+| `error(msg, data?)` | 常時（stderr） |
+| `log(level, msg, data?)` | level に従う |
 
-### Methods
-
-| Method | Parameters | Description |
-|--------|-----------|-------------|
-| `debug()` | `message: string, data?: unknown` | Shown when `LOG_LEVEL=debug` |
-| `info()` | `message: string, data?: unknown` | Shown by default (level >= INFO) |
-| `warn()` | `message: string, data?: unknown` | Shown when `LOG_LEVEL=warn` or lower |
-| `error()` | `message: string, data?: unknown` | Always shown, output to stderr |
-
-### LogLevel Enum
-
-| Level | Value | Description |
-|-------|-------|-------------|
-| DEBUG | 0 | Detailed debug information (lowest) |
-| INFO | 1 | General informational (default) |
-| WARN | 2 | Potentially harmful situations |
-| ERROR | 3 | Error messages (highest, always shown) |
-
-### LogEntry Interface
+## 型
 
 ```typescript
-interface LogEntry {
-  message: string;    // Primary log text
-  level: LogLevel;    // Severity indicator
-  key: string;        // Logger identifier for filtering
-  data?: unknown;     // Structured contextual data
-  timestamp: Date;    // ISO 8601 formatted
-}
+import { LogLevel, LogLength, type LogEntry } from "@tettuan/breakdownlogger";
 ```
 
-## Environment Variables
+| 型 | 値 |
+|---|---|
+| `LogLevel` | `DEBUG=0`, `INFO=1`, `WARN=2`, `ERROR=3` |
+| `LogLength` | `DEFAULT`=80, `SHORT`=160, `LONG`=300, `WHOLE`=無制限 |
+| `LogEntry` | `{ timestamp, level, key, message, data? }` |
 
-| Variable | Values | Description |
-|----------|--------|-------------|
-| `LOG_LEVEL` | `debug`, `info`, `warn`, `error` | Severity threshold |
-| `LOG_KEY` | Comma-separated keys | Filter by logger key (e.g. `dataflow,security`) |
-| `LOG_LENGTH` | `S`, `L`, `W` | Output length: S=160, L=300, W=unlimited (default=80) |
+## 環境変数
 
-## Usage Patterns
+| 変数 | 値 | 用途 |
+|------|---|------|
+| `LOG_LEVEL` | `debug`, `info`, `warn`, `error` | 出力閾値 |
+| `LOG_KEY` | カンマ区切り | キーでフィルタ（例: `loader,validator`） |
+| `LOG_LENGTH` | `S`=160, `L`=300, `W`=無制限 | 出力長（デフォルト80） |
 
-### Basic Test Logging
+## LOG_KEY 命名規則
+
+src/ のモジュール境界に対応させ、デバッグ時に問題の層を特定する。
+
+| KEY | 対象モジュール | デバッグ用途 |
+|-----|--------------|------------|
+| `config` | `breakdown_config.ts`, `config_manager.ts` | 設定の生成・マージ・取得の追跡 |
+| `loader` | `loaders/` | ファイル読み込み・パース失敗の特定 |
+| `validator` | `validators/` | バリデーションルール・拒否理由の確認 |
+| `error` | `errors/` | エラー生成・変換・伝播の追跡 |
+| `path` | `utils/path_resolver.ts`, `utils/valid_path.ts` | パス解決・ディレクトリ探索の確認 |
+| `cache` | `utils/config_cache.ts`, `utils/error_cache.ts` | キャッシュのヒット・ミス・無効化 |
+| `setup` | テストのsetup/teardown | テスト環境構築・破棄の確認 |
+
+使い方:
 
 ```typescript
-import { BreakdownLogger } from "@tettuan/breakdownlogger";
-const logger = new BreakdownLogger();
+// テストファイル内で、デバッグ対象の層に応じたkeyを付与する
+const logger = new BreakdownLogger("loader");
+logger.debug("config file loaded", { path, content });
 
-logger.debug("Test started", { testName, context });
-logger.error("Test failed", { error, expectedValue, actualValue });
+const pathLogger = new BreakdownLogger("path");
+pathLogger.debug("resolved working dir", { baseDir, resolved });
 ```
-
-### Purpose-Classified Loggers
-
-```typescript
-const dataflowLogger = new BreakdownLogger("dataflow");
-dataflowLogger.debug("Config loading started", { workingDir });
-
-const securityLogger = new BreakdownLogger("security");
-securityLogger.debug("File permissions checked", { path, mode });
-
-const stepLogger = new BreakdownLogger("stepbystep");
-stepLogger.debug("Phase 1 completed", { phase: "initialization" });
-
-const errorLogger = new BreakdownLogger("error");
-errorLogger.error("Validation failed", { field, expected, actual });
-```
-
-### Execution Commands
 
 ```bash
-# Basic debug output
-LOG_LEVEL=debug deno test --allow-env --allow-write --allow-read
+# 設定読み込み問題を調査
+LOG_LEVEL=debug LOG_KEY="loader" deno test tests/3.integrated/config_loading_integration_test.ts --allow-env --allow-write --allow-read
 
-# Filter by key
-LOG_LEVEL=debug LOG_KEY="dataflow" deno test --allow-env --allow-write --allow-read
+# パス解決とバリデーションを同時に追跡
+LOG_LEVEL=debug LOG_KEY="path,validator" deno test --allow-env --allow-write --allow-read
 
-# Multiple keys
-LOG_LEVEL=debug LOG_KEY="dataflow,security" deno test --allow-env --allow-write --allow-read
-
-# Long output (300 chars)
-LOG_LEVEL=debug LOG_LENGTH=L deno test --allow-env --allow-write --allow-read
-
-# Whole output (unlimited)
+# 全出力（キーフィルタなし、出力長無制限）
 LOG_LEVEL=debug LOG_LENGTH=W deno test --allow-env --allow-write --allow-read
-
-# CI with error key
-DEBUG=true LOG_KEY="error" scripts/local_ci.sh
 ```
-
-### Troubleshooting Formula
-
-1. `scripts/local_ci.sh` (overview)
-2. `DEBUG=true scripts/local_ci.sh` (detailed check)
-3. `LOG_LEVEL=debug deno test {file} --allow-env --allow-write --allow-read` (individual)
-4. `LOG_LEVEL=debug LOG_KEY="{key}" deno test {file} --allow-env --allow-write --allow-read` (filtered)
-5. `LOG_LEVEL=debug LOG_LENGTH=W deno test {file} --allow-env --allow-write --allow-read` (full output)
