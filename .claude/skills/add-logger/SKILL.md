@@ -3,23 +3,17 @@ name: add-logger
 description: Add BreakdownLogger to test code. Use when creating test files, adding debug logging to existing tests, or when user says 'ログ追加', 'logger追加', 'デバッグログ'.
 ---
 
-テストファイルに BreakdownLogger を追加する手順。本番コード（`src/`）での使用は禁止。
+テスト実行の追跡のため、BreakdownLogger をテストファイルに追加する（本番コード禁止）。
 
-## 1. Import
+## Import と生成
 
 ```typescript
 import { BreakdownLogger } from "@tettuan/breakdownlogger";
+import { LogLevel, LogLength, type LogEntry } from "@tettuan/breakdownlogger";
+const logger = new BreakdownLogger("loader"); // KEY=テスト対象モジュール
 ```
 
-## 2. Logger生成（LOG_KEY を付与）
-
-```typescript
-const logger = new BreakdownLogger("loader");
-```
-
-KEY はテスト対象モジュールに対応させる（後述の命名規則を参照）。
-
-## 3. API
+## API
 
 | メソッド | 表示条件 |
 |---------|---------|
@@ -28,11 +22,7 @@ KEY はテスト対象モジュールに対応させる（後述の命名規則�
 | `warn(msg, data?)` | `LOG_LEVEL=warn` 以上 |
 | `error(msg, data?)` | 常時（stderr） |
 
-## 4. 型
-
-```typescript
-import { LogLevel, LogLength, type LogEntry } from "@tettuan/breakdownlogger";
-```
+## 型
 
 | 型 | 値 |
 |---|---|
@@ -40,9 +30,9 @@ import { LogLevel, LogLength, type LogEntry } from "@tettuan/breakdownlogger";
 | `LogLength` | `DEFAULT`=80, `SHORT`=160, `LONG`=300, `WHOLE`=無制限 |
 | `LogEntry` | `{ timestamp, level, key, message, data? }` |
 
-## 5. LOG_KEY 命名規則
+## LOG_KEY 命名規則
 
-src/ のモジュール境界に1対1で対応させる。テスト対象の層を KEY で特定できるようにする。
+問題の層を特定するため、src/ モジュール境界に1対1で KEY を対応させる。
 
 | KEY | src/ モジュール | デバッグ対象 |
 |-----|---------------|------------|
@@ -55,32 +45,19 @@ src/ のモジュール境界に1対1で対応させる。テスト対象の層�
 | `cache` | `utils/config_cache.ts`, `utils/error_cache.ts` | キャッシュ: ヒット/ミス・TTL・無効化 |
 | `setup` | テストのsetup/teardown | テスト環境: フィクスチャ・一時ディレクトリ |
 
-**config vs manager の使い分け**: `BreakdownConfig` クラスのテストには `config`、`ConfigManager` のテストには `manager` を使う。問題が公開APIにあるか内部制御にあるかを切り分けるため。
+`config` は BreakdownConfig クラス、`manager` は ConfigManager に使い、公開APIか内部制御かを切り分ける。
 
-## 6. 実装パターン
+## 実装パターン
+
+関数呼び出し前に入力値、呼び出し後に期待値と実際の値をログし、失敗原因を特定する。
 
 ```typescript
-import { describe, it, beforeEach, afterEach } from "@std/testing/bdd";
-import { assertEquals } from "@std/assert";
-import { BreakdownLogger } from "@tettuan/breakdownlogger";
+const logger = new BreakdownLogger("manager");
 
-describe("ConfigManager merge", () => {
-  const logger = new BreakdownLogger("manager");
-
-  it("should merge user config over app defaults", () => {
-    const appConfig = { key: "app_value" };
-    const userConfig = { key: "user_value" };
-    logger.debug("merge inputs", { appConfig, userConfig });
-
-    const result = mergeConfigs(appConfig, userConfig);
-    logger.debug("merge result", { expected: "user_value", actual: result.key });
-
-    assertEquals(result.key, "user_value");
-  });
+it("should merge user config over app defaults", () => {
+  logger.debug("merge inputs", { appConfig, userConfig });
+  const result = mergeConfigs(appConfig, userConfig);
+  logger.debug("merge result", { expected: "user_value", actual: result.key });
+  assertEquals(result.key, "user_value");
 });
 ```
-
-要点:
-- 関数呼び出し前に入力値をログ
-- 関数呼び出し後に期待値と実際の値の両方をログ
-- 失敗時の原因特定を容易にする
