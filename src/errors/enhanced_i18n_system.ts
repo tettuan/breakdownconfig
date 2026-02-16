@@ -7,7 +7,7 @@
  */
 
 import { ErrorCodeRegistry, StandardErrorCode } from "./standardized_error_codes.ts";
-import {
+import type {
   BaseErrorInterface,
   ErrorCategory as _ErrorCategory,
   ErrorSeverity as _ErrorSeverity,

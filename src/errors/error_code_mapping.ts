@@ -4,7 +4,7 @@
  */
 
 import { ErrorCode } from "../error_manager.ts";
-import { ErrorFactories, UnifiedError } from "./unified_errors.ts";
+import { ErrorFactories, type UnifiedError } from "./unified_errors.ts";
 
 /**
  * Maps legacy ErrorCode values to appropriate UnifiedError factory functions

@@ -8,7 +8,7 @@
  * 4. 型安全なメッセージ定義
  */
 
-import { ErrorCode } from "../error_manager.ts";
+import type { ErrorCode } from "../error_manager.ts";
 
 // サポート言語
 export type SupportedLanguage = "en" | "ja";

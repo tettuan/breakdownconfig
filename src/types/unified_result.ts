@@ -3,7 +3,7 @@
  * This replaces ConfigResult to provide a single Result type for the entire application
  */
 
-import { UnifiedError } from "../errors/unified_errors.ts";
+import type { UnifiedError } from "../errors/unified_errors.ts";
 
 /**
  * Success case of Result type
@@ -253,30 +253,32 @@ export const Result: {
   /**
    * Converts a Promise to a Result, catching thrown errors
    */
-  async fromPromise<T>(
-    promise: Promise<T>,
-    errorMapper?: (error: unknown) => UnifiedError,
-  ): Promise<Result<T, UnifiedError>> {
-    try {
-      const value = await promise;
-      return Result.ok(value);
-    } catch (error) {
-      if (errorMapper) {
-        return Result.err(errorMapper(error));
-      }
-      // Default error mapping
-      const errorMessage = error && typeof error === "object" && "message" in error
-        ? String(error.message)
-        : String(error);
-      return Result.err({
-        kind: "UNKNOWN_ERROR",
-        originalError: error,
-        message: errorMessage,
-        timestamp: new Date(),
-        stackTrace: error && typeof error === "object" && "stack" in error
-          ? String(error.stack)
-          : undefined,
-      } as UnifiedError);
-    }
-  },
+  fromPromise: fromPromiseImpl,
 };
+
+async function fromPromiseImpl<T>(
+  promise: Promise<T>,
+  errorMapper?: (error: unknown) => UnifiedError,
+): Promise<Result<T, UnifiedError>> {
+  try {
+    const value = await promise;
+    return Result.ok(value);
+  } catch (error) {
+    if (errorMapper) {
+      return Result.err(errorMapper(error));
+    }
+    // Default error mapping
+    const errorMessage = error && typeof error === "object" && "message" in error
+      ? String(error.message)
+      : String(error);
+    return Result.err({
+      kind: "UNKNOWN_ERROR",
+      originalError: error,
+      message: errorMessage,
+      timestamp: new Date(),
+      stackTrace: error && typeof error === "object" && "stack" in error
+        ? String(error.stack)
+        : undefined,
+    } as UnifiedError);
+  }
+}

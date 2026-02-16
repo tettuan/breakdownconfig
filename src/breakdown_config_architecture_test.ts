@@ -3,10 +3,15 @@
  * Level 0: Verifies architectural constraints and Total Function design patterns
  */
 
-import { assertEquals, assertExists, assertThrows as _assertThrows } from "@std/assert";
+import {
+  assert,
+  assertEquals,
+  assertExists,
+  type assertThrows as _assertThrows,
+} from "@std/assert";
 // import { BreakdownLogger } from "https://jsr.io/@tettuan/breakdownlogger";
 import { BreakdownConfig } from "./breakdown_config.ts";
-import { Result as _Result } from "./types/unified_result.ts";
+import type { Result as _Result } from "./types/unified_result.ts";
 
 // const logger = new BreakdownLogger("architecture");
 
@@ -21,7 +26,7 @@ Deno.test("Architecture: BreakdownConfig Smart Constructor Pattern", async (t) =
     // Note: TypeScript enforces private constructor at compile time
     // We verify the class can only be instantiated through create()
     const hasCreateMethod = typeof BreakdownConfig.create === "function";
-    assertEquals(hasCreateMethod, true, "Should only be created via create() method");
+    assert(hasCreateMethod, "Should only be created via create() method");
   });
 
   await t.step("Static create method should exist and return Result", () => {
@@ -36,7 +41,7 @@ Deno.test("Architecture: BreakdownConfig Smart Constructor Pattern", async (t) =
 
     // Should have success property (Result type signature)
     const hasSuccessProperty = "success" in result;
-    assertEquals(hasSuccessProperty, true, "Result should have success property");
+    assert(hasSuccessProperty, "Result should have success property");
 
     // logger.debug("Smart Constructor verification complete", {
     //   hasCreateMethod: true,
@@ -49,11 +54,11 @@ Deno.test("Architecture: BreakdownConfig Smart Constructor Pattern", async (t) =
 
     // Valid inputs should succeed
     const validResult = BreakdownConfig.create("production", "/valid/path");
-    assertEquals(validResult.success, true, "Valid inputs should succeed");
+    assert(validResult.success, "Valid inputs should succeed");
 
     // Invalid profile name should fail
     const invalidResult = BreakdownConfig.create("invalid@profile!", "/valid/path");
-    assertEquals(invalidResult.success, false, "Invalid profile should fail");
+    assert(!invalidResult.success, "Invalid profile should fail");
 
     if (!invalidResult.success) {
       assertExists(invalidResult.error, "Error should be provided for invalid input");
@@ -77,15 +82,15 @@ Deno.test("Architecture: BreakdownConfig Result Type Consistency", async (t) => 
 
     // Test loadConfigSafe returns Result
     const loadResult = await config.loadConfigSafe();
-    assertEquals("success" in loadResult, true, "loadConfigSafe should return Result");
+    assert("success" in loadResult, "loadConfigSafe should return Result");
 
     // Test getConfigSafe returns Result
     const getResult = await config.getConfigSafe();
-    assertEquals("success" in getResult, true, "getConfigSafe should return Result");
+    assert("success" in getResult, "getConfigSafe should return Result");
 
     // Test getWorkingDirSafe returns Result
     const workingDirResult = await config.getWorkingDirSafe();
-    assertEquals("success" in workingDirResult, true, "getWorkingDirSafe should return Result");
+    assert("success" in workingDirResult, "getWorkingDirSafe should return Result");
 
     // logger.debug("All Safe methods verified to return Result types");
   });
@@ -132,7 +137,7 @@ Deno.test("Architecture: BreakdownConfig Exception-Free Design", async (t) => {
         const result = BreakdownConfig.create(profile as string, baseDir as string);
         // Should always return a Result, never throw
         assertExists(result, `Should return Result for inputs: ${profile}, ${baseDir}`);
-        assertEquals("success" in result, true, "Should always return Result type");
+        assert("success" in result, "Should always return Result type");
       } catch (error) {
         throw new Error(
           `create() threw exception for inputs ${profile}, ${baseDir}: ${
@@ -182,7 +187,7 @@ Deno.test("Architecture: BreakdownConfig Total Function Compliance", async (t) =
     // logger.debug("Verifying total function behavior");
 
     const configResult = BreakdownConfig.create("test");
-    assertEquals(configResult.success, true, "Valid create should succeed");
+    assert(configResult.success, "Valid create should succeed");
 
     if (!configResult.success) {
       throw new Error("Test setup failed");

@@ -1,11 +1,11 @@
-import { AppConfigLoader } from "./loaders/app_config_loader.ts";
-import { UserConfigLoader } from "./loaders/user_config_loader.ts";
+import type { AppConfigLoader } from "./loaders/app_config_loader.ts";
+import type { UserConfigLoader } from "./loaders/user_config_loader.ts";
 import type { AppConfig } from "./types/app_config.ts";
 import type { LegacyUserConfig, UserConfig } from "./types/user_config.ts";
 import { UserConfigFactory, UserConfigGuards } from "./types/user_config.ts";
 import type { MergedConfig } from "./types/merged_config.ts";
 import { Result } from "./types/unified_result.ts";
-import { ErrorFactories, UnifiedError } from "./errors/unified_errors.ts";
+import { ErrorFactories, type UnifiedError } from "./errors/unified_errors.ts";
 import type { ValidationError } from "./types/config_result.ts";
 
 /**
@@ -363,16 +363,16 @@ export class ConfigManager {
 
       // Start with complete app config as base - ensuring ALL fields are preserved
       const mergedConfig: MergedConfig = {
-        working_dir: String(appConfigCopy.working_dir || ""),
-        app_prompt: {
-          base_dir: this.safeGetBaseDir(appConfigCopy.app_prompt),
+        "working_dir": String(appConfigCopy.working_dir || ""),
+        "app_prompt": {
+          "base_dir": this.safeGetBaseDir(appConfigCopy.app_prompt),
           // Deep clone additional app_prompt fields to prevent reference issues
           ...this.deepCloneNestedFields(appConfigCopy.app_prompt as Record<string, unknown>, [
             "base_dir",
           ]),
         },
-        app_schema: {
-          base_dir: this.safeGetBaseDir(appConfigCopy.app_schema),
+        "app_schema": {
+          "base_dir": this.safeGetBaseDir(appConfigCopy.app_schema),
           // Deep clone additional app_schema fields to prevent reference issues
           ...this.deepCloneNestedFields(appConfigCopy.app_schema as Record<string, unknown>, [
             "base_dir",
@@ -405,7 +405,7 @@ export class ConfigManager {
    */
   private safeGetBaseDir(configObj: unknown): string {
     // Handle null or undefined
-    if (configObj == null) {
+    if (configObj === null || configObj === undefined) {
       return "";
     }
 

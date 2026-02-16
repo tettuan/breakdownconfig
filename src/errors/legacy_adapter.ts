@@ -5,8 +5,11 @@
  * while maintaining backward compatibility during the transition period.
  */
 
-import { ConfigError, PathErrorReason as LegacyPathErrorReason } from "../types/config_result.ts";
-import { ErrorFactories, PathErrorReason, UnifiedError } from "./unified_errors.ts";
+import type {
+  ConfigError,
+  PathErrorReason as LegacyPathErrorReason,
+} from "../types/config_result.ts";
+import { ErrorFactories, type PathErrorReason, type UnifiedError } from "./unified_errors.ts";
 
 /**
  * Maps legacy PathErrorReason to new PathErrorReason
