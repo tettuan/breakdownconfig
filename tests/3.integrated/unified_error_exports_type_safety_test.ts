@@ -6,6 +6,7 @@
  */
 
 import {
+  assert,
   assertEquals,
   assertExists,
   assertInstanceOf,
@@ -36,7 +37,7 @@ describe("Unified Error Final Exports Type Safety Tests", () => {
           throw testCase.input;
         }, `Testing ${testCase.description}`);
 
-        assertEquals(result.success, false);
+        assert(!result.success);
         if (!result.success) {
           assertExists(result.error);
           if (result.error instanceof Error) {
@@ -61,7 +62,7 @@ describe("Unified Error Final Exports Type Safety Tests", () => {
         "Async operation test",
       );
 
-      assertEquals(result.success, false);
+      assert(!result.success);
       if (!result.success) {
         assertExists(result.error);
         if (result.error instanceof Error) {
@@ -88,7 +89,7 @@ describe("Unified Error Final Exports Type Safety Tests", () => {
 
       // Test successful operation
       const result1 = safeDivide(10, 2);
-      assertEquals(result1.success, true);
+      assert(result1.success);
       if (result1.success) {
         assertEquals(result1.data, 5);
         assertEquals(typeof result1.data, "number");
@@ -96,7 +97,7 @@ describe("Unified Error Final Exports Type Safety Tests", () => {
 
       // Test error case
       const result2 = safeDivide(10, 0);
-      assertEquals(result2.success, false);
+      assert(!result2.success);
       if (!result2.success) {
         assertExists(result2.error);
         if (result2.error instanceof Error) {
@@ -121,7 +122,7 @@ describe("Unified Error Final Exports Type Safety Tests", () => {
 
       // Test successful operation
       const result1 = await safeAsyncDivide(20, 4);
-      assertEquals(result1.success, true);
+      assert(result1.success);
       if (result1.success) {
         assertEquals(result1.data, 5);
         assertEquals(typeof result1.data, "number");
@@ -129,7 +130,7 @@ describe("Unified Error Final Exports Type Safety Tests", () => {
 
       // Test error case
       const result2 = await safeAsyncDivide(20, 0);
-      assertEquals(result2.success, false);
+      assert(!result2.success);
       if (!result2.success) {
         assertExists(result2.error);
         if (result2.error instanceof Error) {
@@ -208,8 +209,8 @@ describe("Unified Error Final Exports Type Safety Tests", () => {
       for (const operation of operations) {
         const result = operation();
         assertExists(result);
-        assertEquals(result !== null, true);
-        assertEquals(result !== undefined, true);
+        assert(result !== null);
+        assert(result !== undefined);
         assertExists(result.kind);
         assertExists(result.message);
       }
@@ -230,7 +231,7 @@ describe("Unified Error Final Exports Type Safety Tests", () => {
         }, `Testing ${testCase.description}`);
 
         // Should always return a proper error result
-        assertEquals(result.success, false);
+        assert(!result.success);
         if (!result.success) {
           assertExists(result.error);
           assertExists(result.error.message);
@@ -266,7 +267,7 @@ describe("Unified Error Final Exports Type Safety Tests", () => {
 
       // Test error case
       const result2 = safeGetUser(-1);
-      assertEquals(result2.success, false);
+      assert(!result2.success);
     });
   });
 
@@ -285,7 +286,7 @@ describe("Unified Error Final Exports Type Safety Tests", () => {
           throw error;
         }, "Type guard test");
 
-        assertEquals(result.success, false);
+        assert(!result.success);
         if (!result.success) {
           assertExists(result.error);
           // Should have properly typed error without any casts

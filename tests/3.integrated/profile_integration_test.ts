@@ -16,17 +16,22 @@
  * 5. Integration with configuration loading
  */
 
-import { assertEquals, assertExists, assertRejects as _assertRejects } from "@std/assert";
+import {
+  assert,
+  assertEquals,
+  assertExists,
+  type assertRejects as _assertRejects,
+} from "@std/assert";
 import { describe, it } from "@std/testing/bdd";
 import { BreakdownConfig } from "../../mod.ts";
 import {
   type AppConfig,
-  AppOnlyProfile as _AppOnlyProfile,
-  ConfigProfile as _ConfigProfile,
+  type AppOnlyProfile as _AppOnlyProfile,
+  type ConfigProfile as _ConfigProfile,
   ConfigProfileFactory,
   ConfigProfileGuards,
   ConfigProfileHelpers,
-  MergedProfile as _MergedProfile,
+  type MergedProfile as _MergedProfile,
   type UserConfig as _UserConfig,
 } from "../../src/types/merged_config.ts";
 import { UserConfigFactory } from "../../src/types/user_config.ts";
@@ -58,16 +63,17 @@ describe("Profile Integration Tests", () => {
 
         // When no user config exists, should be app-only
         const mockAppConfig: AppConfig = {
-          working_dir: "./workspace",
-          app_prompt: { base_dir: "./prompts" },
-          app_schema: { base_dir: "./schema" },
+          "working_dir": "./workspace",
+          "app_prompt": { "base_dir": "./prompts" },
+          "app_schema": { "base_dir": "./schema" },
         };
 
+        const HAS_USER_CONFIG = true;
         const profileResult = ConfigProfileFactory.createAppOnly(
           mockAppConfig,
           undefined,
           `${tempDir}/.agent/climpt/config/app.yml`,
-          true,
+          HAS_USER_CONFIG,
         );
 
         assertResultSuccess(profileResult);
@@ -76,9 +82,9 @@ describe("Profile Integration Tests", () => {
 
         // Verify discriminated union
         assertEquals(profile.kind, "app-only");
-        assertEquals(ConfigProfileGuards.isAppOnly(profile), true);
-        assertEquals(ConfigProfileGuards.isMerged(profile), false);
-        assertEquals(profile.source.userConfigExists, false);
+        assert(ConfigProfileGuards.isAppOnly(profile));
+        assert(!ConfigProfileGuards.isMerged(profile));
+        assert(!profile.source.userConfigExists);
       } finally {
         await cleanupTestConfigs(tempDir);
       }
@@ -88,9 +94,9 @@ describe("Profile Integration Tests", () => {
       const tempDir = await setupValidConfig();
       try {
         const mockAppConfig: AppConfig = {
-          working_dir: "./workspace",
-          app_prompt: { base_dir: "./prompts/app" },
-          app_schema: { base_dir: "./schema/app" },
+          "working_dir": "./workspace",
+          "app_prompt": { "base_dir": "./prompts/app" },
+          "app_schema": { "base_dir": "./schema/app" },
         };
 
         const userConfig = UserConfigFactory.createComplete(
@@ -112,9 +118,9 @@ describe("Profile Integration Tests", () => {
 
         // Verify discriminated union
         assertEquals(profile.kind, "merged");
-        assertEquals(ConfigProfileGuards.isMerged(profile), true);
-        assertEquals(ConfigProfileGuards.isAppOnly(profile), false);
-        assertEquals(profile.source.userConfigExists, true);
+        assert(ConfigProfileGuards.isMerged(profile));
+        assert(!ConfigProfileGuards.isAppOnly(profile));
+        assert(profile.source.userConfigExists);
       } finally {
         await cleanupTestConfigs(tempDir);
       }
@@ -124,17 +130,18 @@ describe("Profile Integration Tests", () => {
       const tempDir = await setupValidConfig();
       try {
         const mockAppConfig: AppConfig = {
-          working_dir: "./workspace",
-          app_prompt: { base_dir: "./prompts" },
-          app_schema: { base_dir: "./schema" },
+          "working_dir": "./workspace",
+          "app_prompt": { "base_dir": "./prompts" },
+          "app_schema": { "base_dir": "./schema" },
         };
 
         // Start with app-only
+        const HAS_USER_CONFIG = false;
         const appOnlyResult = ConfigProfileFactory.createAppOnly(
           mockAppConfig,
           "development",
           `${tempDir}/app.yml`,
-          false,
+          HAS_USER_CONFIG,
         );
 
         assertResultSuccess(appOnlyResult);
@@ -168,9 +175,9 @@ describe("Profile Integration Tests", () => {
   describe("Profile Name Validation", () => {
     it("should accept valid profile names", () => {
       const mockAppConfig: AppConfig = {
-        working_dir: "./workspace",
-        app_prompt: { base_dir: "./prompts" },
-        app_schema: { base_dir: "./schema" },
+        "working_dir": "./workspace",
+        "app_prompt": { "base_dir": "./prompts" },
+        "app_schema": { "base_dir": "./schema" },
       };
 
       const validNames = [
@@ -184,11 +191,12 @@ describe("Profile Integration Tests", () => {
       ];
 
       for (const name of validNames) {
+        const HAS_USER_CONFIG = false;
         const result = ConfigProfileFactory.createAppOnly(
           mockAppConfig,
           name,
           "/test/app.yml",
-          false,
+          HAS_USER_CONFIG,
         );
 
         assertResultSuccess(result);
@@ -199,40 +207,42 @@ describe("Profile Integration Tests", () => {
 
     it("should handle default profile (undefined name)", () => {
       const mockAppConfig: AppConfig = {
-        working_dir: "./workspace",
-        app_prompt: { base_dir: "./prompts" },
-        app_schema: { base_dir: "./schema" },
+        "working_dir": "./workspace",
+        "app_prompt": { "base_dir": "./prompts" },
+        "app_schema": { "base_dir": "./schema" },
       };
 
+      const HAS_USER_CONFIG = false;
       const result = ConfigProfileFactory.createAppOnly(
         mockAppConfig,
         undefined,
         "/test/app.yml",
-        false,
+        HAS_USER_CONFIG,
       );
 
       assertResultSuccess(result);
       if (!result.success) throw new Error("Profile creation should have succeeded");
       assertEquals(result.data.profileName, undefined);
-      assertEquals(ConfigProfileGuards.isDefaultProfile(result.data), true);
+      assert(ConfigProfileGuards.isDefaultProfile(result.data));
       assertEquals(ConfigProfileHelpers.getProfileDisplayName(result.data), "default");
     });
 
     it("should maintain profile name consistency", () => {
       const mockAppConfig: AppConfig = {
-        working_dir: "./workspace",
-        app_prompt: { base_dir: "./prompts" },
-        app_schema: { base_dir: "./schema" },
+        "working_dir": "./workspace",
+        "app_prompt": { "base_dir": "./prompts" },
+        "app_schema": { "base_dir": "./schema" },
       };
 
       const profileName = "test_profile";
 
       // Create app-only profile
+      const HAS_USER_CONFIG = false;
       const appOnlyResult = ConfigProfileFactory.createAppOnly(
         mockAppConfig,
         profileName,
         "/test/app.yml",
-        false,
+        HAS_USER_CONFIG,
       );
 
       // Create merged profile with same name
@@ -255,24 +265,25 @@ describe("Profile Integration Tests", () => {
 
       assertEquals(appOnlyResult.data.profileName, profileName);
       assertEquals(mergedResult.data.profileName, profileName);
-      assertEquals(ConfigProfileGuards.isNamedProfile(appOnlyResult.data), true);
-      assertEquals(ConfigProfileGuards.isNamedProfile(mergedResult.data), true);
+      assert(ConfigProfileGuards.isNamedProfile(appOnlyResult.data));
+      assert(ConfigProfileGuards.isNamedProfile(mergedResult.data));
     });
   });
 
   describe("App-Only and Merged State Verification", () => {
     it("should correctly handle app-only state", () => {
       const mockAppConfig: AppConfig = {
-        working_dir: "./workspace",
-        app_prompt: { base_dir: "./prompts/app" },
-        app_schema: { base_dir: "./schema/app" },
+        "working_dir": "./workspace",
+        "app_prompt": { "base_dir": "./prompts/app" },
+        "app_schema": { "base_dir": "./schema/app" },
       };
 
+      const HAS_USER_CONFIG = true;
       const result = ConfigProfileFactory.createAppOnly(
         mockAppConfig,
         "app_only_test",
         "/config/app.yml",
-        true,
+        HAS_USER_CONFIG,
       );
 
       assertResultSuccess(result);
@@ -281,8 +292,8 @@ describe("Profile Integration Tests", () => {
 
       // Verify app-only specific properties
       assertEquals(profile.kind, "app-only");
-      assertEquals(profile.source.userConfigAttempted, true);
-      assertEquals(profile.source.userConfigExists, false);
+      assert(profile.source.userConfigAttempted);
+      assert(!profile.source.userConfigExists);
       assertEquals(profile.config.working_dir, "./workspace");
       assertEquals(profile.config.app_prompt.base_dir, "./prompts/app");
       assertEquals(profile.config.app_schema.base_dir, "./schema/app");
@@ -291,14 +302,14 @@ describe("Profile Integration Tests", () => {
       assertEquals(ConfigProfileHelpers.getWorkingDir(profile), "./workspace");
       assertEquals(ConfigProfileHelpers.getPromptBaseDir(profile), "./prompts/app");
       assertEquals(ConfigProfileHelpers.getSchemaBaseDir(profile), "./schema/app");
-      assertEquals(ConfigProfileHelpers.hasUserCustomization(profile), false);
+      assert(!ConfigProfileHelpers.hasUserCustomization(profile));
     });
 
     it("should correctly handle merged state with user overrides", () => {
       const mockAppConfig: AppConfig = {
-        working_dir: "./workspace",
-        app_prompt: { base_dir: "./prompts/app" },
-        app_schema: { base_dir: "./schema/app" },
+        "working_dir": "./workspace",
+        "app_prompt": { "base_dir": "./prompts/app" },
+        "app_schema": { "base_dir": "./schema/app" },
       };
 
       // User config with overrides
@@ -321,7 +332,7 @@ describe("Profile Integration Tests", () => {
 
       // Verify merged specific properties
       assertEquals(profile.kind, "merged");
-      assertEquals(profile.source.userConfigExists, true);
+      assert(profile.source.userConfigExists);
       assertEquals(profile.source.userConfigPath, "/config/user.yml");
 
       // Working dir should not be overridden
@@ -334,15 +345,15 @@ describe("Profile Integration Tests", () => {
       // Helper functions should reflect overrides
       assertEquals(ConfigProfileHelpers.getPromptBaseDir(profile), "./prompts/user");
       assertEquals(ConfigProfileHelpers.getSchemaBaseDir(profile), "./schema/user");
-      assertEquals(ConfigProfileHelpers.hasUserCustomization(profile), true);
+      assert(ConfigProfileHelpers.hasUserCustomization(profile));
       assertEquals(ConfigProfileHelpers.getUserConfigPath(profile), "/config/user.yml");
     });
 
     it("should handle partial user configs in merged state", () => {
       const mockAppConfig: AppConfig = {
-        working_dir: "./workspace",
-        app_prompt: { base_dir: "./prompts/app" },
-        app_schema: { base_dir: "./schema/app" },
+        "working_dir": "./workspace",
+        "app_prompt": { "base_dir": "./prompts/app" },
+        "app_schema": { "base_dir": "./schema/app" },
       };
 
       // Test with prompt-only user config
@@ -453,16 +464,17 @@ describe("Profile Integration Tests", () => {
 
     it("should validate configuration constraints", () => {
       const invalidAppConfig: AppConfig = {
-        working_dir: "", // Invalid empty string
-        app_prompt: { base_dir: "./prompts" },
-        app_schema: { base_dir: "./schema" },
+        "working_dir": "", // Invalid empty string
+        "app_prompt": { "base_dir": "./prompts" },
+        "app_schema": { "base_dir": "./schema" },
       };
 
+      const HAS_USER_CONFIG = false;
       const result = ConfigProfileFactory.createAppOnly(
         invalidAppConfig,
         "invalid_test",
         "/config/app.yml",
-        false,
+        HAS_USER_CONFIG,
       );
 
       assertResultError(result);
@@ -473,15 +485,16 @@ describe("Profile Integration Tests", () => {
   describe("Error Handling and Edge Cases", () => {
     it("should handle missing required fields", () => {
       const incompleteAppConfig = {
-        working_dir: "./workspace",
+        "working_dir": "./workspace",
         // Missing app_prompt and app_schema
       } as AppConfig;
 
+      const HAS_USER_CONFIG = false;
       const result = ConfigProfileFactory.createAppOnly(
         incompleteAppConfig,
         "incomplete",
         "/config/app.yml",
-        false,
+        HAS_USER_CONFIG,
       );
 
       assertResultError(result);
@@ -490,9 +503,9 @@ describe("Profile Integration Tests", () => {
 
     it("should handle empty user config gracefully", () => {
       const mockAppConfig: AppConfig = {
-        working_dir: "./workspace",
-        app_prompt: { base_dir: "./prompts/app" },
-        app_schema: { base_dir: "./schema/app" },
+        "working_dir": "./workspace",
+        "app_prompt": { "base_dir": "./prompts/app" },
+        "app_schema": { "base_dir": "./schema/app" },
       };
 
       const emptyUser = UserConfigFactory.createEmpty();
@@ -515,16 +528,17 @@ describe("Profile Integration Tests", () => {
 
     it("should maintain immutability of profiles", () => {
       const mockAppConfig: AppConfig = {
-        working_dir: "./workspace",
-        app_prompt: { base_dir: "./prompts" },
-        app_schema: { base_dir: "./schema" },
+        "working_dir": "./workspace",
+        "app_prompt": { "base_dir": "./prompts" },
+        "app_schema": { "base_dir": "./schema" },
       };
 
+      const HAS_USER_CONFIG = false;
       const result = ConfigProfileFactory.createAppOnly(
         mockAppConfig,
         "immutable_test",
         "/config/app.yml",
-        false,
+        HAS_USER_CONFIG,
       );
 
       assertResultSuccess(result);
