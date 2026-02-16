@@ -1,6 +1,7 @@
 # examples/ ≠ tests/
 
 **例実装ルール**: ユーザー実体験を再現。テスト混合禁止。
+team の sub agent で実行
 
 ## 目的
 
