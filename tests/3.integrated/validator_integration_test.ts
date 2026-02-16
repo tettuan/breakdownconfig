@@ -13,7 +13,7 @@
  * return proper Result types without throwing exceptions
  */
 
-import { assertEquals, assertExists } from "@std/assert";
+import { assert, assertEquals, assertExists } from "@std/assert";
 import { describe, it } from "@std/testing/bdd";
 import { ConfigValidator } from "../../src/validators/config_validator.ts";
 import { Result } from "../../src/types/config_result.ts";
@@ -25,18 +25,18 @@ describe("ConfigValidator Integration Tests", () => {
   describe("validateAppConfig - Core Validation", () => {
     it("should successfully validate a complete and valid AppConfig", () => {
       const validConfig: AppConfig = {
-        working_dir: "./.agent/climpt",
-        app_prompt: {
-          base_dir: "./.agent/climpt/prompts/app",
+        "working_dir": "./.agent/climpt",
+        "app_prompt": {
+          "base_dir": "./.agent/climpt/prompts/app",
         },
-        app_schema: {
-          base_dir: "./.agent/climpt/schema/app",
+        "app_schema": {
+          "base_dir": "./.agent/climpt/schema/app",
         },
       };
 
       const result = ConfigValidator.validateAppConfig(validConfig);
 
-      assertEquals(result.success, true);
+      assert(result.success);
       if (result.success) {
         assertEquals(result.data.working_dir, validConfig.working_dir);
         assertEquals(result.data.app_prompt.base_dir, validConfig.app_prompt.base_dir);
@@ -57,15 +57,15 @@ describe("ConfigValidator Integration Tests", () => {
       for (const invalidConfig of invalidConfigs) {
         const result = ConfigValidator.validateAppConfig(invalidConfig);
 
-        assertEquals(result.success, false);
+        assert(!result.success);
         if (!result.success) {
-          assertEquals(result.error.length > 0, true);
+          assert(result.error.length > 0);
           // First error should be either "root" or a required field error
           const hasRootError = result.error.some((e) => e.field === "root");
           const hasRequiredFieldError = result.error.some((e) =>
             ["working_dir", "app_prompt", "app_schema"].includes(e.field)
           );
-          assertEquals(hasRootError || hasRequiredFieldError, true);
+          assert(hasRootError || hasRequiredFieldError);
 
           if (hasRootError) {
             const rootError = result.error.find((e) => e.field === "root");
@@ -79,20 +79,20 @@ describe("ConfigValidator Integration Tests", () => {
     it("should fail validation when required fields are missing", () => {
       const result = ConfigValidator.validateAppConfig({});
 
-      assertEquals(result.success, false);
+      assert(!result.success);
       if (!result.success) {
         assertEquals(result.error.length, 3);
 
         const fieldErrors = result.error.map((e) => e.field);
-        assertEquals(fieldErrors.includes("working_dir"), true);
-        assertEquals(fieldErrors.includes("app_prompt"), true);
-        assertEquals(fieldErrors.includes("app_schema"), true);
+        assert(fieldErrors.includes("working_dir"));
+        assert(fieldErrors.includes("app_prompt"));
+        assert(fieldErrors.includes("app_schema"));
 
         for (const error of result.error) {
           if (error instanceof Error) {
-            assertEquals(error.message?.includes("required"), true);
+            assert(error.message?.includes("required"));
           } else {
-            assertEquals(error.message?.includes("required"), true);
+            assert(error.message?.includes("required"));
           }
         }
       }
@@ -100,14 +100,14 @@ describe("ConfigValidator Integration Tests", () => {
 
     it("should fail validation when fields have incorrect types", () => {
       const invalidConfig = {
-        working_dir: 123,
-        app_prompt: "not an object",
-        app_schema: null,
+        "working_dir": 123,
+        "app_prompt": "not an object",
+        "app_schema": null,
       };
 
       const result = ConfigValidator.validateAppConfig(invalidConfig);
 
-      assertEquals(result.success, false);
+      assert(!result.success);
       if (!result.success) {
         assertEquals(result.error.length, 3);
 
@@ -127,18 +127,18 @@ describe("ConfigValidator Integration Tests", () => {
 
     it("should fail validation when nested fields are invalid", () => {
       const invalidConfig = {
-        working_dir: "./.agent/climpt",
-        app_prompt: {
-          base_dir: 123, // Invalid: should be string
+        "working_dir": "./.agent/climpt",
+        "app_prompt": {
+          "base_dir": 123, // Invalid: should be string
         },
-        app_schema: {
+        "app_schema": {
           // Missing base_dir
         },
       };
 
       const result = ConfigValidator.validateAppConfig(invalidConfig);
 
-      assertEquals(result.success, false);
+      assert(!result.success);
       if (!result.success) {
         assertEquals(result.error.length, 2);
 
@@ -156,18 +156,18 @@ describe("ConfigValidator Integration Tests", () => {
   describe("validateAppConfig - Path Validation", () => {
     it("should fail validation when paths are empty", () => {
       const invalidConfig: AppConfig = {
-        working_dir: "",
-        app_prompt: {
-          base_dir: "   ",
+        "working_dir": "",
+        "app_prompt": {
+          "base_dir": "   ",
         },
-        app_schema: {
-          base_dir: "",
+        "app_schema": {
+          "base_dir": "",
         },
       };
 
       const result = ConfigValidator.validateAppConfig(invalidConfig);
 
-      assertEquals(result.success, false);
+      assert(!result.success);
       if (!result.success) {
         const emptyPathErrors = result.error.filter((e) =>
           e.message?.includes("Path must not be empty")
@@ -181,41 +181,41 @@ describe("ConfigValidator Integration Tests", () => {
 
       for (const char of invalidChars) {
         const invalidConfig: AppConfig = {
-          working_dir: `./.agent/climpt${char}test`,
-          app_prompt: {
-            base_dir: `./.agent/climpt/prompts${char}app`,
+          "working_dir": `./.agent/climpt${char}test`,
+          "app_prompt": {
+            "base_dir": `./.agent/climpt/prompts${char}app`,
           },
-          app_schema: {
-            base_dir: `./.agent/climpt/schema${char}app`,
+          "app_schema": {
+            "base_dir": `./.agent/climpt/schema${char}app`,
           },
         };
 
         const result = ConfigValidator.validateAppConfig(invalidConfig);
 
-        assertEquals(result.success, false);
+        assert(!result.success);
         if (!result.success) {
           const invalidCharErrors = result.error.filter((e) =>
             e.message?.includes("Path contains invalid characters")
           );
-          assertEquals(invalidCharErrors.length >= 1, true);
+          assert(invalidCharErrors.length >= 1);
         }
       }
     });
 
     it("should fail validation when paths contain traversal patterns", () => {
       const invalidConfig: AppConfig = {
-        working_dir: "./.agent/../../../etc/passwd",
-        app_prompt: {
-          base_dir: "./.agent/climpt/../../../prompts",
+        "working_dir": "./.agent/../../../etc/passwd",
+        "app_prompt": {
+          "base_dir": "./.agent/climpt/../../../prompts",
         },
-        app_schema: {
-          base_dir: "./.agent/climpt/schema/../../..",
+        "app_schema": {
+          "base_dir": "./.agent/climpt/schema/../../..",
         },
       };
 
       const result = ConfigValidator.validateAppConfig(invalidConfig);
 
-      assertEquals(result.success, false);
+      assert(!result.success);
       if (!result.success) {
         const traversalErrors = result.error.filter((e) =>
           e.message?.includes("Path traversal detected")
@@ -226,18 +226,18 @@ describe("ConfigValidator Integration Tests", () => {
 
     it("should fail validation when paths are absolute", () => {
       const invalidConfig: AppConfig = {
-        working_dir: "/etc/passwd",
-        app_prompt: {
-          base_dir: "/usr/local/prompts",
+        "working_dir": "/etc/passwd",
+        "app_prompt": {
+          "base_dir": "/usr/local/prompts",
         },
-        app_schema: {
-          base_dir: "/var/lib/schema",
+        "app_schema": {
+          "base_dir": "/var/lib/schema",
         },
       };
 
       const result = ConfigValidator.validateAppConfig(invalidConfig);
 
-      assertEquals(result.success, false);
+      assert(!result.success);
       if (!result.success) {
         const absolutePathErrors = result.error.filter((e) =>
           e.message?.includes("Absolute path not allowed")
@@ -248,22 +248,22 @@ describe("ConfigValidator Integration Tests", () => {
 
     it("should accumulate all path validation errors", () => {
       const invalidConfig: AppConfig = {
-        working_dir: "/absolute/../traversal<invalid>",
-        app_prompt: {
-          base_dir: "",
+        "working_dir": "/absolute/../traversal<invalid>",
+        "app_prompt": {
+          "base_dir": "",
         },
-        app_schema: {
-          base_dir: "relative/path", // This one is valid
+        "app_schema": {
+          "base_dir": "relative/path", // This one is valid
         },
       };
 
       const result = ConfigValidator.validateAppConfig(invalidConfig);
 
-      assertEquals(result.success, false);
+      assert(!result.success);
       if (!result.success) {
         // working_dir should have multiple errors: absolute, traversal, invalid chars
         const workingDirErrors = result.error.filter((e) => e.field === "working_dir");
-        assertEquals(workingDirErrors.length >= 1, true); // At least one error for working_dir
+        assert(workingDirErrors.length >= 1); // At least one error for working_dir
 
         // Check that we have errors for different validation rules
         const _hasAbsoluteError = result.error.some((e) =>
@@ -278,7 +278,7 @@ describe("ConfigValidator Integration Tests", () => {
 
         // app_prompt.base_dir should have 1 error: empty
         const promptErrors = result.error.filter((e) => e.field === "app_prompt.base_dir");
-        assertEquals(promptErrors.length >= 1, true);
+        assert(promptErrors.length >= 1);
 
         // app_schema.base_dir should have no errors
         const schemaErrors = result.error.filter((e) => e.field === "app_schema.base_dir");
@@ -292,9 +292,9 @@ describe("ConfigValidator Integration Tests", () => {
       const emptyConfig = UserConfigFactory.createEmpty();
       const result = ConfigValidator.validateUserConfig(emptyConfig);
 
-      assertEquals(result.success, true);
+      assert(result.success);
       if (result.success) {
-        assertEquals(UserConfigGuards.isEmpty(result.data), true);
+        assert(UserConfigGuards.isEmpty(result.data));
       }
     });
 
@@ -306,12 +306,12 @@ describe("ConfigValidator Integration Tests", () => {
       });
       const result = ConfigValidator.validateUserConfig(emptyConfig);
 
-      assertEquals(result.success, true);
+      assert(result.success);
       if (result.success) {
-        assertEquals(UserConfigGuards.isEmpty(result.data), true);
+        assert(UserConfigGuards.isEmpty(result.data));
         assertEquals(result.data.customFields?.customField1, "value1");
         assertEquals(result.data.customFields?.customField2, 123);
-        assertEquals(result.data.customFields?.customField3, true);
+        assert(result.data.customFields?.customField3);
       }
     });
 
@@ -321,9 +321,9 @@ describe("ConfigValidator Integration Tests", () => {
       );
       const result = ConfigValidator.validateUserConfig(promptConfig);
 
-      assertEquals(result.success, true);
+      assert(result.success);
       if (result.success) {
-        assertEquals(UserConfigGuards.isPromptOnly(result.data), true);
+        assert(UserConfigGuards.isPromptOnly(result.data));
         if (UserConfigGuards.hasPromptConfig(result.data)) {
           assertEquals(result.data.app_prompt.base_dir, "./custom/prompts");
         }
@@ -336,9 +336,9 @@ describe("ConfigValidator Integration Tests", () => {
       );
       const result = ConfigValidator.validateUserConfig(schemaConfig);
 
-      assertEquals(result.success, true);
+      assert(result.success);
       if (result.success) {
-        assertEquals(UserConfigGuards.isSchemaOnly(result.data), true);
+        assert(UserConfigGuards.isSchemaOnly(result.data));
         if (UserConfigGuards.hasSchemaConfig(result.data)) {
           assertEquals(result.data.app_schema.base_dir, "./custom/schemas");
         }
@@ -353,16 +353,16 @@ describe("ConfigValidator Integration Tests", () => {
       );
       const result = ConfigValidator.validateUserConfig(completeConfig);
 
-      assertEquals(result.success, true);
+      assert(result.success);
       if (result.success) {
-        assertEquals(UserConfigGuards.isComplete(result.data), true);
+        assert(UserConfigGuards.isComplete(result.data));
         if (UserConfigGuards.hasPromptConfig(result.data)) {
           assertEquals(result.data.app_prompt.base_dir, "./custom/prompts");
         }
         if (UserConfigGuards.hasSchemaConfig(result.data)) {
           assertEquals(result.data.app_schema.base_dir, "./custom/schemas");
         }
-        assertEquals(result.data.customFields?.debugMode, true);
+        assert(result.data.customFields?.debugMode);
       }
     });
 
@@ -373,9 +373,9 @@ describe("ConfigValidator Integration Tests", () => {
       for (const invalidConfig of invalidConfigs) {
         const result = ConfigValidator.validateUserConfig(invalidConfig);
 
-        assertEquals(result.success, false);
+        assert(!result.success);
         if (!result.success) {
-          assertEquals(result.error.length > 0, true);
+          assert(result.error.length > 0);
           const rootError = result.error.find((e) => e.field === "root");
           assertExists(rootError);
           assertEquals(rootError.expectedType, "object");
@@ -389,7 +389,7 @@ describe("ConfigValidator Integration Tests", () => {
         const result = ConfigValidator.validateUserConfig(config);
         // These pass validation because the validator treats them as
         // empty user configs without prompt or schema overrides
-        assertEquals(result.success, true);
+        assert(result.success);
       }
     });
   });
@@ -397,17 +397,17 @@ describe("ConfigValidator Integration Tests", () => {
   describe("validateUserConfig - Legacy Format Support", () => {
     it("should validate legacy UserConfig with app_prompt only", () => {
       const legacyConfig: LegacyUserConfig = {
-        app_prompt: {
-          base_dir: "./legacy/prompts",
+        "app_prompt": {
+          "base_dir": "./legacy/prompts",
         },
       };
 
       const userConfig = UserConfigFactory.fromLegacy(legacyConfig);
       const result = ConfigValidator.validateUserConfig(userConfig);
 
-      assertEquals(result.success, true);
+      assert(result.success);
       if (result.success) {
-        assertEquals(UserConfigGuards.isPromptOnly(result.data), true);
+        assert(UserConfigGuards.isPromptOnly(result.data));
       }
     });
 
@@ -416,14 +416,14 @@ describe("ConfigValidator Integration Tests", () => {
       // that don't have proper type checking unless they match the discriminated
       // union pattern (have app_prompt or app_schema as objects)
       const invalidLegacyConfig = {
-        app_prompt: "not an object",
+        "app_prompt": "not an object",
       };
 
       const result = ConfigValidator.validateUserConfig(invalidLegacyConfig);
 
       // The current implementation treats this as valid because UserConfigGuards
       // don't recognize it as having prompt config (since app_prompt is not an object)
-      assertEquals(result.success, true);
+      assert(result.success);
     });
 
     it("should validate legacy UserConfig with invalid nested fields", () => {
@@ -431,11 +431,11 @@ describe("ConfigValidator Integration Tests", () => {
       // as valid even if the nested fields have wrong types,
       // because it only validates when the structure matches the expected pattern
       const invalidLegacyConfig = {
-        app_prompt: {
-          base_dir: 123, // Should be string
+        "app_prompt": {
+          "base_dir": 123, // Should be string
         },
-        app_schema: {
-          base_dir: null, // Should be string
+        "app_schema": {
+          "base_dir": null, // Should be string
         },
       };
 
@@ -443,7 +443,7 @@ describe("ConfigValidator Integration Tests", () => {
 
       // Similar to the previous test, this passes because the validator
       // accepts objects that don't strictly conform to the discriminated union types
-      assertEquals(result.success, true);
+      assert(result.success);
     });
   });
 
@@ -457,7 +457,7 @@ describe("ConfigValidator Integration Tests", () => {
 
       const result = ConfigValidator.validateUserConfig(invalidUserConfig);
 
-      assertEquals(result.success, false);
+      assert(!result.success);
       if (!result.success) {
         const absolutePathError = result.error.find((e) =>
           e.field === "app_prompt.base_dir" && e.message?.includes("Absolute path not allowed")
@@ -475,17 +475,17 @@ describe("ConfigValidator Integration Tests", () => {
       // Empty config should pass without path validation
       const emptyConfig = UserConfigFactory.createEmpty();
       const emptyResult = ConfigValidator.validateUserConfig(emptyConfig);
-      assertEquals(emptyResult.success, true);
+      assert(emptyResult.success);
 
       // Prompt-only with valid path should pass
       const promptConfig = UserConfigFactory.createPromptOnly("./valid/path");
       const promptResult = ConfigValidator.validateUserConfig(promptConfig);
-      assertEquals(promptResult.success, true);
+      assert(promptResult.success);
 
       // Schema-only with invalid path should fail
       const schemaConfig = UserConfigFactory.createSchemaOnly("path<with>invalid|chars");
       const schemaResult = ConfigValidator.validateUserConfig(schemaConfig);
-      assertEquals(schemaResult.success, false);
+      assert(!schemaResult.success);
       if (!schemaResult.success) {
         const invalidCharError = schemaResult.error.find((e) =>
           e.message?.includes("Path contains invalid characters")
@@ -498,12 +498,12 @@ describe("ConfigValidator Integration Tests", () => {
   describe("Result Type Integration", () => {
     it("should support Result type chaining with map", () => {
       const validConfig: AppConfig = {
-        working_dir: "./.agent/climpt",
-        app_prompt: {
-          base_dir: "./.agent/climpt/prompts/app",
+        "working_dir": "./.agent/climpt",
+        "app_prompt": {
+          "base_dir": "./.agent/climpt/prompts/app",
         },
-        app_schema: {
-          base_dir: "./.agent/climpt/schema/app",
+        "app_schema": {
+          "base_dir": "./.agent/climpt/schema/app",
         },
       };
 
@@ -512,7 +512,7 @@ describe("ConfigValidator Integration Tests", () => {
         dirs: [config.working_dir, config.app_prompt.base_dir, config.app_schema.base_dir],
       }));
 
-      assertEquals(mappedResult.success, true);
+      assert(mappedResult.success);
       if (mappedResult.success) {
         assertEquals(mappedResult.data.dirs.length, 3);
         assertEquals(mappedResult.data.dirs[0], "./.agent/climpt");
@@ -528,23 +528,23 @@ describe("ConfigValidator Integration Tests", () => {
         fields: errors.map((e) => e.field),
       }));
 
-      assertEquals(mappedResult.success, false);
+      assert(!mappedResult.success);
       if (!mappedResult.success) {
         assertEquals(mappedResult.error.errorCount, 3);
-        assertEquals(mappedResult.error.fields.includes("working_dir"), true);
-        assertEquals(mappedResult.error.fields.includes("app_prompt"), true);
-        assertEquals(mappedResult.error.fields.includes("app_schema"), true);
+        assert(mappedResult.error.fields.includes("working_dir"));
+        assert(mappedResult.error.fields.includes("app_prompt"));
+        assert(mappedResult.error.fields.includes("app_schema"));
       }
     });
 
     it("should support Result type pattern matching", () => {
       const validConfig: AppConfig = {
-        working_dir: "./.agent/climpt",
-        app_prompt: {
-          base_dir: "./.agent/climpt/prompts/app",
+        "working_dir": "./.agent/climpt",
+        "app_prompt": {
+          "base_dir": "./.agent/climpt/prompts/app",
         },
-        app_schema: {
-          base_dir: "./.agent/climpt/schema/app",
+        "app_schema": {
+          "base_dir": "./.agent/climpt/schema/app",
         },
       };
 
@@ -567,9 +567,9 @@ describe("ConfigValidator Integration Tests", () => {
 
     it("should support Result type unwrapOr for default values", () => {
       const defaultConfig: AppConfig = {
-        working_dir: "./default",
-        app_prompt: { base_dir: "./default/prompts" },
-        app_schema: { base_dir: "./default/schemas" },
+        "working_dir": "./default",
+        "app_prompt": { "base_dir": "./default/prompts" },
+        "app_schema": { "base_dir": "./default/schemas" },
       };
 
       const invalidResult = ConfigValidator.validateAppConfig("not an object");
@@ -584,16 +584,16 @@ describe("ConfigValidator Integration Tests", () => {
   describe("Error Accumulation and Reporting", () => {
     it("should accumulate all validation errors in a single result", () => {
       const invalidConfig = {
-        working_dir: "", // Empty path
-        app_prompt: {
-          base_dir: "/absolute/path/../traversal<invalid>", // Multiple violations
+        "working_dir": "", // Empty path
+        "app_prompt": {
+          "base_dir": "/absolute/path/../traversal<invalid>", // Multiple violations
         },
-        app_schema: "not an object", // Type error
+        "app_schema": "not an object", // Type error
       };
 
       const result = ConfigValidator.validateAppConfig(invalidConfig);
 
-      assertEquals(result.success, false);
+      assert(!result.success);
       if (!result.success) {
         // Should have errors for:
         // 1. working_dir empty
@@ -601,7 +601,7 @@ describe("ConfigValidator Integration Tests", () => {
         // 3. app_prompt.base_dir path traversal
         // 4. app_prompt.base_dir invalid characters
         // 5. app_schema type error
-        assertEquals(result.error.length >= 5, true);
+        assert(result.error.length >= 5);
 
         // Check error details
         for (const error of result.error) {
@@ -619,23 +619,23 @@ describe("ConfigValidator Integration Tests", () => {
 
     it("should provide clear error messages for each validation failure", () => {
       const result = ConfigValidator.validateAppConfig({
-        working_dir: 123,
-        app_prompt: null,
-        app_schema: {
+        "working_dir": 123,
+        "app_prompt": null,
+        "app_schema": {
           // Missing base_dir
         },
       });
 
-      assertEquals(result.success, false);
+      assert(!result.success);
       if (!result.success) {
         const workingDirError = result.error.find((e) => e.field === "working_dir");
-        assertEquals(workingDirError?.message?.includes("must be a string"), true);
+        assert(workingDirError?.message?.includes("must be a string"));
 
         const appPromptError = result.error.find((e) => e.field === "app_prompt");
-        assertEquals(appPromptError?.message?.includes("must be an object"), true);
+        assert(appPromptError?.message?.includes("must be an object"));
 
         const schemaBaseDirError = result.error.find((e) => e.field === "app_schema.base_dir");
-        assertEquals(schemaBaseDirError?.message?.includes("required"), true);
+        assert(schemaBaseDirError?.message?.includes("required"));
       }
     });
   });

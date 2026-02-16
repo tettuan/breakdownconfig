@@ -4,7 +4,7 @@
  */
 
 import { Result } from "../types/unified_result.ts";
-import { ErrorFactories, UnifiedError } from "./unified_errors.ts";
+import { ErrorFactories, type UnifiedError } from "./unified_errors.ts";
 import { ErrorCode } from "../error_manager.ts";
 
 /**

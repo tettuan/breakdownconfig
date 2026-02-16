@@ -1,4 +1,7 @@
-import { ConfigResult, Result, ValidationError } from "../types/config_result.ts";
+import { type ConfigResult, Result, type ValidationError } from "../types/config_result.ts";
+
+/** Constant representing a successful validation result */
+const VALIDATION_SUCCESS = true as const;
 
 /**
  * Schema definition for validating configuration objects
@@ -102,7 +105,7 @@ export class SchemaValidator {
       }
     }
 
-    return Result.ok(true);
+    return Result.ok(VALIDATION_SUCCESS);
   }
 
   /**
@@ -137,7 +140,7 @@ export class SchemaValidator {
       });
     }
 
-    return Result.ok(true);
+    return Result.ok(VALIDATION_SUCCESS);
   }
 
   /**
@@ -251,6 +254,6 @@ export class SchemaValidator {
         message: `Field '${fieldName}' must be a non-empty string`,
       });
     }
-    return Result.ok(true);
+    return Result.ok(VALIDATION_SUCCESS);
   }
 }

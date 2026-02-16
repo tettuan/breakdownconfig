@@ -3,14 +3,14 @@
  * Provides helper functions for error type conversions and handling
  */
 
-import { ErrorFactories, UnifiedError } from "./unified_errors.ts";
+import { ErrorFactories, type UnifiedError } from "./unified_errors.ts";
 import {
-  BaseErrorInterface,
+  type BaseErrorInterface,
   ErrorCategory,
   ErrorSeverity,
   StandardErrorCode,
 } from "./unified_error_interface.ts";
-import { Result as _Result } from "../types/unified_result.ts";
+import type { Result as _Result } from "../types/unified_result.ts";
 
 /**
  * Error handling utilities

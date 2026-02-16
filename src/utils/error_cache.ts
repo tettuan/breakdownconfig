@@ -1,5 +1,5 @@
-import { ErrorFactories, UnifiedError } from "../errors/unified_errors.ts";
-import { PathErrorReason } from "../errors/unified_errors.ts";
+import { ErrorFactories, type UnifiedError } from "../errors/unified_errors.ts";
+import type { PathErrorReason } from "../errors/unified_errors.ts";
 
 /**
  * Error instance cache to reduce error creation overhead

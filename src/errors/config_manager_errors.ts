@@ -5,8 +5,8 @@
  * ファクトリ関数とメッセージテンプレートを提供
  */
 
-import { ErrorFactories, UnifiedError } from "./unified_errors.ts";
-import { errorManager, SupportedLanguage } from "./unified_error_manager.ts";
+import { ErrorFactories, type UnifiedError } from "./unified_errors.ts";
+import { errorManager, type SupportedLanguage } from "./unified_error_manager.ts";
 
 /**
  * ConfigManager固有のエラーコンテキスト
@@ -34,9 +34,9 @@ export const ConfigManagerErrors = {
    */
   configFileNotFound: (
     path: string,
-    configType: "app" | "user" = "app",
     searchedLocations?: string[],
     _context?: ConfigManagerContext,
+    configType: "app" | "user" = "app",
   ): UnifiedError => {
     return ErrorFactories.configFileNotFound(path, configType, searchedLocations);
   },

@@ -3,7 +3,7 @@
  * Level 0: Verifies state machine design and Discriminated Union patterns
  */
 
-import { assertEquals, assertExists } from "@std/assert";
+import { assert, assertEquals, assertExists } from "@std/assert";
 import { BreakdownLogger } from "@tettuan/breakdownlogger";
 import { ConfigManager } from "./config_manager.ts";
 import { AppConfigLoader } from "./loaders/app_config_loader.ts";
@@ -24,7 +24,7 @@ Deno.test("Architecture: ConfigManager State Machine Pattern", async (t) => {
     // Test initial state by calling methods
     const initialResult = await manager.getConfigSafe();
     assertExists(initialResult, "getConfigSafe should return Result");
-    assertEquals("success" in initialResult, true, "Should return Result type");
+    assert("success" in initialResult, "Should return Result type");
 
     logger.debug("State machine pattern verified");
   });
@@ -63,7 +63,7 @@ Deno.test("Architecture: ConfigManager Result Type Consistency", async (t) => {
 
     // Test getConfigSafe returns Result
     const configResult = await manager.getConfigSafe();
-    assertEquals("success" in configResult, true, "getConfigSafe should return Result");
+    assert("success" in configResult, "getConfigSafe should return Result");
 
     logger.debug("Result type consistency verified");
   });
@@ -79,7 +79,7 @@ Deno.test("Architecture: ConfigManager Result Type Consistency", async (t) => {
     try {
       const result = await manager.getConfigSafe();
       assertExists(result, "Should return Result even for errors");
-      assertEquals("success" in result, true, "Should return Result type structure");
+      assert("success" in result, "Should return Result type structure");
 
       if (!result.success) {
         assertExists(result.error, "Error Result should contain error information");
@@ -208,13 +208,13 @@ Deno.test("Architecture: ConfigManager Total Function Compliance", async (t) => 
     // All calls should return Result types
     calls.forEach((result, index) => {
       assertExists(result, `Call ${index} should return defined Result`);
-      assertEquals("success" in result, true, `Call ${index} should return Result type`);
+      assert("success" in result, `Call ${index} should return Result type`);
     });
 
     // State should be consistent across calls
     const successStates = calls.map((r) => r.success);
     const allSameState = successStates.every((state) => state === successStates[0]);
-    assertEquals(allSameState, true, "State should be consistent across multiple calls");
+    assert(allSameState, "State should be consistent across multiple calls");
 
     logger.debug("State transition predictability verified");
   });

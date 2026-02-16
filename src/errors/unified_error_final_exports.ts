@@ -7,7 +7,7 @@
 
 // Import main components
 import {
-  CompleteUnifiedErrorManager,
+  type CompleteUnifiedErrorManager,
   ErrorUtils,
   unifiedErrorManager,
 } from "./unified_error_implementation.ts";
@@ -91,11 +91,11 @@ export { convertLegacyError, ErrorCodeMapping, isErrorCode } from "./error_code_
 // Import ErrorFactories for use in utility functions
 import { ErrorFactories } from "./unified_errors.ts";
 import {
-  BaseErrorInterface,
+  type BaseErrorInterface,
   ErrorCategory,
-  ErrorConfiguration,
+  type ErrorConfiguration,
   ErrorSeverity,
-  StandardErrorCode as _StandardErrorCode,
+  type StandardErrorCode as _StandardErrorCode,
 } from "./unified_error_interface.ts";
 
 // Type guard to check if an object is a BaseErrorInterface
@@ -201,49 +201,52 @@ export const QuickErrorFactory = {
 /**
  * Error handling utilities for common scenarios
  */
-export const ErrorHandlingUtils = {
-  /**
-   * Handle promise rejections and convert to unified errors
-   */
-  async handleAsync<T>(
-    promise: Promise<T>,
-    context?: string,
-  ): Promise<{ success: true; data: T } | { success: false; error: BaseErrorInterface }> {
-    try {
-      const data = await promise;
-      return { success: true, data };
-    } catch (error) {
-      // Type-safe error handling
-      const baseError = toBaseError(
-        error instanceof Error ? error : new Error(String(error)),
-        context,
-      );
-      await unifiedErrorManager.processError(baseError);
-      return { success: false, error: baseError };
-    }
-  },
+/**
+ * Handle promise rejections and convert to unified errors
+ */
+async function handleAsyncImpl<T>(
+  promise: Promise<T>,
+  context?: string,
+): Promise<{ success: true; data: T } | { success: false; error: BaseErrorInterface }> {
+  try {
+    const data = await promise;
+    return { success: true, data };
+  } catch (error) {
+    // Type-safe error handling
+    const baseError = toBaseError(
+      error instanceof Error ? error : new Error(String(error)),
+      context,
+    );
+    await unifiedErrorManager.processError(baseError);
+    return { success: false, error: baseError };
+  }
+}
 
-  /**
-   * Handle synchronous operations and convert to unified errors
-   */
-  handleSync<T>(
-    operation: () => T,
-    context?: string,
-  ): { success: true; data: T } | { success: false; error: BaseErrorInterface } {
-    try {
-      const data = operation();
-      return { success: true, data };
-    } catch (error) {
-      // Type-safe error handling
-      const baseError = toBaseError(
-        error instanceof Error ? error : new Error(String(error)),
-        context,
-      );
-      // Note: Sync processing - no await
-      unifiedErrorManager.processError(baseError);
-      return { success: false, error: baseError };
-    }
-  },
+/**
+ * Handle synchronous operations and convert to unified errors
+ */
+function handleSyncImpl<T>(
+  operation: () => T,
+  context?: string,
+): { success: true; data: T } | { success: false; error: BaseErrorInterface } {
+  try {
+    const data = operation();
+    return { success: true, data };
+  } catch (error) {
+    // Type-safe error handling
+    const baseError = toBaseError(
+      error instanceof Error ? error : new Error(String(error)),
+      context,
+    );
+    // Note: Sync processing - no await
+    unifiedErrorManager.processError(baseError);
+    return { success: false, error: baseError };
+  }
+}
+
+export const ErrorHandlingUtils = {
+  handleAsync: handleAsyncImpl,
+  handleSync: handleSyncImpl,
 
   /**
    * Create error boundary for function execution
@@ -253,7 +256,7 @@ export const ErrorHandlingUtils = {
     context?: string,
   ): (...args: T) => { success: true; data: R } | { success: false; error: BaseErrorInterface } {
     return (...args: T) => {
-      return this.handleSync(() => fn(...args), context);
+      return handleSyncImpl(() => fn(...args), context);
     };
   },
 
@@ -267,7 +270,7 @@ export const ErrorHandlingUtils = {
     ...args: T
   ) => Promise<{ success: true; data: R } | { success: false; error: BaseErrorInterface }> {
     return async (...args: T) => {
-      return await this.handleAsync(fn(...args), context);
+      return await handleAsyncImpl(fn(...args), context);
     };
   },
 };
@@ -448,8 +451,8 @@ export const ErrorConfigPresets = {
  * Initialize unified error system with preset configuration
  */
 export function initializeErrorSystem(
-  preset: "development" | "production" | "testing" = "production",
   customConfig?: Partial<ErrorConfiguration>,
+  preset: "development" | "production" | "testing" = "production",
 ): CompleteUnifiedErrorManager {
   const baseConfig = ErrorConfigPresets[preset]();
   const finalConfig = { ...baseConfig, ...customConfig };

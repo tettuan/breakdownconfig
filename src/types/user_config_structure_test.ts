@@ -3,18 +3,18 @@
  * Level 1: Verifies type definition integrity and union variant completeness
  */
 
-import { assertEquals, assertExists } from "@std/assert";
+import { assert, assertEquals, assertExists } from "@std/assert";
 // BreakdownLogger replaced with console for test stability
 import {
-  CompleteUserConfig as _CompleteUserConfig,
-  EmptyUserConfig as _EmptyUserConfig,
-  LegacyUserConfig,
-  PromptOnlyUserConfig as _PromptOnlyUserConfig,
-  SchemaOnlyUserConfig as _SchemaOnlyUserConfig,
-  UserConfig,
+  type CompleteUserConfig as _CompleteUserConfig,
+  type EmptyUserConfig as _EmptyUserConfig,
+  type LegacyUserConfig,
+  type PromptOnlyUserConfig as _PromptOnlyUserConfig,
+  type SchemaOnlyUserConfig as _SchemaOnlyUserConfig,
+  type UserConfig,
   UserConfigFactory,
   UserConfigGuards,
-  UserConfigHelpers as _UserConfigHelpers,
+  type UserConfigHelpers as _UserConfigHelpers,
 } from "./user_config.ts";
 
 // Logger removed for test stability
@@ -214,9 +214,8 @@ Deno.test("Structure: UserConfigFactory Contract Validation", async (t) => {
 
       // Should match expected kind values
       const validKinds = ["empty", "prompt-only", "schema-only", "complete"];
-      assertEquals(
+      assert(
         validKinds.includes(variant.kind),
-        true,
         `Kind "${variant.kind}" should be valid`,
       );
     }
@@ -237,46 +236,39 @@ Deno.test("Structure: UserConfigGuards Type Safety", async (t) => {
     const complete = UserConfigFactory.createComplete("/test/prompt", "/test/schema");
 
     // Test isEmpty
-    assertEquals(UserConfigGuards.isEmpty(empty), true, "isEmpty should identify empty config");
-    assertEquals(
-      UserConfigGuards.isEmpty(promptOnly),
-      false,
+    assert(UserConfigGuards.isEmpty(empty), "isEmpty should identify empty config");
+    assert(
+      !UserConfigGuards.isEmpty(promptOnly),
       "isEmpty should reject non-empty config",
     );
 
     // Test isPromptOnly
-    assertEquals(
+    assert(
       UserConfigGuards.isPromptOnly(promptOnly),
-      true,
       "isPromptOnly should identify prompt-only config",
     );
-    assertEquals(
-      UserConfigGuards.isPromptOnly(empty),
-      false,
+    assert(
+      !UserConfigGuards.isPromptOnly(empty),
       "isPromptOnly should reject non-prompt-only config",
     );
 
     // Test isSchemaOnly
-    assertEquals(
+    assert(
       UserConfigGuards.isSchemaOnly(schemaOnly),
-      true,
       "isSchemaOnly should identify schema-only config",
     );
-    assertEquals(
-      UserConfigGuards.isSchemaOnly(complete),
-      false,
+    assert(
+      !UserConfigGuards.isSchemaOnly(complete),
       "isSchemaOnly should reject non-schema-only config",
     );
 
     // Test isComplete
-    assertEquals(
+    assert(
       UserConfigGuards.isComplete(complete),
-      true,
       "isComplete should identify complete config",
     );
-    assertEquals(
-      UserConfigGuards.isComplete(schemaOnly),
-      false,
+    assert(
+      !UserConfigGuards.isComplete(schemaOnly),
       "isComplete should reject non-complete config",
     );
 

@@ -8,7 +8,7 @@
  * - Total Function原則の遵守
  */
 
-import { assertEquals, assertExists } from "https://deno.land/std@0.219.0/assert/mod.ts";
+import { assert, assertEquals, assertExists } from "https://deno.land/std@0.219.0/assert/mod.ts";
 import { afterEach, beforeEach, describe, it } from "https://deno.land/std@0.219.0/testing/bdd.ts";
 import { join } from "https://deno.land/std@0.219.0/path/mod.ts";
 import { stringify as stringifyYaml } from "https://deno.land/std@0.219.0/yaml/mod.ts";
@@ -40,19 +40,19 @@ describe("Config Loading Integration Tests", () => {
   describe("アプリ設定 + ユーザー設定の統合検証", () => {
     it("デフォルトプロファイルでのアプリ設定とユーザー設定のマージ", async () => {
       const configResult = BreakdownConfig.create(undefined, tempDir);
-      assertEquals(configResult.success, true);
+      assert(configResult.success);
       if (!configResult.success) return;
       const config = configResult.data;
 
       const loadResult = await config.loadConfigSafe();
 
       assertExists(loadResult);
-      assertEquals(loadResult.success, true);
+      assert(loadResult.success);
 
       // 設定が正常にロードされたら、個別に値を取得
       if (loadResult.success) {
         const configDataResult = await config.getConfigSafe();
-        assertEquals(configDataResult.success, true);
+        assert(configDataResult.success);
 
         if (configDataResult.success) {
           // アプリ設定の確認
@@ -77,18 +77,18 @@ describe("Config Loading Integration Tests", () => {
       await Deno.remove(userConfigPath);
 
       const configResult = BreakdownConfig.create(undefined, tempDir);
-      assertEquals(configResult.success, true);
+      assert(configResult.success);
       if (!configResult.success) return;
       const config = configResult.data;
 
       const loadResult = await config.loadConfigSafe();
 
       assertExists(loadResult);
-      assertEquals(loadResult.success, true);
+      assert(loadResult.success);
 
       if (loadResult.success) {
         const configDataResult = await config.getConfigSafe();
-        assertEquals(configDataResult.success, true);
+        assert(configDataResult.success);
 
         if (configDataResult.success) {
           // アプリ設定のデフォルト値が使用されることを確認
@@ -108,16 +108,16 @@ describe("Config Loading Integration Tests", () => {
     it("アプリ設定とユーザー設定の深いマージ検証", async () => {
       // より複雑な設定を作成
       const complexAppConfig = {
-        working_dir: ".agent/climpt",
-        app_prompt: {
-          base_dir: "prompts/default",
+        "working_dir": ".agent/climpt",
+        "app_prompt": {
+          "base_dir": "prompts/default",
           templates: {
             main: "main.txt",
             sub: "sub.txt",
           },
         },
-        app_schema: {
-          base_dir: "schemas/default",
+        "app_schema": {
+          "base_dir": "schemas/default",
           version: "1.0.0",
         },
         features: {
@@ -127,8 +127,8 @@ describe("Config Loading Integration Tests", () => {
       };
 
       const complexUserConfig = {
-        app_prompt: {
-          base_dir: "custom/prompts", // base_dirを追加
+        "app_prompt": {
+          "base_dir": "custom/prompts", // base_dirを追加
           templates: {
             main: "custom-main.txt", // 上書き
             extra: "extra.txt", // 追加
@@ -152,18 +152,18 @@ describe("Config Loading Integration Tests", () => {
       );
 
       const configResult = BreakdownConfig.create(undefined, tempDir);
-      assertEquals(configResult.success, true);
+      assert(configResult.success);
       if (!configResult.success) return;
       const config = configResult.data;
 
       const loadResult = await config.loadConfigSafe();
 
       assertExists(loadResult);
-      assertEquals(loadResult.success, true);
+      assert(loadResult.success);
 
       if (loadResult.success) {
         const configDataResult = await config.getConfigSafe();
-        assertEquals(configDataResult.success, true);
+        assert(configDataResult.success);
 
         if (configDataResult.success) {
           const mergedConfig = configDataResult.data;
@@ -187,9 +187,9 @@ describe("Config Loading Integration Tests", () => {
           // featuresプロパティに安全にアクセス
           const features = configRecord.features as Record<string, unknown> | undefined;
           if (features && typeof features === "object") {
-            assertEquals(features.cache, true);
-            assertEquals(features.logging, true);
-            assertEquals(features.debug, true);
+            assert(features.cache);
+            assert(features.logging);
+            assert(features.debug);
           }
         }
       }
@@ -202,14 +202,14 @@ describe("Config Loading Integration Tests", () => {
       tempDir = await setupCustomConfigSet("production");
 
       const configResult = BreakdownConfig.create("production", tempDir);
-      assertEquals(configResult.success, true);
+      assert(configResult.success);
       if (!configResult.success) return;
       const config = configResult.data;
 
       const loadResult = await config.loadConfigSafe();
 
       assertExists(loadResult);
-      assertEquals(loadResult.success, true);
+      assert(loadResult.success);
       if (loadResult.success) {
         // プロファイル固有の設定が読み込まれることを確認
         const configDataResult = await config.getConfigSafe();
@@ -225,20 +225,24 @@ describe("Config Loading Integration Tests", () => {
       const profiles = ["development", "staging", "production"];
 
       for (const profile of profiles) {
+        // deno-lint-ignore no-await-in-loop
         await cleanupTestConfigs(tempDir);
+        // deno-lint-ignore no-await-in-loop
         tempDir = await setupCustomConfigSet(profile);
 
         const configResult = BreakdownConfig.create(profile, tempDir);
-        assertEquals(configResult.success, true);
+        assert(configResult.success);
         if (!configResult.success) continue;
         const config = configResult.data;
 
+        // deno-lint-ignore no-await-in-loop
         const loadResult = await config.loadConfigSafe();
 
         assertExists(loadResult);
-        assertEquals(loadResult.success, true);
+        assert(loadResult.success);
         if (loadResult.success) {
           // プロファイル固有のパスが正しく設定されていることを確認
+          // deno-lint-ignore no-await-in-loop
           const configDataResult = await config.getConfigSafe();
           if (configDataResult.success) {
             const mergedConfig = configDataResult.data;
@@ -268,18 +272,17 @@ describe("Config Loading Integration Tests", () => {
       for (const invalidProfile of invalidProfiles) {
         const configResult = BreakdownConfig.create(invalidProfile, tempDir);
 
-        assertEquals(configResult.success, false);
+        assert(!configResult.success);
         if (!configResult.success) {
           assertEquals(configResult.error.kind, "CONFIG_VALIDATION_ERROR");
           const errorMessage = configResult.error instanceof Error
             ? configResult.error.message
             : String(configResult.error.message || configResult.error);
           assertExists(errorMessage);
-          assertEquals(
+          assert(
             errorMessage.includes(
               "only alphanumeric characters and hyphens are allowed",
             ),
-            true,
           );
         }
       }
@@ -287,14 +290,14 @@ describe("Config Loading Integration Tests", () => {
 
     it("存在しないプロファイルファイルでのフォールバック動作", async () => {
       const configResult = BreakdownConfig.create("non-existent-profile", tempDir);
-      assertEquals(configResult.success, true);
+      assert(configResult.success);
       if (!configResult.success) return;
       const config = configResult.data;
 
       const loadResult = await config.loadConfigSafe();
 
       // プロファイルファイルが存在しない場合はエラーになる
-      assertEquals(loadResult.success, false);
+      assert(!loadResult.success);
       if (!loadResult.success) {
         assertEquals(loadResult.error.kind, "CONFIG_FILE_NOT_FOUND");
         const errorMessage = loadResult.error instanceof Error
@@ -317,13 +320,13 @@ describe("Config Loading Integration Tests", () => {
       );
 
       const configResult = BreakdownConfig.create(undefined, tempDir);
-      assertEquals(configResult.success, true);
+      assert(configResult.success);
       if (!configResult.success) return;
       const config = configResult.data;
 
       const loadResult = await config.loadConfigSafe();
 
-      assertEquals(loadResult.success, false);
+      assert(!loadResult.success);
       if (!loadResult.success) {
         assertEquals(loadResult.error.kind, "CONFIG_PARSE_ERROR");
         const errorMessage = loadResult.error instanceof Error
@@ -339,23 +342,23 @@ describe("Config Loading Integration Tests", () => {
         join(configDir, "app.yml"),
         stringifyYaml({
           // working_dirが欠落
-          app_prompt: {
-            base_dir: "prompts",
+          "app_prompt": {
+            "base_dir": "prompts",
           },
-          app_schema: {
-            base_dir: "schemas",
+          "app_schema": {
+            "base_dir": "schemas",
           },
         }),
       );
 
       const configResult = BreakdownConfig.create(undefined, tempDir);
-      assertEquals(configResult.success, true);
+      assert(configResult.success);
       if (!configResult.success) return;
       const config = configResult.data;
 
       const loadResult = await config.loadConfigSafe();
 
-      assertEquals(loadResult.success, false);
+      assert(!loadResult.success);
       if (!loadResult.success) {
         assertEquals(loadResult.error.kind, "CONFIG_VALIDATION_ERROR");
         const errorMessage = loadResult.error instanceof Error
@@ -363,26 +366,25 @@ describe("Config Loading Integration Tests", () => {
           : String(loadResult.error.message || loadResult.error);
         assertExists(errorMessage);
         // エラーメッセージにworking_dirが含まれることを確認
-        assertEquals(errorMessage.includes("working_dir"), true);
+        assert(errorMessage.includes("working_dir"));
       }
     });
 
     it("ファイルアクセスエラーのResult型ハンドリング", async () => {
       // 存在しないディレクトリを指定
       const configResult = BreakdownConfig.create(undefined, "/nonexistent/directory/path");
-      assertEquals(configResult.success, true);
+      assert(configResult.success);
       if (!configResult.success) return;
       const config = configResult.data;
 
       const loadResult = await config.loadConfigSafe();
 
-      assertEquals(loadResult.success, false);
+      assert(!loadResult.success);
       if (!loadResult.success) {
         // ファイルアクセスエラーまたはファイル未検出エラー
-        assertEquals(
+        assert(
           loadResult.error.kind === "CONFIG_FILE_NOT_FOUND" ||
             loadResult.error.kind === "FILE_SYSTEM_ERROR",
-          true,
         );
       }
     });
@@ -394,24 +396,24 @@ describe("Config Loading Integration Tests", () => {
       await Deno.writeTextFile(
         join(configDir, "app.yml"),
         stringifyYaml({
-          working_dir: "", // 空文字列
-          app_prompt: {
-            base_dir: "../../../etc", // パストラバーサル
+          "working_dir": "", // 空文字列
+          "app_prompt": {
+            "base_dir": "../../../etc", // パストラバーサル
           },
-          app_schema: {
-            base_dir: 123, // 型エラー
+          "app_schema": {
+            "base_dir": 123, // 型エラー
           },
         }),
       );
 
       const configResult = BreakdownConfig.create(undefined, tempDir);
-      assertEquals(configResult.success, true);
+      assert(configResult.success);
       if (!configResult.success) return;
       const config = configResult.data;
 
       const loadResult = await config.loadConfigSafe();
 
-      assertEquals(loadResult.success, false);
+      assert(!loadResult.success);
       if (!loadResult.success) {
         // 複数のエラーが発生する可能性があるが、最初のエラーが返される
         assertExists(loadResult.error.kind);
@@ -424,7 +426,7 @@ describe("Config Loading Integration Tests", () => {
 
     it("Result型チェーンでの安全な操作", async () => {
       const configResult = BreakdownConfig.create(undefined, tempDir);
-      assertEquals(configResult.success, true);
+      assert(configResult.success);
       if (!configResult.success) return;
       const config = configResult.data;
 
@@ -444,9 +446,9 @@ describe("Config Loading Integration Tests", () => {
       // 設定がロードされた場合は、個別の値を取得可能
       if (Result.isOk(loadResult)) {
         const workingDirResult = await config.getWorkingDirSafe();
-        assertEquals(Result.isOk(workingDirResult), true);
+        assert(Result.isOk(workingDirResult));
         if (Result.isOk(workingDirResult)) {
-          assertEquals(workingDirResult.data.endsWith(validAppConfig.working_dir), true);
+          assert(workingDirResult.data.endsWith(validAppConfig.working_dir));
         }
       }
     });
@@ -477,6 +479,7 @@ describe("Config Loading Integration Tests", () => {
         // 成功または失敗のいずれか
         if (configResult.success) {
           assertExists(configResult.data);
+          // deno-lint-ignore no-await-in-loop
           const loadResult = await configResult.data.loadConfigSafe();
 
           // loadも必ずResultを返す
@@ -485,6 +488,7 @@ describe("Config Loading Integration Tests", () => {
 
           if (loadResult.success) {
             // ロード成功時は設定データにアクセス可能
+            // deno-lint-ignore no-await-in-loop
             const configDataResult = await configResult.data.getConfigSafe();
             assertExists(configDataResult.success);
           } else {

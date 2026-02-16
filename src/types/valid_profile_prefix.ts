@@ -1,5 +1,5 @@
 import { Result } from "./unified_result.ts";
-import { ErrorFactories, UnifiedError } from "../errors/unified_errors.ts";
+import { ErrorFactories, type UnifiedError } from "../errors/unified_errors.ts";
 
 /**
  * ValidProfilePrefix Smart Constructor

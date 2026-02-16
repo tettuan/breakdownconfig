@@ -1,12 +1,12 @@
 import {
-  ConfigResult,
-  PathError,
-  PathErrorReason as _PathErrorReason,
+  type ConfigResult,
+  type PathError,
+  type PathErrorReason as _PathErrorReason,
   Result,
-  ValidationError as _ValidationError,
+  type ValidationError as _ValidationError,
 } from "../types/config_result.ts";
 import { Result as UnifiedResult } from "../types/unified_result.ts";
-import { ErrorFactories, UnifiedError } from "../errors/unified_errors.ts";
+import { ErrorFactories, type UnifiedError } from "../errors/unified_errors.ts";
 
 /**
  * ValidPath - A Smart Constructor pattern implementation for safe path handling

@@ -6,10 +6,10 @@
  * ensuring all error paths are properly captured and returned as Result types.
  */
 
-import { assertEquals, assertExists } from "@std/assert";
+import { assert, assertEquals, assertExists } from "@std/assert";
 import { BreakdownConfig } from "../../mod.ts";
 import { Result } from "../../src/types/unified_result.ts";
-import { ErrorFactories, UnifiedError } from "../../src/errors/unified_errors.ts";
+import { ErrorFactories, type UnifiedError } from "../../src/errors/unified_errors.ts";
 import {
   assertConfigFileNotFoundError,
   assertConfigParseError,
@@ -17,7 +17,7 @@ import {
   assertPathValidationError,
   assertResultError,
   assertResultErrorKind,
-  assertResultErrorMessage as _assertResultErrorMessage,
+  type assertResultErrorMessage as _assertResultErrorMessage,
   assertResultSuccess,
 } from "../test_helpers/result_test_helpers.ts";
 import {
@@ -28,7 +28,10 @@ import {
 } from "../test_utils.ts";
 import { join } from "@std/path";
 
+const RECURSIVE_OPTIONS = { recursive: true };
+
 Deno.test("E2E: Error Boundary - Complete Error Handling Coverage", async (t) => {
+  // deno-lint-ignore no-console
   console.log("Testing Total Function error boundaries across all system components");
 
   await t.step("Boundary: File System Errors", async () => {
@@ -53,7 +56,7 @@ Deno.test("E2E: Error Boundary - Complete Error Handling Coverage", async (t) =>
     try {
       // Create invalid YAML file
       const configPath = join(tempDir, ".agent", "climpt", "config");
-      await Deno.mkdir(configPath, { recursive: true });
+      await Deno.mkdir(configPath, RECURSIVE_OPTIONS);
       await Deno.writeTextFile(join(configPath, "app.yml"), "invalid: yaml: content: [");
 
       const parseErrorConfig = BreakdownConfig.create(undefined, tempDir);
@@ -98,7 +101,7 @@ Deno.test("E2E: Error Boundary - Complete Error Handling Coverage", async (t) =>
     const tempDir = await setupCustomConfigSet("missing_fields");
     const _missingFieldsConfig = {
       // Missing working_dir and other required fields
-      app_prompt: { base_dir: "./prompts" },
+      "app_prompt": { "base_dir": "./prompts" },
     };
 
     try {
@@ -186,10 +189,10 @@ Deno.test("E2E: Error Boundary - Complete Error Handling Coverage", async (t) =>
     if (!getBeforeLoad.success) {
       if (getBeforeLoad.error instanceof Error) {
         assertExists(getBeforeLoad.error.message);
-        assertEquals(getBeforeLoad.error.message.includes("Configuration not loaded"), true);
+        assert(getBeforeLoad.error.message.includes("Configuration not loaded"));
       } else {
         assertExists(getBeforeLoad.error.message);
-        assertEquals(getBeforeLoad.error.message.includes("Configuration not loaded"), true);
+        assert(getBeforeLoad.error.message.includes("Configuration not loaded"));
       }
     }
   });
@@ -228,7 +231,7 @@ Deno.test("E2E: Error Boundary - Complete Error Handling Coverage", async (t) =>
 
   await t.step("Boundary: Error Propagation Through Operations", async () => {
     // Test error propagation through Result chain
-    const tempDir = await setupInvalidConfig({ working_dir: 123 }); // Invalid type
+    const tempDir = await setupInvalidConfig({ "working_dir": 123 }); // Invalid type
     try {
       const configResult = BreakdownConfig.create(undefined, tempDir);
       assertResultSuccess(configResult);
@@ -344,10 +347,10 @@ Deno.test("E2E: Error Boundary - Complete Error Handling Coverage", async (t) =>
           if (!result.success) {
             if (result.error instanceof Error) {
               assertExists(result.error.message);
-              assertEquals(result.error.message.includes("not found"), true);
+              assert(result.error.message.includes("not found"));
             } else {
               assertExists(result.error.message);
-              assertEquals(result.error.message.includes("not found"), true);
+              assert(result.error.message.includes("not found"));
             }
             if (result.error.kind === "CONFIG_FILE_NOT_FOUND") {
               assertExists(result.error.path);
@@ -398,6 +401,7 @@ Deno.test("E2E: Error Boundary - Complete Error Handling Coverage", async (t) =>
     ];
 
     for (const scenario of errorScenarios) {
+      // deno-lint-ignore no-await-in-loop
       const result = await scenario.setup();
 
       // Check if result is a Result type (has 'success' property)
@@ -407,15 +411,18 @@ Deno.test("E2E: Error Boundary - Complete Error Handling Coverage", async (t) =>
           result.success &&
           (scenario.name === "File not found" || scenario.name === "Config not loaded")
         ) {
+          // deno-lint-ignore no-await-in-loop
           await (scenario.verify as (config: BreakdownConfig) => Promise<void>)(result.data);
         } // For scenarios that expect Result type (like "Path validation")
         else {
+          // deno-lint-ignore no-await-in-loop
           await (scenario.verify as (
             result: Result<BreakdownConfig, UnifiedError>,
           ) => Promise<void>)(result);
         }
       } else {
         // If not a Result type, pass as-is (should be BreakdownConfig)
+        // deno-lint-ignore no-await-in-loop
         await (scenario.verify as (config: BreakdownConfig) => Promise<void>)(
           result as BreakdownConfig,
         );
@@ -456,9 +463,9 @@ Deno.test("E2E: Error Boundary - Complete Error Handling Coverage", async (t) =>
       assertResultError(mappedError);
       if (!mappedError.success) {
         if (mappedError.error instanceof Error) {
-          assertEquals(mappedError.error.message.startsWith("Wrapped:"), true);
+          assert(mappedError.error.message.startsWith("Wrapped:"));
         } else {
-          assertEquals(mappedError.error.message.startsWith("Wrapped:"), true);
+          assert(mappedError.error.message.startsWith("Wrapped:"));
         }
       }
 
@@ -495,7 +502,7 @@ Deno.test("E2E: Error Boundary - Complete Error Handling Coverage", async (t) =>
       } catch (error) {
         exceptionThrown = true;
         assertExists(error);
-        assertEquals(error instanceof Error, true);
+        assert(error instanceof Error);
         if (error instanceof Error) {
           assertEquals(
             error.message,
@@ -503,7 +510,7 @@ Deno.test("E2E: Error Boundary - Complete Error Handling Coverage", async (t) =>
           );
         }
       }
-      assertEquals(exceptionThrown, true);
+      assert(exceptionThrown);
 
       // Test with invalid config path
       const invalidConfig = BreakdownConfig.create(undefined, "/nonexistent");
@@ -519,9 +526,9 @@ Deno.test("E2E: Error Boundary - Complete Error Handling Coverage", async (t) =>
       } catch (error) {
         exceptionThrown = true;
         assertExists(error);
-        assertEquals(error instanceof Error, true);
+        assert(error instanceof Error);
       }
-      assertEquals(exceptionThrown, true);
+      assert(exceptionThrown);
     } finally {
       await cleanupTestConfigs(tempDir);
     }
@@ -568,7 +575,7 @@ Deno.test("E2E: Error Boundary - Complete Error Handling Coverage", async (t) =>
       },
       // CONFIG_VALIDATION_ERROR
       async () => {
-        const tempDir = await setupInvalidConfig({ working_dir: "" });
+        const tempDir = await setupInvalidConfig({ "working_dir": "" });
         try {
           const config = BreakdownConfig.create(undefined, tempDir);
           if (config.success) {
@@ -583,11 +590,12 @@ Deno.test("E2E: Error Boundary - Complete Error Handling Coverage", async (t) =>
 
     // Execute all operations
     for (const op of operations) {
+      // deno-lint-ignore no-await-in-loop
       await op();
     }
 
     // Verify we've covered multiple error types
-    assertEquals(seenErrors.size >= 3, true);
+    assert(seenErrors.size >= 3);
   });
 });
 
@@ -602,10 +610,10 @@ Deno.test("E2E: Error Boundary - Edge Case Stress Testing", async (t) => {
 
   await t.step("Unicode and special characters in paths", () => {
     const specialPaths = [
-      "config/你好",
-      "config/🚀",
-      "config/café",
-      "config/файл",
+      "config/\u4F60\u597D",
+      "config/\uD83D\uDE80",
+      "config/caf\u00E9",
+      "config/\u0444\u0430\u0439\u043B",
     ];
 
     for (const path of specialPaths) {

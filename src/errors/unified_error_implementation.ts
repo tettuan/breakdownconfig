@@ -7,28 +7,28 @@
  */
 
 import {
-  BaseErrorInterface,
-  ErrorAggregator,
+  type BaseErrorInterface,
+  type ErrorAggregator,
   ErrorCategory,
-  ErrorConfiguration,
-  ErrorContext as _ErrorContext,
-  ErrorFactory,
-  ErrorHandler,
-  ErrorI18nConfig,
-  ErrorLifecycleHooks,
-  ErrorMetrics,
-  ErrorRecoveryStrategy as _ErrorRecoveryStrategy,
-  ErrorReporter,
-  ErrorSerializer,
+  type ErrorConfiguration,
+  type ErrorContext as _ErrorContext,
+  type ErrorFactory,
+  type ErrorHandler,
+  type ErrorI18nConfig,
+  type ErrorLifecycleHooks,
+  type ErrorMetrics,
+  type ErrorRecoveryStrategy as _ErrorRecoveryStrategy,
+  type ErrorReporter,
+  type ErrorSerializer,
   ErrorSeverity,
-  ErrorTransformer as _ErrorTransformer,
-  ErrorValidator,
+  type ErrorTransformer as _ErrorTransformer,
+  type ErrorValidator,
   StandardErrorCode,
-  UnifiedErrorManager,
+  type UnifiedErrorManager,
 } from "./unified_error_interface.ts";
 
 import {
-  AbstractError as _AbstractError,
+  type AbstractError as _AbstractError,
   createError,
   ErrorChainBuilder,
   makeErrorVisitable,
@@ -38,25 +38,25 @@ import {
 
 import {
   enhancedI18n,
-  EnhancedI18nManager as _EnhancedI18nManager,
+  type EnhancedI18nManager as _EnhancedI18nManager,
   ErrorMessageUtils,
-  MessageContext,
-  MessageParams,
-  SupportedLanguage,
+  type MessageContext,
+  type MessageParams,
+  type SupportedLanguage,
 } from "./enhanced_i18n_system.ts";
 
-import {
+import type {
   ErrorCodeRegistry as _ErrorCodeRegistry,
   ErrorCodeUtils as _ErrorCodeUtils,
 } from "./standardized_error_codes.ts";
-import { UnifiedError } from "./unified_errors.ts";
+import type { UnifiedError } from "./unified_errors.ts";
 
 /**
  * Production-ready error aggregator implementation
  */
 export class ProductionErrorAggregator implements ErrorAggregator {
   private errors: BaseErrorInterface[] = [];
-  private maxErrors: number = 1000;
+  private maxErrors = 1000;
 
   constructor(maxErrors = 1000) {
     this.maxErrors = maxErrors;
@@ -601,20 +601,25 @@ export const unifiedErrorManager = new CompleteUnifiedErrorManager({
 });
 
 /**
+ * Create and process error in one call
+ */
+async function createAndProcessImpl<T extends BaseErrorInterface>(
+  errorType: string,
+  params: unknown,
+): Promise<T> {
+  const error = unifiedErrorManager.createError<T>(errorType, params);
+  await unifiedErrorManager.processError(error);
+  return error;
+}
+
+/**
  * Convenience functions for common error operations
  */
 export const ErrorUtils = {
   /**
    * Create and process error in one call
    */
-  async createAndProcess<T extends BaseErrorInterface>(
-    errorType: string,
-    params: unknown,
-  ): Promise<T> {
-    const error = unifiedErrorManager.createError<T>(errorType, params);
-    await unifiedErrorManager.processError(error);
-    return error;
-  },
+  createAndProcess: createAndProcessImpl,
 
   /**
    * Convert any error to unified error

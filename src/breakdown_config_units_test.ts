@@ -3,7 +3,7 @@
  * Level 2: Verifies individual function behavior and business logic
  */
 
-import { assertEquals, assertExists, assertThrows } from "@std/assert";
+import { assert, assertEquals, assertExists, assertThrows } from "@std/assert";
 // import { BreakdownLogger } from "https://jsr.io/@tettuan/breakdownlogger";
 import { BreakdownConfig } from "./breakdown_config.ts";
 
@@ -17,24 +17,23 @@ Deno.test("Units: BreakdownConfig.create() Method Behavior", async (t) => {
 
     // No parameters (defaults)
     const defaultResult = BreakdownConfig.create();
-    assertEquals(defaultResult.success, true, "Default parameters should succeed");
+    assert(defaultResult.success, "Default parameters should succeed");
 
     if (defaultResult.success) {
       assertExists(defaultResult.data, "Success result should contain BreakdownConfig instance");
-      assertEquals(
+      assert(
         defaultResult.data instanceof BreakdownConfig,
-        true,
         "Data should be BreakdownConfig instance",
       );
     }
 
     // Valid profile only
     const profileResult = BreakdownConfig.create("production");
-    assertEquals(profileResult.success, true, "Valid profile should succeed");
+    assert(profileResult.success, "Valid profile should succeed");
 
     // Valid profile and baseDir
     const bothResult = BreakdownConfig.create("staging", "/valid/path");
-    assertEquals(bothResult.success, true, "Valid profile and baseDir should succeed");
+    assert(bothResult.success, "Valid profile and baseDir should succeed");
 
     // logger.debug("Valid parameter success cases verified");
   });
@@ -54,7 +53,7 @@ Deno.test("Units: BreakdownConfig.create() Method Behavior", async (t) => {
 
     for (const invalidProfile of invalidProfiles) {
       const result = BreakdownConfig.create(invalidProfile);
-      assertEquals(result.success, false, `Profile "${invalidProfile}" should be rejected`);
+      assert(!result.success, `Profile "${invalidProfile}" should be rejected`);
 
       if (!result.success) {
         assertExists(result.error, "Error result should contain error information");
@@ -85,7 +84,7 @@ Deno.test("Units: BreakdownConfig.create() Method Behavior", async (t) => {
 
     for (const validProfile of validProfiles) {
       const result = BreakdownConfig.create(validProfile);
-      assertEquals(result.success, true, `Profile "${validProfile}" should be accepted`);
+      assert(result.success, `Profile "${validProfile}" should be accepted`);
 
       if (result.success) {
         assertExists(result.data, "Success result should contain data");
@@ -101,7 +100,7 @@ Deno.test("Units: BreakdownConfig.create() Method Behavior", async (t) => {
 
     // Empty string baseDir should be valid (defaults to current dir)
     const emptyDirResult = BreakdownConfig.create("test", "");
-    assertEquals(emptyDirResult.success, true, "Empty baseDir should be valid (defaults)");
+    assert(emptyDirResult.success, "Empty baseDir should be valid (defaults)");
 
     // logger.debug("Invalid baseDir handling verified");
   });
@@ -129,7 +128,7 @@ Deno.test("Units: BreakdownConfig.create() Method Behavior", async (t) => {
       try {
         const result = BreakdownConfig.create(profile, baseDir);
         assertExists(result, `Should return Result for inputs: ${profile}, ${baseDir}`);
-        assertEquals("success" in result, true, "Should always return Result type");
+        assert("success" in result, "Should always return Result type");
         // logger.debug(`Exception-free behavior verified for inputs: ${profile}, ${baseDir}`);
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
@@ -152,9 +151,8 @@ Deno.test("Units: BreakdownConfig.createLegacy() Method Behavior", async (t) => 
     // No parameters
     const defaultLegacy = BreakdownConfig.createLegacy();
     assertExists(defaultLegacy, "createLegacy should work with no parameters");
-    assertEquals(
+    assert(
       defaultLegacy instanceof BreakdownConfig,
-      true,
       "Should return BreakdownConfig instance",
     );
 
@@ -195,14 +193,12 @@ Deno.test("Units: BreakdownConfig.createLegacy() Method Behavior", async (t) => 
 
       if (modernResult.success) {
         // Both should be BreakdownConfig instances
-        assertEquals(
+        assert(
           modernResult.data instanceof BreakdownConfig,
-          true,
           "Modern should create BreakdownConfig",
         );
-        assertEquals(
+        assert(
           legacyInstance instanceof BreakdownConfig,
-          true,
           "Legacy should create BreakdownConfig",
         );
 
@@ -240,14 +236,14 @@ Deno.test("Units: BreakdownConfig loadConfigSafe() Functionality", async (t) => 
 
     // Should always return Result
     assertExists(loadResult, "loadConfigSafe should return defined value");
-    assertEquals("success" in loadResult, true, "Should return Result type");
+    assert("success" in loadResult, "Should return Result type");
 
     if (loadResult.success) {
       assertExists(loadResult.data, "Success result should have data");
       // logger.debug("loadConfigSafe success case verified");
     } else {
       assertExists(loadResult.error, "Error result should have error");
-      assertEquals("kind" in loadResult.error, true, "Error should have kind property");
+      assert("kind" in loadResult.error, "Error should have kind property");
       // logger.debug("loadConfigSafe error case verified", { errorKind: loadResult.error.kind });
     }
 
@@ -267,9 +263,10 @@ Deno.test("Units: BreakdownConfig loadConfigSafe() Functionality", async (t) => 
     for (const configResult of problemConfigs) {
       if (configResult.success) {
         try {
+          // deno-lint-ignore no-await-in-loop
           const loadResult = await configResult.data.loadConfigSafe();
           assertExists(loadResult, "loadConfigSafe should return Result even for problems");
-          assertEquals("success" in loadResult, true, "Should return Result type structure");
+          assert("success" in loadResult, "Should return Result type structure");
           // logger.debug("loadConfigSafe handled potential problem gracefully");
         } catch (error) {
           throw new Error(`loadConfigSafe threw exception: ${error}`);
@@ -330,7 +327,7 @@ Deno.test("Units: BreakdownConfig getConfigSafe() Functionality", async (t) => {
 
     // Should return Result type
     assertExists(getResult, "getConfigSafe should return defined value");
-    assertEquals("success" in getResult, true, "Should return Result type");
+    assert("success" in getResult, "Should return Result type");
 
     if (getResult.success) {
       assertExists(getResult.data, "Success should contain configuration data");
@@ -361,16 +358,15 @@ Deno.test("Units: BreakdownConfig getConfigSafe() Functionality", async (t) => {
     // Success/failure should be related
     if (loadResult.success) {
       // If load succeeded, get should also succeed (or be consistent)
-      assertEquals(
+      assert(
         "success" in getResult,
-        true,
         "getConfigSafe should return Result after successful load",
       );
     }
 
     // Both should follow same Result pattern
-    assertEquals("success" in loadResult, true, "loadConfigSafe should return Result");
-    assertEquals("success" in getResult, true, "getConfigSafe should return Result");
+    assert("success" in loadResult, "loadConfigSafe should return Result");
+    assert("success" in getResult, "getConfigSafe should return Result");
 
     // logger.debug("getConfigSafe/loadConfigSafe consistency verified");
   });
@@ -390,11 +386,11 @@ Deno.test("Units: BreakdownConfig Directory Retrieval Methods", async (t) => {
     const config = configResult.data;
     const workingDirResult = await config.getWorkingDirSafe();
 
-    assertEquals("success" in workingDirResult, true, "Should return Result type");
+    assert("success" in workingDirResult, "Should return Result type");
 
     if (workingDirResult.success) {
       assertEquals(typeof workingDirResult.data, "string", "Working directory should be string");
-      assertEquals(workingDirResult.data.length > 0, true, "Working directory should not be empty");
+      assert(workingDirResult.data.length > 0, "Working directory should not be empty");
       // logger.debug("getWorkingDirSafe success verified", { workingDir: workingDirResult.data });
     }
 
@@ -412,11 +408,11 @@ Deno.test("Units: BreakdownConfig Directory Retrieval Methods", async (t) => {
     const config = configResult.data;
     const promptDirResult = await config.getPromptDirSafe();
 
-    assertEquals("success" in promptDirResult, true, "Should return Result type");
+    assert("success" in promptDirResult, "Should return Result type");
 
     if (promptDirResult.success) {
       assertEquals(typeof promptDirResult.data, "string", "Prompt directory should be string");
-      assertEquals(promptDirResult.data.length > 0, true, "Prompt directory should not be empty");
+      assert(promptDirResult.data.length > 0, "Prompt directory should not be empty");
       // logger.debug("getPromptDirSafe success verified", { promptDir: promptDirResult.data });
     }
 
@@ -434,11 +430,11 @@ Deno.test("Units: BreakdownConfig Directory Retrieval Methods", async (t) => {
     const config = configResult.data;
     const schemaDirResult = await config.getSchemaDirSafe();
 
-    assertEquals("success" in schemaDirResult, true, "Should return Result type");
+    assert("success" in schemaDirResult, "Should return Result type");
 
     if (schemaDirResult.success) {
       assertEquals(typeof schemaDirResult.data, "string", "Schema directory should be string");
-      assertEquals(schemaDirResult.data.length > 0, true, "Schema directory should not be empty");
+      assert(schemaDirResult.data.length > 0, "Schema directory should not be empty");
       // logger.debug("getSchemaDirSafe success verified", { schemaDir: schemaDirResult.data });
     }
 
@@ -461,9 +457,9 @@ Deno.test("Units: BreakdownConfig Directory Retrieval Methods", async (t) => {
     const schemaDirResult = await config.getSchemaDirSafe();
 
     // All should return Results
-    assertEquals("success" in workingDirResult, true, "Working dir should return Result");
-    assertEquals("success" in promptDirResult, true, "Prompt dir should return Result");
-    assertEquals("success" in schemaDirResult, true, "Schema dir should return Result");
+    assert("success" in workingDirResult, "Working dir should return Result");
+    assert("success" in promptDirResult, "Prompt dir should return Result");
+    assert("success" in schemaDirResult, "Schema dir should return Result");
 
     // If all succeed, they should be valid paths
     if (workingDirResult.success && promptDirResult.success && schemaDirResult.success) {
@@ -472,9 +468,9 @@ Deno.test("Units: BreakdownConfig Directory Retrieval Methods", async (t) => {
       assertEquals(typeof schemaDirResult.data, "string", "Schema dir should be string");
 
       // All should be non-empty
-      assertEquals(workingDirResult.data.length > 0, true, "Working dir should not be empty");
-      assertEquals(promptDirResult.data.length > 0, true, "Prompt dir should not be empty");
-      assertEquals(schemaDirResult.data.length > 0, true, "Schema dir should not be empty");
+      assert(workingDirResult.data.length > 0, "Working dir should not be empty");
+      assert(promptDirResult.data.length > 0, "Prompt dir should not be empty");
+      assert(schemaDirResult.data.length > 0, "Schema dir should not be empty");
     }
 
     // logger.debug("Directory method consistency verified");

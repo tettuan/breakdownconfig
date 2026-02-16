@@ -87,6 +87,7 @@ export class ProfileConfigLoader {
     // Check if user config exists and is valid
     if (userResult.success && userResult.data !== null && Object.keys(userResult.data).length > 0) {
       // User config exists and loaded successfully - return MergedProfile
+      const userData = userResult.data as UserConfig;
       const mergedProfile: MergedProfile = {
         kind: "merged",
         profileName: this.profileName,
@@ -95,7 +96,7 @@ export class ProfileConfigLoader {
           userConfigPath: this.getUserConfigPath(),
           userConfigExists: true,
         },
-        config: this.mergeConfigs(appConfig, userResult.data!),
+        config: this.mergeConfigs(appConfig, userData),
       };
       return UnifiedResult.ok(mergedProfile);
     } else {
@@ -109,12 +110,12 @@ export class ProfileConfigLoader {
           userConfigExists: false,
         },
         config: {
-          working_dir: appConfig.working_dir,
-          app_prompt: {
-            base_dir: appConfig.app_prompt.base_dir,
+          "working_dir": appConfig.working_dir,
+          "app_prompt": {
+            "base_dir": appConfig.app_prompt.base_dir,
           },
-          app_schema: {
-            base_dir: appConfig.app_schema.base_dir,
+          "app_schema": {
+            "base_dir": appConfig.app_schema.base_dir,
           },
         },
       };
@@ -128,12 +129,12 @@ export class ProfileConfigLoader {
   private mergeConfigs(appConfig: AppConfig, userConfig: UserConfig): MergedProfile["config"] {
     // Start with app config as base
     const merged: MergedProfile["config"] = {
-      working_dir: appConfig.working_dir,
-      app_prompt: {
-        base_dir: appConfig.app_prompt.base_dir,
+      "working_dir": appConfig.working_dir,
+      "app_prompt": {
+        "base_dir": appConfig.app_prompt.base_dir,
       },
-      app_schema: {
-        base_dir: appConfig.app_schema.base_dir,
+      "app_schema": {
+        "base_dir": appConfig.app_schema.base_dir,
       },
     };
 

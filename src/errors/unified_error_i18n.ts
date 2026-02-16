@@ -8,7 +8,7 @@
  * - パラメータ置換サポート
  */
 
-import {
+import type {
   ConfigError,
   PathErrorReason as _PathErrorReason,
   ValidationError as _ValidationError,

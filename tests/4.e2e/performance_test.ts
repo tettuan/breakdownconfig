@@ -1,10 +1,12 @@
-import { assertEquals, assertExists } from "https://deno.land/std@0.204.0/assert/mod.ts";
-import { join } from "https://deno.land/std@0.204.0/path/mod.ts";
-import { stringify } from "https://deno.land/std@0.220.0/yaml/mod.ts";
+import { assert, assertEquals, assertExists } from "@std/assert";
+import { join } from "@std/path";
+import { stringify } from "@std/yaml";
 import { BreakdownConfig } from "../../src/breakdown_config.ts";
 import { BreakdownLogger } from "@tettuan/breakdownlogger";
 
 const logger = new BreakdownLogger("performance_test");
+
+const RECURSIVE_OPTIONS = { recursive: true };
 
 interface PerformanceMetrics {
   configSize: string;
@@ -26,7 +28,7 @@ async function measurePerformance(
   const tempDir = await Deno.makeTempDir();
   // App config goes in the "working_dir" location
   const appConfigDir = join(tempDir, ".agent", "climpt", "config");
-  await Deno.mkdir(appConfigDir, { recursive: true });
+  await Deno.mkdir(appConfigDir, RECURSIVE_OPTIONS);
 
   // Read JSON test fixture and convert to YAML
   const jsonContent = await Deno.readTextFile(configPath);
@@ -70,7 +72,7 @@ async function measurePerformance(
   const endMemory = Deno.memoryUsage();
 
   // Clean up temp directory
-  await Deno.remove(tempDir, { recursive: true });
+  await Deno.remove(tempDir, RECURSIVE_OPTIONS);
 
   // Calculate metrics
   const fileInfo = await Deno.stat(configPath);
@@ -108,6 +110,7 @@ Deno.test("E2E Performance Tests - Total Function Design", async (t) => {
   const results: PerformanceMetrics[] = [];
 
   for (const testConfig of testConfigs) {
+    // deno-lint-ignore no-await-in-loop
     await t.step(`Performance test with ${testConfig.file}`, async () => {
       const configPath = join(baseDir, testConfig.file);
       logger.info(`Testing with ${testConfig.file} (${testConfig.items} items)`);
@@ -137,13 +140,13 @@ Deno.test("E2E Performance Tests - Total Function Design", async (t) => {
       const totalTime = metrics.loadTime + metrics.parseTime;
       if (testConfig.items <= 100) {
         // Small/medium configs should load in under 100ms
-        assertEquals(totalTime < 100, true, `Expected total time < 100ms, got ${totalTime}ms`);
+        assert(totalTime < 100, `Expected total time < 100ms, got ${totalTime}ms`);
       } else if (testConfig.items <= 1000) {
         // Large configs should load in under 500ms
-        assertEquals(totalTime < 500, true, `Expected total time < 500ms, got ${totalTime}ms`);
+        assert(totalTime < 500, `Expected total time < 500ms, got ${totalTime}ms`);
       } else {
         // XLarge configs should load in under 2000ms
-        assertEquals(totalTime < 2000, true, `Expected total time < 2000ms, got ${totalTime}ms`);
+        assert(totalTime < 2000, `Expected total time < 2000ms, got ${totalTime}ms`);
       }
     });
   }
@@ -179,9 +182,8 @@ Deno.test("E2E Performance Tests - Total Function Design", async (t) => {
       logger.info(`  Scaling efficiency: ${Math.round((itemRatio / timeRatio) * 100)}%`);
 
       // Assert reasonable scaling (sub-linear is good)
-      assertEquals(
+      assert(
         timeRatio < itemRatio,
-        true,
         `Expected sub-linear scaling, but time increased ${timeRatio}x for ${itemRatio}x items`,
       );
     }
@@ -195,14 +197,13 @@ Deno.test("E2E Performance Tests - Total Function Design", async (t) => {
     const invalidConfig = BreakdownConfig.create("invalid@profile");
     const errorEndTime = performance.now();
 
-    assertEquals(invalidConfig.success, false);
+    assert(!invalidConfig.success);
     const errorHandlingTime = errorEndTime - errorStartTime;
     logger.info(`Error handling time: ${Math.round(errorHandlingTime * 100) / 100}ms`);
 
     // Verify error handling is fast
-    assertEquals(
+    assert(
       errorHandlingTime < 10,
-      true,
       `Error handling should be fast (<10ms), got ${errorHandlingTime}ms`,
     );
 
@@ -213,7 +214,7 @@ Deno.test("E2E Performance Tests - Total Function Design", async (t) => {
     // Create temp setup for chain test
     const tempDir = await Deno.makeTempDir();
     const configDir = join(tempDir, ".agent", "climpt", "config");
-    await Deno.mkdir(configDir, { recursive: true });
+    await Deno.mkdir(configDir, RECURSIVE_OPTIONS);
     const jsonContent = await Deno.readTextFile(testConfigPath);
     const jsonData = JSON.parse(jsonContent);
     const yamlContent = stringify(jsonData);
@@ -234,15 +235,14 @@ Deno.test("E2E Performance Tests - Total Function Design", async (t) => {
     const chainTime = chainEndTime - chainStartTime;
 
     // Clean up
-    await Deno.remove(tempDir, { recursive: true });
+    await Deno.remove(tempDir, RECURSIVE_OPTIONS);
 
-    assertEquals(chainResult.success, true);
+    assert(chainResult.success);
     logger.info(`Result chain time: ${Math.round(chainTime * 100) / 100}ms`);
 
     // Verify chaining doesn't add significant overhead
-    assertEquals(
+    assert(
       chainTime < 50,
-      true,
       `Result chaining should have minimal overhead (<50ms), got ${chainTime}ms`,
     );
   });
@@ -257,21 +257,28 @@ Deno.test("E2E Performance Tests - Total Function Design", async (t) => {
     const testConfigPath = join(baseDir, "config_medium.json");
 
     for (let i = 0; i < 10; i++) {
+      // deno-lint-ignore no-await-in-loop
       const tempDir = await Deno.makeTempDir();
       const configDir = join(tempDir, ".agent", "climpt", "config");
-      await Deno.mkdir(configDir, { recursive: true });
+      // deno-lint-ignore no-await-in-loop
+      await Deno.mkdir(configDir, RECURSIVE_OPTIONS);
+      // deno-lint-ignore no-await-in-loop
       const jsonContent = await Deno.readTextFile(testConfigPath);
       const jsonData = JSON.parse(jsonContent);
       const yamlContent = stringify(jsonData);
+      // deno-lint-ignore no-await-in-loop
       await Deno.writeTextFile(join(configDir, "app.yml"), yamlContent);
 
       const config = BreakdownConfig.create(`mem-test-${i}`, tempDir);
       if (config.success) {
+        // deno-lint-ignore no-await-in-loop
         await config.data.loadConfigSafe();
+        // deno-lint-ignore no-await-in-loop
         await config.data.getConfigSafe();
       }
 
-      await Deno.remove(tempDir, { recursive: true });
+      // deno-lint-ignore no-await-in-loop
+      await Deno.remove(tempDir, RECURSIVE_OPTIONS);
     }
 
     // Force garbage collection if available
@@ -286,9 +293,8 @@ Deno.test("E2E Performance Tests - Total Function Design", async (t) => {
     logger.info(`Memory growth after 10 operations: ${Math.round(memoryGrowth * 100) / 100}MB`);
 
     // Verify no significant memory leaks
-    assertEquals(
+    assert(
       memoryGrowth < 50,
-      true,
       `Expected minimal memory growth (<50MB), got ${memoryGrowth}MB`,
     );
   });

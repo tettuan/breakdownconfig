@@ -9,13 +9,15 @@
  * - Error recovery scenarios
  */
 
-import { assertEquals, assertExists } from "@std/assert";
+import { assert, assertEquals, assertExists } from "@std/assert";
 import { BreakdownConfig } from "../../mod.ts";
 import { BreakdownLogger } from "@tettuan/breakdownlogger";
 import { resolve } from "@std/path";
 
 const logger = new BreakdownLogger("e2e-realworld");
 const perfLogger = new BreakdownLogger("performance");
+
+const RECURSIVE_OPTIONS = { recursive: true };
 
 Deno.test("E2E: Real-World Scenario - Large Configuration Processing", async (t) => {
   logger.debug("Starting large configuration processing test");
@@ -27,13 +29,13 @@ Deno.test("E2E: Real-World Scenario - Large Configuration Processing", async (t)
     try {
       // Create large config file with proper structure
       const configDir = resolve(baseDir, ".agent/climpt/config");
-      await Deno.mkdir(configDir, { recursive: true });
+      await Deno.mkdir(configDir, RECURSIVE_OPTIONS);
 
       // Create a large config with many items
       const largeConfig: Record<string, unknown> = {
-        working_dir: ".agent/climpt",
-        app_prompt: { base_dir: ".agent/climpt/prompts/app" },
-        app_schema: { base_dir: ".agent/climpt/schema/app" },
+        "working_dir": ".agent/climpt",
+        "app_prompt": { "base_dir": ".agent/climpt/prompts/app" },
+        "app_schema": { "base_dir": ".agent/climpt/schema/app" },
       };
 
       // Add many config items
@@ -129,7 +131,7 @@ ${configItemsYaml}
       });
 
       const configResult = BreakdownConfig.create(undefined, baseDir);
-      assertEquals(configResult.success, true, "Should create config instance");
+      assert(configResult.success, "Should create config instance");
 
       if (!configResult.success) return;
 
@@ -143,12 +145,12 @@ ${configItemsYaml}
         status: loadResult.success ? "success" : "failed",
       });
 
-      assertEquals(loadResult.success, true, "Should load large config successfully");
+      assert(loadResult.success, "Should load large config successfully");
 
       if (loadResult.success) {
         // loadConfigSafe returns void, need to call getConfigSafe to get data
         const getResult = await config.getConfigSafe();
-        assertEquals(getResult.success, true, "Should get config after loading");
+        assert(getResult.success, "Should get config after loading");
 
         if (getResult.success) {
           const data = getResult.data;
@@ -166,15 +168,14 @@ ${configItemsYaml}
             totalTime: `${(performance.now() - startTime).toFixed(2)}ms`,
           });
 
-          assertEquals(
+          assert(
             configKeys.length >= 2000,
-            true,
             "Should have many config items (got " + configKeys.length + ")",
           );
         }
       }
     } finally {
-      await Deno.remove(baseDir, { recursive: true });
+      await Deno.remove(baseDir, RECURSIVE_OPTIONS);
     }
   });
 
@@ -188,20 +189,23 @@ ${configItemsYaml}
     try {
       // Load multiple large configs to test memory handling
       for (let i = 0; i < 5; i++) {
+        // deno-lint-ignore no-await-in-loop
         const tempDir = await Deno.makeTempDir();
         tempDirs.push(tempDir);
 
         // Create config structure
         const configDir = resolve(tempDir, ".agent/climpt/config");
-        await Deno.mkdir(configDir, { recursive: true });
+        // deno-lint-ignore no-await-in-loop
+        await Deno.mkdir(configDir, RECURSIVE_OPTIONS);
 
         const config = {
-          working_dir: ".agent/climpt",
-          app_prompt: { base_dir: ".agent/climpt/prompts/app" },
-          app_schema: { base_dir: ".agent/climpt/schema/app" },
+          "working_dir": ".agent/climpt",
+          "app_prompt": { "base_dir": ".agent/climpt/prompts/app" },
+          "app_schema": { "base_dir": ".agent/climpt/schema/app" },
           profile: `profile-${i}`,
         };
 
+        // deno-lint-ignore no-await-in-loop
         await Deno.writeTextFile(
           resolve(configDir, "app.yml"),
           JSON.stringify(config),
@@ -212,11 +216,12 @@ ${configItemsYaml}
 
         if (result.success) {
           configs.push(result.data);
+          // deno-lint-ignore no-await-in-loop
           const loadResult = await result.data.loadConfigSafe();
           const endTime = performance.now();
           loadTimes.push(endTime - startTime);
 
-          assertEquals(loadResult.success, true, `Config ${i} should load successfully`);
+          assert(loadResult.success, `Config ${i} should load successfully`);
         }
       }
 
@@ -231,7 +236,8 @@ ${configItemsYaml}
     } finally {
       // Cleanup all temp directories
       for (const dir of tempDirs) {
-        await Deno.remove(dir, { recursive: true });
+        // deno-lint-ignore no-await-in-loop
+        await Deno.remove(dir, RECURSIVE_OPTIONS);
       }
     }
   });
@@ -249,17 +255,16 @@ Deno.test("E2E: Real-World Scenario - Error Recovery and Resilience", async (t) 
       await Deno.writeTextFile(resolve(baseDir, "app_config.json"), corruptedJson);
 
       const configResult = BreakdownConfig.create(undefined, baseDir);
-      assertEquals(configResult.success, true);
+      assert(configResult.success);
 
       if (configResult.success) {
         const loadResult = await configResult.data.loadConfigSafe();
-        assertEquals(loadResult.success, false, "Should fail on corrupted JSON");
+        assert(!loadResult.success, "Should fail on corrupted JSON");
 
         if (!loadResult.success) {
           // Could be CONFIG_PARSE_ERROR or CONFIG_FILE_NOT_FOUND depending on how JSON.parse handles the corrupted data
-          assertEquals(
+          assert(
             ["CONFIG_PARSE_ERROR", "CONFIG_FILE_NOT_FOUND"].includes(loadResult.error.kind),
-            true,
             `Should be parse or file error, got: ${loadResult.error.kind}`,
           );
           if (loadResult.error instanceof Error) {
@@ -276,7 +281,7 @@ Deno.test("E2E: Real-World Scenario - Error Recovery and Resilience", async (t) 
         }
       }
     } finally {
-      await Deno.remove(baseDir, { recursive: true });
+      await Deno.remove(baseDir, RECURSIVE_OPTIONS);
     }
   });
 
@@ -288,9 +293,9 @@ Deno.test("E2E: Real-World Scenario - Error Recovery and Resilience", async (t) 
       await Deno.writeTextFile(
         configFile,
         JSON.stringify({
-          working_dir: ".",
-          app_prompt: { base_dir: "./prompts" },
-          app_schema: { base_dir: "./schemas" },
+          "working_dir": ".",
+          "app_prompt": { "base_dir": "./prompts" },
+          "app_schema": { "base_dir": "./schemas" },
         }),
       );
 
@@ -300,7 +305,7 @@ Deno.test("E2E: Real-World Scenario - Error Recovery and Resilience", async (t) 
       const configResult = BreakdownConfig.create(undefined, baseDir);
       if (configResult.success) {
         const loadResult = await configResult.data.loadConfigSafe();
-        assertEquals(loadResult.success, false, "Should fail on permission denied");
+        assert(!loadResult.success, "Should fail on permission denied");
 
         if (!loadResult.success) {
           if (loadResult.error instanceof Error) {
@@ -320,7 +325,7 @@ Deno.test("E2E: Real-World Scenario - Error Recovery and Resilience", async (t) 
       // Restore permissions for cleanup
       await Deno.chmod(configFile, 0o644);
     } finally {
-      await Deno.remove(baseDir, { recursive: true });
+      await Deno.remove(baseDir, RECURSIVE_OPTIONS);
     }
   });
 
@@ -328,7 +333,11 @@ Deno.test("E2E: Real-World Scenario - Error Recovery and Resilience", async (t) 
     const testCases = [
       { name: "empty profile", profile: "", shouldFail: false }, // Empty profile now valid (treated as "no profile") per Total Function design
       { name: "very long profile", profile: "a".repeat(255), shouldFail: false }, // Long alphanumeric profile is valid
-      { name: "unicode profile", profile: "测试-プロファイル", shouldFail: true }, // Unicode not supported per regex ^[a-zA-Z0-9-]+$
+      {
+        name: "unicode profile",
+        profile: "\u6D4B\u8BD5-\u30D7\u30ED\u30D5\u30A1\u30A4\u30EB",
+        shouldFail: true,
+      }, // Unicode not supported per regex ^[a-zA-Z0-9-]+$
       { name: "special chars", profile: "../../../etc/passwd", shouldFail: true }, // Path traversal attack
     ];
 
@@ -369,8 +378,9 @@ Deno.test("E2E: Real-World Scenario - Multi-Environment Deployment", async (t) =
         const config = configResult.data;
 
         // Test safe retrieval before loading
+        // deno-lint-ignore no-await-in-loop
         const getResult = await config.getConfigSafe();
-        assertEquals(getResult.success, false, "Should fail before loading");
+        assert(!getResult.success, "Should fail before loading");
         if (!getResult.success) {
           assertEquals(getResult.error.kind, "CONFIG_NOT_LOADED");
         }
@@ -379,7 +389,7 @@ Deno.test("E2E: Real-World Scenario - Multi-Environment Deployment", async (t) =
 
     assertEquals(results.size, 3, "Should handle all environments");
     for (const [env, result] of results) {
-      assertEquals(result.success, true, `${env} config should be created successfully`);
+      assert(result.success, `${env} config should be created successfully`);
     }
   });
 
@@ -389,16 +399,16 @@ Deno.test("E2E: Real-World Scenario - Multi-Environment Deployment", async (t) =
     try {
       // Create proper config structure
       const configDir = resolve(baseDir, ".agent/climpt/config");
-      await Deno.mkdir(configDir, { recursive: true });
+      await Deno.mkdir(configDir, RECURSIVE_OPTIONS);
 
       // Create test configuration in the correct location
       await Deno.writeTextFile(
         resolve(configDir, "app.yml"),
         JSON.stringify({
-          working_dir: ".agent/climpt",
-          app_prompt: { base_dir: ".agent/climpt/prompts/app" },
-          app_schema: { base_dir: ".agent/climpt/schema/app" },
-          concurrent_test: true,
+          "working_dir": ".agent/climpt",
+          "app_prompt": { "base_dir": ".agent/climpt/prompts/app" },
+          "app_schema": { "base_dir": ".agent/climpt/schema/app" },
+          "concurrent_test": true,
         }),
       );
 
@@ -434,10 +444,10 @@ Deno.test("E2E: Real-World Scenario - Multi-Environment Deployment", async (t) =
 
       // All should succeed
       for (const result of results) {
-        assertEquals(result.success, true, "Concurrent access should succeed");
+        assert(result.success, "Concurrent access should succeed");
       }
     } finally {
-      await Deno.remove(baseDir, { recursive: true });
+      await Deno.remove(baseDir, RECURSIVE_OPTIONS);
     }
   });
 });
@@ -455,8 +465,8 @@ Deno.test("E2E: Real-World Scenario - Configuration Migration", async (t) => {
         appPrompt: { baseDir: "./old-prompts" }, // Old camelCase
         appSchema: { baseDir: "./old-schemas" },
         // Mix of old and new properties
-        legacy_property: "should be ignored",
-        new_property: "should be preserved",
+        "legacy_property": "should be ignored",
+        "new_property": "should be preserved",
       };
 
       await Deno.writeTextFile(
@@ -489,7 +499,7 @@ Deno.test("E2E: Real-World Scenario - Configuration Migration", async (t) => {
         }
       }
     } finally {
-      await Deno.remove(baseDir, { recursive: true });
+      await Deno.remove(baseDir, RECURSIVE_OPTIONS);
     }
   });
 
@@ -500,9 +510,9 @@ Deno.test("E2E: Real-World Scenario - Configuration Migration", async (t) => {
       // Create config with version info
       const versionedConfig = {
         version: "2.0.0", // Future version
-        working_dir: ".",
-        app_prompt: { base_dir: "./prompts", version: "2.0" },
-        app_schema: { base_dir: "./schemas", version: "2.0" },
+        "working_dir": ".",
+        "app_prompt": { "base_dir": "./prompts", version: "2.0" },
+        "app_schema": { "base_dir": "./schemas", version: "2.0" },
         features: {
           experimental: true,
           newFeature: "not-yet-supported",
@@ -534,7 +544,7 @@ Deno.test("E2E: Real-World Scenario - Configuration Migration", async (t) => {
         }
       }
     } finally {
-      await Deno.remove(baseDir, { recursive: true });
+      await Deno.remove(baseDir, RECURSIVE_OPTIONS);
     }
   });
 });
@@ -552,16 +562,18 @@ Deno.test("E2E: Performance Benchmarks", async (t) => {
     };
 
     const configs = ["small", "medium", "large", "xlarge"];
-    const tempDirs = [];
+    const tempDirs: string[] = [];
 
     try {
       for (const size of configs) {
+        // deno-lint-ignore no-await-in-loop
         const tempDir = await Deno.makeTempDir();
         tempDirs.push(tempDir);
 
         // Create config with different sizes
         const configDir = resolve(tempDir, ".agent/climpt/config");
-        await Deno.mkdir(configDir, { recursive: true });
+        // deno-lint-ignore no-await-in-loop
+        await Deno.mkdir(configDir, RECURSIVE_OPTIONS);
 
         const itemCount = size === "small"
           ? 10
@@ -572,9 +584,9 @@ Deno.test("E2E: Performance Benchmarks", async (t) => {
           : 5000;
 
         const config: Record<string, unknown> = {
-          working_dir: ".agent/climpt",
-          app_prompt: { base_dir: ".agent/climpt/prompts/app" },
-          app_schema: { base_dir: ".agent/climpt/schema/app" },
+          "working_dir": ".agent/climpt",
+          "app_prompt": { "base_dir": ".agent/climpt/prompts/app" },
+          "app_schema": { "base_dir": ".agent/climpt/schema/app" },
         };
 
         // Add items based on size
@@ -586,6 +598,7 @@ Deno.test("E2E: Performance Benchmarks", async (t) => {
           };
         }
 
+        // deno-lint-ignore no-await-in-loop
         await Deno.writeTextFile(
           resolve(configDir, "app.yml"),
           JSON.stringify(config),
@@ -596,6 +609,7 @@ Deno.test("E2E: Performance Benchmarks", async (t) => {
 
         if (result.success) {
           const config = result.data;
+          // deno-lint-ignore no-await-in-loop
           const loadResult = await config.loadConfigSafe();
           const endTime = performance.now();
 
@@ -611,14 +625,14 @@ Deno.test("E2E: Performance Benchmarks", async (t) => {
     } finally {
       // Cleanup
       for (const dir of tempDirs) {
-        await Deno.remove(dir, { recursive: true });
+        // deno-lint-ignore no-await-in-loop
+        await Deno.remove(dir, RECURSIVE_OPTIONS);
       }
     }
 
     // Verify performance scales reasonably (relaxed for 10MB+ configs)
-    assertEquals(
+    assert(
       metrics.xlargeConfig < metrics.smallConfig * 500,
-      true,
       "Extra large config should not take more than 500x small config time",
     );
   });

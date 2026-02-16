@@ -6,6 +6,7 @@
  */
 
 import {
+  assert,
   assertEquals,
   assertExists,
   assertInstanceOf,
@@ -13,14 +14,14 @@ import {
 import { describe, it } from "https://deno.land/std@0.220.1/testing/bdd.ts";
 
 import {
-  BaseErrorInterface,
+  type BaseErrorInterface,
   ErrorCategory,
   ErrorFactories,
   ErrorGuards,
   ErrorHandlingUtils,
   ErrorSeverity,
   QuickErrorFactory,
-  StandardErrorCode as _StandardErrorCode,
+  type StandardErrorCode as _StandardErrorCode,
   unifiedErrorManager,
 } from "../../src/errors/unified_error_final_exports.ts";
 import { ErrorHandlingUtils as ErrorUtilsHandling } from "../../src/errors/error_handling_utils.ts";
@@ -63,7 +64,7 @@ describe("Unified Error Type Safety Integration Tests", () => {
           throw testCase.input;
         }, `Testing ${testCase.description}`);
 
-        assertEquals(result.success, false);
+        assert(!result.success);
         if (!result.success) {
           assertExists(result.error);
           assertEquals(typeof result.error.kind, "string");
@@ -118,7 +119,7 @@ describe("Unified Error Type Safety Integration Tests", () => {
         "Async operation test",
       );
 
-      assertEquals(result.success, false);
+      assert(!result.success);
       if (!result.success) {
         assertExists(result.error);
         assertEquals(result.error.category, ErrorCategory.UNKNOWN);
@@ -136,7 +137,7 @@ describe("Unified Error Type Safety Integration Tests", () => {
         "Sync operation test",
       );
 
-      assertEquals(result.success, false);
+      assert(!result.success);
       if (!result.success) {
         assertExists(result.error);
         assertEquals(result.error.category, ErrorCategory.UNKNOWN);
@@ -156,13 +157,13 @@ describe("Unified Error Type Safety Integration Tests", () => {
       );
 
       const result1 = safeDivide(10, 2);
-      assertEquals(result1.success, true);
+      assert(result1.success);
       if (result1.success) {
         assertEquals(result1.data, 5);
       }
 
       const result2 = safeDivide(10, 0);
-      assertEquals(result2.success, false);
+      assert(!result2.success);
       if (!result2.success) {
         assertExists(result2.error);
         assertEquals(result2.error.category, ErrorCategory.UNKNOWN);
@@ -182,13 +183,13 @@ describe("Unified Error Type Safety Integration Tests", () => {
       );
 
       const result1 = await safeAsyncDivide(20, 4);
-      assertEquals(result1.success, true);
+      assert(result1.success);
       if (result1.success) {
         assertEquals(result1.data, 5);
       }
 
       const result2 = await safeAsyncDivide(20, 0);
-      assertEquals(result2.success, false);
+      assert(!result2.success);
       if (!result2.success) {
         assertExists(result2.error);
         assertEquals(result2.error.category, ErrorCategory.UNKNOWN);
@@ -241,6 +242,7 @@ describe("Unified Error Type Safety Integration Tests", () => {
 
       // Process each error
       for (const error of errors) {
+        // deno-lint-ignore no-await-in-loop
         await unifiedErrorManager.processError(error);
       }
 
@@ -253,7 +255,7 @@ describe("Unified Error Type Safety Integration Tests", () => {
 
       // Verify type safety in report
       assertEquals(typeof report.summary.total, "number");
-      assertEquals(report.summary.total >= errors.length, true);
+      assert(report.summary.total >= errors.length);
     });
 
     it("should maintain type safety in error guards", () => {
@@ -300,8 +302,8 @@ describe("Unified Error Type Safety Integration Tests", () => {
       for (const operation of operations) {
         const result = operation();
         assertExists(result);
-        assertEquals(result !== null, true);
-        assertEquals(result !== undefined, true);
+        assert(result !== null);
+        assert(result !== undefined);
       }
     });
 

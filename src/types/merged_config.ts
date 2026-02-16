@@ -4,7 +4,7 @@ import type { LegacyUserConfig as _LegacyUserConfig, UserConfig } from "./user_c
 // Re-export for test compatibility
 export type { AppConfig };
 export type { UserConfig };
-import { UserConfigGuards as _UserConfigGuards, UserConfigHelpers } from "./user_config.ts";
+import { type UserConfigGuards as _UserConfigGuards, UserConfigHelpers } from "./user_config.ts";
 import type { ValidPath } from "../utils/valid_path.ts";
 import { Result } from "./unified_result.ts";
 import type { UnifiedError, ValidationViolation } from "../errors/unified_errors.ts";
@@ -24,33 +24,33 @@ export interface ValidatedConfig {
   /**
    * The validated working directory for the application
    */
-  working_dir: ValidPath;
+  "working_dir": ValidPath;
 
   /**
    * Configuration settings for prompt-related functionality with validated paths
    */
-  app_prompt: {
+  "app_prompt": {
     /**
      * Validated base directory for prompt files
      */
-    base_dir: ValidPath;
+    "base_dir": ValidPath;
   };
 
   /**
    * Configuration settings for schema-related functionality with validated paths
    */
-  app_schema: {
+  "app_schema": {
     /**
      * Validated base directory for schema files
      */
-    base_dir: ValidPath;
+    "base_dir": ValidPath;
   };
 
   /**
    * Optional fields from AppConfig that may be present
    */
-  app_name?: string;
-  app_version?: string;
+  "app_name"?: string;
+  "app_version"?: string;
 
   /**
    * Additional validated custom fields
@@ -77,12 +77,12 @@ export interface AppOnlyProfile {
     userConfigExists: false;
   };
   readonly config: {
-    working_dir: string;
-    app_prompt: {
-      base_dir: string;
+    "working_dir": string;
+    "app_prompt": {
+      "base_dir": string;
     };
-    app_schema: {
-      base_dir: string;
+    "app_schema": {
+      "base_dir": string;
     };
   };
 }
@@ -100,13 +100,13 @@ export interface MergedProfile {
     userConfigExists: true;
   };
   readonly config: {
-    working_dir: string;
-    app_prompt: {
-      base_dir: string;
+    "working_dir": string;
+    "app_prompt": {
+      "base_dir": string;
       [key: string]: unknown;
     };
-    app_schema: {
-      base_dir: string;
+    "app_schema": {
+      "base_dir": string;
       [key: string]: unknown;
     };
     [key: string]: unknown; // ユーザー設定からの任意フィールド
@@ -319,12 +319,12 @@ export class ConfigProfileFactory {
   ): MergedProfile["config"] {
     // working_dirは上書き不可
     const mergedConfig: MergedProfile["config"] = {
-      working_dir: appConfig.working_dir,
-      app_prompt: {
-        base_dir: UserConfigHelpers.getPromptBaseDir(userConfig) ?? appConfig.app_prompt.base_dir,
+      "working_dir": appConfig.working_dir,
+      "app_prompt": {
+        "base_dir": UserConfigHelpers.getPromptBaseDir(userConfig) ?? appConfig.app_prompt.base_dir,
       },
-      app_schema: {
-        base_dir: UserConfigHelpers.getSchemaBaseDir(userConfig) ?? appConfig.app_schema.base_dir,
+      "app_schema": {
+        "base_dir": UserConfigHelpers.getSchemaBaseDir(userConfig) ?? appConfig.app_schema.base_dir,
       },
     };
 
@@ -417,12 +417,12 @@ export const ConfigProfileHelpers = {
  * @deprecated Use ConfigProfile instead
  */
 export interface MergedConfig extends AppConfig {
-  working_dir: string;
-  app_prompt: {
-    base_dir: string;
+  "working_dir": string;
+  "app_prompt": {
+    "base_dir": string;
   };
-  app_schema: {
-    base_dir: string;
+  "app_schema": {
+    "base_dir": string;
   };
   [key: string]: string | number | boolean | null | undefined | { [key: string]: unknown };
 }
@@ -434,12 +434,12 @@ export interface MergedConfig extends AppConfig {
 export function profileToLegacyConfig(profile: ConfigProfile): MergedConfig {
   const config = profile.config;
   const result: MergedConfig = {
-    working_dir: config.working_dir,
-    app_prompt: {
-      base_dir: config.app_prompt.base_dir,
+    "working_dir": config.working_dir,
+    "app_prompt": {
+      "base_dir": config.app_prompt.base_dir,
     },
-    app_schema: {
-      base_dir: config.app_schema.base_dir,
+    "app_schema": {
+      "base_dir": config.app_schema.base_dir,
     },
   };
 

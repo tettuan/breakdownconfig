@@ -1,8 +1,8 @@
 import { parse as parseYaml } from "@std/yaml";
 import { join } from "@std/path";
 import {
-  ConfigError,
-  ConfigResult,
+  type ConfigError,
+  type ConfigResult,
   type FileNotFoundError,
   type ParseError,
   Result,

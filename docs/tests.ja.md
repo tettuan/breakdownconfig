@@ -91,8 +91,8 @@ LOG_LEVEL=debug LOG_KEY="security" deno test          # セキュリティ検証
 LOG_LEVEL=debug LOG_KEY="stepbystep" deno test        # ステップ追跡
 LOG_LEVEL=debug LOG_KEY="dataflow,security" deno test # 複数目的
 
-# 制限: LOG_LENGTH=数値
-LOG_LEVEL=debug LOG_LENGTH=200 deno test
+# 出力長: LOG_LENGTH={S|L|W} (Short=160文字, Long=300文字, Whole=無制限, デフォルト=80文字)
+LOG_LEVEL=debug LOG_LENGTH=L deno test
 
 # CI: DEBUG=true
 DEBUG=true LOG_KEY="error" scripts/local_ci.sh

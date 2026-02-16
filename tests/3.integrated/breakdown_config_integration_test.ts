@@ -3,10 +3,10 @@
  * Level 3: Verifies complete integration flows with Total Function design
  */
 
-import { assertEquals, assertExists, assertRejects, assertThrows } from "@std/assert";
+import { assert, assertEquals, assertExists, assertRejects, assertThrows } from "@std/assert";
 import { BreakdownConfig } from "../../mod.ts";
-import { Result as _Result } from "../../src/types/unified_result.ts";
-import { UnifiedError as _UnifiedError } from "../../src/errors/unified_errors.ts";
+import type { Result as _Result } from "../../src/types/unified_result.ts";
+import type { UnifiedError as _UnifiedError } from "../../src/errors/unified_errors.ts";
 import {
   cleanupTestConfigs,
   setupAppConfigOnly,
@@ -15,27 +15,28 @@ import {
 } from "../test_utils.ts";
 
 Deno.test("Integration: BreakdownConfig Total Function Complete Flow", async (t) => {
+  // deno-lint-ignore no-console
   console.log("Testing BreakdownConfig complete integration flow with Total Function principles");
 
   await t.step("Smart Constructor integration with valid inputs", () => {
     // Test 1: Default parameters
     const defaultResult = BreakdownConfig.create();
-    assertEquals(defaultResult.success, true, "Default parameters should succeed");
+    assert(defaultResult.success, "Default parameters should succeed");
     if (defaultResult.success) {
       assertExists(defaultResult.data);
-      assertEquals(defaultResult.data instanceof BreakdownConfig, true);
+      assert(defaultResult.data instanceof BreakdownConfig);
     }
 
     // Test 2: With valid profile
     const profileResult = BreakdownConfig.create("production");
-    assertEquals(profileResult.success, true, "Valid profile should succeed");
+    assert(profileResult.success, "Valid profile should succeed");
     if (profileResult.success) {
       assertExists(profileResult.data);
     }
 
     // Test 3: With valid profile and baseDir
     const bothResult = BreakdownConfig.create("staging", "/tmp/test");
-    assertEquals(bothResult.success, true, "Valid parameters should succeed");
+    assert(bothResult.success, "Valid parameters should succeed");
   });
 
   await t.step("Smart Constructor integration with invalid inputs", () => {
@@ -49,7 +50,7 @@ Deno.test("Integration: BreakdownConfig Total Function Complete Flow", async (t)
 
     for (const profile of invalidProfiles) {
       const result = BreakdownConfig.create(profile);
-      assertEquals(result.success, false, `Profile "${profile}" should fail`);
+      assert(!result.success, `Profile "${profile}" should fail`);
       if (!result.success) {
         assertEquals(result.error.kind, "CONFIG_VALIDATION_ERROR");
       }
@@ -69,12 +70,12 @@ Deno.test("Integration: Safe Method APIs with Result Pattern", async (t) => {
       const config = configResult.data;
       const loadResult = await config.loadConfigSafe();
 
-      assertEquals(loadResult.success, true, "loadConfigSafe should succeed");
+      assert(loadResult.success, "loadConfigSafe should succeed");
       // loadConfigSafe returns void, not the config data
       // We need to call getConfigSafe to get the actual config
       if (loadResult.success) {
         const configResult = await config.getConfigSafe();
-        assertEquals(configResult.success, true);
+        assert(configResult.success);
         if (configResult.success) {
           assertExists(configResult.data.working_dir);
           assertExists(configResult.data.app_prompt);
@@ -95,7 +96,7 @@ Deno.test("Integration: Safe Method APIs with Result Pattern", async (t) => {
     const config = configResult.data;
     const loadResult = await config.loadConfigSafe();
 
-    assertEquals(loadResult.success, false, "loadConfigSafe should fail gracefully");
+    assert(!loadResult.success, "loadConfigSafe should fail gracefully");
     if (!loadResult.success) {
       assertEquals(loadResult.error.kind, "CONFIG_FILE_NOT_FOUND");
     }
@@ -110,7 +111,7 @@ Deno.test("Integration: Safe Method APIs with Result Pattern", async (t) => {
     const config = configResult.data;
     const getResult = await config.getConfigSafe();
 
-    assertEquals(getResult.success, false, "getConfigSafe should fail before loading");
+    assert(!getResult.success, "getConfigSafe should fail before loading");
     if (!getResult.success) {
       assertEquals(getResult.error.kind, "CONFIG_NOT_LOADED");
     }
@@ -128,7 +129,7 @@ Deno.test("Integration: Safe Method APIs with Result Pattern", async (t) => {
 
       // Before loading
       const beforeResult = await config.getWorkingDirSafe();
-      assertEquals(beforeResult.success, false);
+      assert(!beforeResult.success);
       if (!beforeResult.success) {
         assertEquals(beforeResult.error.kind, "CONFIG_NOT_LOADED");
       }
@@ -136,7 +137,7 @@ Deno.test("Integration: Safe Method APIs with Result Pattern", async (t) => {
       // After loading
       await config.loadConfig();
       const afterResult = await config.getWorkingDirSafe();
-      assertEquals(afterResult.success, true);
+      assert(afterResult.success);
       if (afterResult.success) {
         assertExists(afterResult.data);
       }
@@ -171,7 +172,7 @@ app_schema:
 
       // Safe method should handle gracefully
       const loadResult = await config.loadConfigSafe();
-      assertEquals(loadResult.success, false);
+      assert(!loadResult.success);
       if (!loadResult.success) {
         assertEquals(loadResult.error.kind, "CONFIG_PARSE_ERROR");
       }
@@ -188,12 +189,12 @@ app_schema:
 
   await t.step("Complete error flow with validation failures", async () => {
     const invalidConfig = {
-      working_dir: "", // Empty working_dir
-      app_prompt: {
-        base_dir: "../../../escape", // Path traversal attempt
+      "working_dir": "", // Empty working_dir
+      "app_prompt": {
+        "base_dir": "../../../escape", // Path traversal attempt
       },
-      app_schema: {
-        base_dir: "/absolute/path", // Absolute path where relative expected
+      "app_schema": {
+        "base_dir": "/absolute/path", // Absolute path where relative expected
       },
     };
 
@@ -207,7 +208,7 @@ app_schema:
       const config = configResult.data;
       const loadResult = await config.loadConfigSafe();
 
-      assertEquals(loadResult.success, false);
+      assert(!loadResult.success);
       if (!loadResult.success) {
         // Should be validation error
         assertExists(loadResult.error.kind);
@@ -224,7 +225,7 @@ Deno.test("Integration: Complete Configuration Lifecycle", async (t) => {
     try {
       // Step 1: Create configuration
       const createResult = BreakdownConfig.create(undefined, tempDir);
-      assertEquals(createResult.success, true);
+      assert(createResult.success);
       if (!createResult.success) {
         throw new Error("Create failed");
       }
@@ -233,14 +234,14 @@ Deno.test("Integration: Complete Configuration Lifecycle", async (t) => {
 
       // Step 2: Load configuration
       const loadResult = await config.loadConfigSafe();
-      assertEquals(loadResult.success, true);
+      assert(loadResult.success);
       if (!loadResult.success) {
         throw new Error("Load failed");
       }
 
       // Step 3: Access configuration
       const configResult = await config.getConfigSafe();
-      assertEquals(configResult.success, true);
+      assert(configResult.success);
       if (configResult.success) {
         assertExists(configResult.data.working_dir);
         assertExists(configResult.data.app_prompt);
@@ -249,13 +250,13 @@ Deno.test("Integration: Complete Configuration Lifecycle", async (t) => {
 
       // Step 4: Get derived paths
       const workingDirResult = await config.getWorkingDirSafe();
-      assertEquals(workingDirResult.success, true);
+      assert(workingDirResult.success);
 
       const promptDirResult = await config.getPromptDirSafe();
-      assertEquals(promptDirResult.success, true);
+      assert(promptDirResult.success);
 
       const schemaDirResult = await config.getSchemaDirSafe();
-      assertEquals(schemaDirResult.success, true);
+      assert(schemaDirResult.success);
 
       // Verify all paths exist
       if (workingDirResult.success && promptDirResult.success && schemaDirResult.success) {
@@ -272,16 +273,18 @@ Deno.test("Integration: Complete Configuration Lifecycle", async (t) => {
     const profiles = ["development", "staging", "production"];
 
     for (const profile of profiles) {
+      // deno-lint-ignore no-await-in-loop
       const tempDir = await setupAppConfigOnly();
       try {
         // Create profile-specific config
         const createResult = BreakdownConfig.create(profile, tempDir);
-        assertEquals(createResult.success, true);
+        assert(createResult.success);
 
         if (createResult.success) {
           const config = createResult.data;
 
           // Each profile should work independently
+          // deno-lint-ignore no-await-in-loop
           const loadResult = await config.loadConfigSafe();
 
           // loadConfigSafe might fail if profile config doesn't exist
@@ -295,6 +298,7 @@ Deno.test("Integration: Complete Configuration Lifecycle", async (t) => {
           }
         }
       } finally {
+        // deno-lint-ignore no-await-in-loop
         await cleanupTestConfigs(tempDir);
       }
     }
@@ -348,7 +352,7 @@ Deno.test("Integration: Result Type Chaining and Composition", async (t) => {
         return { success: true as const, data: transformedData };
       })();
 
-      assertEquals(finalResult.success, true);
+      assert(finalResult.success);
       if (finalResult.success) {
         assertExists(finalResult.data.paths);
         assertExists(finalResult.data.hasFiles);
@@ -366,7 +370,7 @@ Deno.test("Integration: Legacy API Compatibility", async (t) => {
       // Legacy pattern that throws
       const config = BreakdownConfig.createLegacy(undefined, tempDir);
       assertExists(config);
-      assertEquals(config instanceof BreakdownConfig, true);
+      assert(config instanceof BreakdownConfig);
 
       // Should be able to use normally
       await config.loadConfig();
@@ -386,4 +390,5 @@ Deno.test("Integration: Legacy API Compatibility", async (t) => {
   });
 });
 
+// deno-lint-ignore no-console
 console.log("BreakdownConfig integration tests complete - Total Function principles verified");
