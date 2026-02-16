@@ -1,20 +1,10 @@
 import { join } from "@std/path";
 import { parse as parseYaml } from "@std/yaml";
-import type {
-  ErrorCode as _ErrorCodeLoader,
-  ErrorManager as _ErrorManagerLoader,
-} from "../error_manager.ts";
 import type { LegacyUserConfig, UserConfig } from "../types/user_config.ts";
 import { UserConfigFactory } from "../types/user_config.ts";
 import { DefaultPaths } from "../types/app_config.ts";
-import {
-  type ConfigResult,
-  type FileNotFoundError as _FileNotFoundErrorLoader,
-  type ParseError,
-  Result,
-  type UnknownError,
-  type ValidationError as _ValidationErrorLoader,
-} from "../types/config_result.ts";
+import { Result } from "../types/unified_result.ts";
+import { ErrorFactories, type UnifiedError } from "../errors/unified_errors.ts";
 
 /**
  * Loads and validates optional user configuration files for personalization and overrides
@@ -126,7 +116,7 @@ export class UserConfigLoader {
    * - With profilePrefix: `{baseDir}/.agent/climpt/config/{profilePrefix}-user.yml`
    * - Without profilePrefix: `{baseDir}/.agent/climpt/config/user.yml`
    *
-   * @returns {Promise<ConfigResult<UserConfig | null>>} Result containing:
+   * @returns {Promise<Result<UserConfig | null, UnifiedError>>} Result containing:
    *          - null if file doesn't exist (this is a success case)
    *          - UserConfig object if file exists and is valid
    *          - Error in Result if file exists but is invalid
@@ -166,7 +156,7 @@ export class UserConfigLoader {
    * }
    * ```
    */
-  async load(): Promise<ConfigResult<UserConfig | null>> {
+  async load(): Promise<Result<UserConfig | null, UnifiedError>> {
     const fileName = this.profilePrefix ? `${this.profilePrefix}-user.yml` : "user.yml";
 
     const configPath = this.baseDir
@@ -182,11 +172,9 @@ export class UserConfigLoader {
         return Result.ok(null);
       }
       // Other file system errors
-      return Result.err<UnknownError>({
-        kind: "unknownError",
-        message: `Failed to read user config file: ${configPath}`,
-        originalError: error,
-      });
+      return Result.err(
+        ErrorFactories.unknown(error, `readUserConfig:${configPath}`),
+      );
     }
 
     let config: unknown;
@@ -194,28 +182,26 @@ export class UserConfigLoader {
       config = parseYaml(text);
     } catch (_) {
       // YAML parse error - this is a real error since the file exists
-      return Result.err<ParseError>({
-        kind: "parseError",
-        path: configPath,
-        line: 0, // YAML parser doesn't provide line numbers
-        column: 0,
-        message: "Invalid YAML format in user configuration file",
-      });
+      return Result.err(
+        ErrorFactories.configParseError(
+          configPath,
+          "Invalid YAML format in user configuration file",
+          0,
+          0,
+        ),
+      );
     }
 
     if (!this.validateConfig(config)) {
-      // Validation error - the file exists but has invalid structure
-      return Result.err({
-        kind: "configValidationError",
-        errors: [{
-          kind: "validationError",
+      return Result.err(
+        ErrorFactories.configValidationError("user_config", [{
           field: "root",
           value: config,
           expectedType: "UserConfig",
-          message: "Invalid user configuration structure",
-        }],
-        path: "user_config",
-      });
+          actualType: typeof config,
+          constraint: "Invalid user configuration structure",
+        }]),
+      );
     }
 
     // Convert legacy format to new discriminated union format
@@ -246,7 +232,9 @@ export class UserConfigLoader {
    * @param config - The configuration object to check
    * @returns {boolean} True if the configuration is valid
    */
-  private isValidPromptConfig(config: unknown): config is { base_dir: string } | undefined {
+  private isValidPromptConfig(
+    config: unknown,
+  ): config is { base_dir: string } | undefined {
     if (config === undefined) return true;
     return typeof config === "object" &&
       config !== null &&
@@ -260,7 +248,9 @@ export class UserConfigLoader {
    * @param config - The configuration object to check
    * @returns {boolean} True if the configuration is valid
    */
-  private isValidSchemaConfig(config: unknown): config is { base_dir: string } | undefined {
+  private isValidSchemaConfig(
+    config: unknown,
+  ): config is { base_dir: string } | undefined {
     if (config === undefined) return true;
     return typeof config === "object" &&
       config !== null &&

@@ -1,30 +1,24 @@
 # Delegation Protocol
 
-## Agent Type by Purpose
+## Agent Type
 
-| Purpose | Agent Type | What it does |
-|---------|-----------|-------------|
-| File exploration, code discovery, codebase search | Explore | Read-only; cannot edit files |
-| Design comparison, architecture options, planning | Plan | Read-only; produces analysis |
-| Implementation, testing, verification, file edits | general-purpose | Full tool access |
+| 用途 | Agent Type | 能力 |
+|------|-----------|------|
+| ファイル探索・コード検索 | Explore | 読み取り専用 |
+| 設計比較・アーキテクチャ選択 | Plan | 読み取り専用 |
+| 実装・テスト・検証・ファイル編集 | general-purpose | 全ツールアクセス |
 
-## Multi-Agent Conflict Resolution
+## 同一ファイル競合
 
-When two Sub Agents edit the same file, conductor judges the merge manually. Do not auto-combine.
+2つのSub Agentが同一ファイルを編集した場合、指揮者が両方のdiffを読み、手動でマージを判断する。自動結合しない。
 
-```
-Sub Agent A edits factory.ts (lines 10-30)
-Sub Agent B edits factory.ts (lines 25-50)
-→ Conductor reads both diffs, decides which changes to keep, applies manually
-```
+## Sub Agent起動テンプレート
 
-## Task Prompt Structure
+プロンプトに以下の4要素を必ず含める。
 
-Every Sub Agent launch must specify four elements in the prompt:
-
-| Element | Example |
-|---------|---------|
-| Goal | "Find all consumers of createCompletionHandler" |
-| Input | "Start from agents/completion/factory.ts" |
-| Expected output | "List of file:line pairs with import/call sites" |
-| Output path | "Write results to tmp/investigation/consumers.md" |
+| 要素 | 例 |
+|------|---|
+| Goal | 「createCompletionHandlerの全消費者を特定」 |
+| Input | 「agents/completion/factory.ts から開始」 |
+| Expected output | 「import/呼び出し箇所のfile:lineリスト」 |
+| Output path | 「tmp/investigation/consumers.md に出力」 |

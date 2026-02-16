@@ -1,51 +1,44 @@
 import { parse as parseYaml } from "@std/yaml";
-import {
-  type ConfigError,
-  type ConfigResult,
-  type FileNotFoundError,
-  type ParseError,
-  Result,
-  type UnknownError,
-  type ValidationError as _ValidationError,
-} from "../types/config_result.ts";
+import { Result } from "../types/unified_result.ts";
+import { ErrorFactories, type UnifiedError } from "../errors/unified_errors.ts";
 
 /**
  * Safe configuration loader with error handling
  *
  * This loader provides safe methods for loading configuration files
  * with proper error handling and validation. It returns results
- * wrapped in ConfigResult type for explicit error handling.
+ * wrapped in Result type for explicit error handling.
  */
 export class SafeConfigLoader {
   /**
    * Creates a new SafeConfigLoader instance
    *
    * @param filePath - Path to the configuration file to load
+   * @param configType - Type of configuration being loaded ("app" or "user")
    */
-  constructor(private readonly filePath: string) {}
+  constructor(
+    private readonly filePath: string,
+    private readonly configType: "app" | "user" = "app",
+  ) {}
 
   /**
    * Safely reads a file from the filesystem
    *
    * @returns The file content as string, or an error if reading fails
    */
-  async readFile(): Promise<ConfigResult<string, FileNotFoundError | UnknownError>> {
+  async readFile(): Promise<Result<string, UnifiedError>> {
     try {
       const content = await Deno.readTextFile(this.filePath);
       return Result.ok(content);
     } catch (error) {
       if (error instanceof Deno.errors.NotFound) {
-        return Result.err<FileNotFoundError>({
-          kind: "fileNotFound",
-          path: this.filePath,
-          message: `Configuration file not found at: ${this.filePath}`,
-        });
+        return Result.err(
+          ErrorFactories.configFileNotFound(this.filePath, this.configType),
+        );
       }
-      return Result.err<UnknownError>({
-        kind: "unknownError",
-        message: error instanceof Error ? error.message : "Unknown error reading file",
-        originalError: error,
-      });
+      return Result.err(
+        ErrorFactories.unknown(error, `readFile:${this.filePath}`),
+      );
     }
   }
 
@@ -55,19 +48,17 @@ export class SafeConfigLoader {
    * @param content - YAML content to parse
    * @returns Parsed object or error if parsing fails
    */
-  parseYaml(content: string): ConfigResult<unknown, ParseError | UnknownError> {
+  parseYaml(content: string): Result<unknown, UnifiedError> {
     try {
       const parsed = parseYaml(content);
       return Result.ok(parsed);
     } catch (error) {
-      // Extract line and column from YAML parse error if available
       let line = 0;
       let column = 0;
       let message = "Invalid YAML format";
 
       if (error instanceof Error) {
         message = error.message;
-        // Try to extract line/column from error message
         const match = error.message.match(/at line (\d+), column (\d+)/);
         if (match) {
           line = parseInt(match[1], 10);
@@ -75,13 +66,9 @@ export class SafeConfigLoader {
         }
       }
 
-      return Result.err<ParseError>({
-        kind: "parseError",
-        path: this.filePath,
-        line,
-        column,
-        message,
-      });
+      return Result.err(
+        ErrorFactories.configParseError(this.filePath, message, line, column),
+      );
     }
   }
 
@@ -95,20 +82,19 @@ export class SafeConfigLoader {
   validate<T>(
     config: unknown,
     validator: (config: unknown) => config is T,
-  ): ConfigResult<T, ConfigError> {
+  ): Result<T, UnifiedError> {
     if (validator(config)) {
       return Result.ok(config);
     }
-    return Result.err<ConfigError>({
-      kind: "configValidationError",
-      errors: [{
+    return Result.err(
+      ErrorFactories.configValidationError(this.filePath, [{
         field: "root",
         value: config,
         expectedType: "valid configuration object",
-        message: "Configuration validation failed",
-      }],
-      path: this.filePath,
-    });
+        actualType: typeof config,
+        constraint: "Configuration validation failed",
+      }]),
+    );
   }
 
   /**
@@ -119,21 +105,13 @@ export class SafeConfigLoader {
    */
   async load<T>(
     validator: (config: unknown) => config is T,
-  ): Promise<ConfigResult<T, ConfigError>> {
-    // Read file
+  ): Promise<Result<T, UnifiedError>> {
     const fileResult = await this.readFile();
-    if (!fileResult.success) {
-      return fileResult;
-    }
+    if (!fileResult.success) return fileResult;
 
-    // Parse YAML
     const parseResult = this.parseYaml(fileResult.data);
-    if (!parseResult.success) {
-      return parseResult;
-    }
+    if (!parseResult.success) return parseResult;
 
-    // Validate
-    const validateResult = this.validate<T>(parseResult.data, validator);
-    return validateResult;
+    return this.validate<T>(parseResult.data, validator);
   }
 }

@@ -39,6 +39,17 @@
 
 詳細は [multi-environment/README.md](./multi-environment/README.md) を参照してください。
 
+### error-handling
+
+Result型API（Safe API）とErrorGuardsによるエラーハンドリングを示すサンプルです。
+
+- `loadConfigSafe()` / `getConfigSafe()` によるResult型操作
+- `Result.match` / `Result.map` / `Result.unwrapOr` による関数合成
+- `ErrorGuards` によるエラー種別分岐
+- 不正プロファイル名・未ロード・ファイル不在の検出
+
+詳細は [error-handling/README.md](./error-handling/README.md) を参照してください。
+
 ## 実行方法
 
 各サンプルは以下のコマンドで実行できます：
@@ -54,6 +65,10 @@ deno run --allow-read --allow-env --allow-write main.ts
 
 # multi-environment（必ずexamples/multi-environmentディレクトリから実行）
 cd examples/multi-environment
+deno run --allow-read --allow-env --allow-write main.ts
+
+# error-handling（必ずexamples/error-handlingディレクトリから実行）
+cd examples/error-handling
 deno run --allow-read --allow-env --allow-write main.ts
 ```
 
@@ -88,3 +103,4 @@ deno run --allow-read --allow-env --allow-write main.ts
 1. 各exampleは必ず該当ディレクトリから実行する必要がある
 2. ユーザー設定がアプリケーション設定を適切に上書きすることを確認
 3. 環境別設定（multi-environment）でprefixによる設定切り替えが正常動作
+4. Result型API（error-handling）でthrow/catchを使わずにエラーを安全に処理

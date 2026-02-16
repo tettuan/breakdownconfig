@@ -95,13 +95,13 @@ LOG_LEVEL=debug LOG_KEY="dataflow,security" deno test # 複数目的
 LOG_LEVEL=debug LOG_LENGTH=L deno test
 
 # CI: DEBUG=true
-DEBUG=true LOG_KEY="error" scripts/local_ci.sh
+DEBUG=true LOG_KEY="error" deno task ci
 ```
 
 #### トラブルシューティング公式
 ```
-1. scripts/local_ci.sh (概要把握)
-2. DEBUG=true scripts/local_ci.sh (詳細確認)  
+1. deno task ci (概要把握)
+2. deno task ci --log-mode debug (詳細確認)  
 3. LOG_LEVEL=debug deno test {file} (個別実行)
 4. ログ出力から問題特定
 ```

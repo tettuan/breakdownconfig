@@ -5,12 +5,9 @@ import { UserConfigGuards } from "../types/user_config.ts";
 import type { AppOnlyProfile, ConfigProfile, MergedProfile } from "../types/merged_config.ts";
 import { Result as UnifiedResult } from "../types/unified_result.ts";
 import type { UnifiedError } from "../errors/unified_errors.ts";
-import { ErrorFactories } from "../errors/unified_errors.ts";
 import { AppConfigLoader } from "./app_config_loader.ts";
 import { UserConfigLoader } from "./user_config_loader.ts";
 import { DefaultPaths } from "../types/app_config.ts";
-import type { ConfigError } from "../types/config_result.ts";
-
 /**
  * ProfileConfigLoader - Loads and returns ConfigProfile (AppOnlyProfile or MergedProfile)
  *
@@ -74,8 +71,7 @@ export class ProfileConfigLoader {
     // First, load the required app configuration
     const appResult = await this.appLoader.loadSafe();
     if (!appResult.success) {
-      // Convert ConfigError to UnifiedError
-      return UnifiedResult.err(this.convertToUnifiedError(appResult.error));
+      return UnifiedResult.err(appResult.error);
     }
 
     const appConfig = appResult.data;
@@ -187,29 +183,5 @@ export class ProfileConfigLoader {
     return this.baseDir
       ? join(this.baseDir, DefaultPaths.WORKING_DIR, "config", configFileName)
       : join(DefaultPaths.WORKING_DIR, "config", configFileName);
-  }
-
-  /**
-   * Converts ConfigError to UnifiedError
-   */
-  private convertToUnifiedError(error: ConfigError): UnifiedError {
-    switch (error.kind) {
-      case "fileNotFound":
-        return ErrorFactories.configFileNotFound(error.path, "app");
-      case "parseError":
-        return ErrorFactories.configParseError(error.path, error.message);
-      case "configValidationError": {
-        const violations = error.errors.map((e) => ({
-          field: e.field,
-          value: e.value,
-          expectedType: e.expectedType,
-          actualType: typeof e.value,
-          constraint: e.message,
-        }));
-        return ErrorFactories.configValidationError(error.path, violations);
-      }
-      default:
-        return ErrorFactories.unknown(error);
-    }
   }
 }

@@ -1,12 +1,8 @@
 import { join } from "@std/path";
 import type { AppConfig } from "../types/app_config.ts";
 import { DefaultPaths } from "../types/app_config.ts";
-import {
-  type ConfigError,
-  type ConfigResult,
-  Result,
-  type ValidationError,
-} from "../types/config_result.ts";
+import type { Result } from "../types/unified_result.ts";
+import type { UnifiedError } from "../errors/unified_errors.ts";
 import { SafeConfigLoader } from "./safe_config_loader.ts";
 import { ConfigValidator } from "../validators/config_validator.ts";
 
@@ -164,19 +160,20 @@ export class AppConfigLoader {
   async load(): Promise<AppConfig> {
     const result = await this.loadSafe();
     if (!result.success) {
-      // For backward compatibility, convert errors to exceptions
       const error = result.error;
-      if (error.kind === "fileNotFound") {
+      if (error.kind === "CONFIG_FILE_NOT_FOUND") {
         throw new Error(`[ERR1001] ${error.message}`);
-      } else if (error.kind === "parseError") {
-        throw new Error(`[ERR1002] Invalid application configuration - ${error.message}`);
-      } else if (error.kind === "configValidationError") {
-        const messages = error.errors.map((e: ValidationError) =>
-          e.message || `${e.field}: ${e.expectedType}`
-        ).join(
-          ", ",
+      } else if (error.kind === "CONFIG_PARSE_ERROR") {
+        throw new Error(
+          `[ERR1002] Invalid application configuration - ${error.message}`,
         );
-        throw new Error(`[ERR1002] Invalid application configuration - ${messages}`);
+      } else if (error.kind === "CONFIG_VALIDATION_ERROR") {
+        const messages = error.violations.map((v) =>
+          v.constraint || `${v.field}: ${v.expectedType}`
+        ).join(", ");
+        throw new Error(
+          `[ERR1002] Invalid application configuration - ${messages}`,
+        );
       } else {
         throw new Error(`[ERR1002] Invalid application configuration`);
       }
@@ -187,41 +184,23 @@ export class AppConfigLoader {
   /**
    * Loads and validates the application configuration from filesystem (Result-based API)
    *
-   * @returns {Promise<ConfigResult<AppConfig, ConfigError>>} The loaded and validated application configuration or error
+   * @returns {Promise<Result<AppConfig, UnifiedError>>} The loaded and validated application configuration or error
    */
-  async loadSafe(): Promise<ConfigResult<AppConfig, ConfigError>> {
-    // Generate config file name based on profilePrefix
+  async loadSafe(): Promise<Result<AppConfig, UnifiedError>> {
     const configFileName = this.profilePrefix ? `${this.profilePrefix}-app.yml` : "app.yml";
 
     const configPath = this.baseDir
       ? join(this.baseDir, DefaultPaths.WORKING_DIR, "config", configFileName)
       : join(DefaultPaths.WORKING_DIR, "config", configFileName);
 
-    // Use SafeConfigLoader to load the file
-    const loader = new SafeConfigLoader(configPath);
+    const loader = new SafeConfigLoader(configPath, "app");
 
-    // Read file
     const fileResult = await loader.readFile();
-    if (!fileResult.success) {
-      return fileResult;
-    }
+    if (!fileResult.success) return fileResult;
 
-    // Parse YAML
     const parseResult = loader.parseYaml(fileResult.data);
-    if (!parseResult.success) {
-      return parseResult;
-    }
+    if (!parseResult.success) return parseResult;
 
-    // Validate configuration using ConfigValidator
-    const validationResult = ConfigValidator.validateAppConfig(parseResult.data);
-    if (!validationResult.success) {
-      return Result.err({
-        kind: "configValidationError",
-        errors: validationResult.error,
-        path: configPath,
-      });
-    }
-
-    return validationResult;
+    return ConfigValidator.validateAppConfig(parseResult.data, configPath);
   }
 }

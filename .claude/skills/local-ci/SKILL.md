@@ -3,10 +3,6 @@ name: local-ci
 description: Run local CI checks before merge or push
 ---
 
-Run the local CI script to validate the project.
+push前にCIを通すため、`deno task ci` を実行する。エラー時は `deno task ci --log-mode debug` で詳細確認する。
 
-1. Run `scripts/local_ci.sh`
-2. If errors occur, re-run with debug logging: `LOG_LEVEL=debug scripts/local_ci.sh`
-3. Report results
-
-DO NOT push until all checks pass.
+全チェック通過までpush禁止。
