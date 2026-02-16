@@ -16,10 +16,19 @@
 import { assert, assertEquals, assertExists } from "@std/assert";
 import { describe, it } from "@std/testing/bdd";
 import { ConfigValidator } from "../../src/validators/config_validator.ts";
-import { Result } from "../../src/types/config_result.ts";
+import { Result } from "../../src/types/unified_result.ts";
 import type { AppConfig } from "../../src/types/app_config.ts";
 import type { LegacyUserConfig, UserConfig as _UserConfig } from "../../src/types/user_config.ts";
 import { UserConfigFactory, UserConfigGuards } from "../../src/types/user_config.ts";
+import type { UnifiedError, ValidationViolation } from "../../src/errors/unified_errors.ts";
+
+/** Extract violations from UnifiedError for test assertions */
+function getViolations(error: UnifiedError): ValidationViolation[] {
+  if (error.kind === "CONFIG_VALIDATION_ERROR") {
+    return error.violations;
+  }
+  return [];
+}
 
 describe("ConfigValidator Integration Tests", () => {
   describe("validateAppConfig - Core Validation", () => {
@@ -59,18 +68,19 @@ describe("ConfigValidator Integration Tests", () => {
 
         assert(!result.success);
         if (!result.success) {
-          assert(result.error.length > 0);
+          const violations = getViolations(result.error);
+          assert(violations.length > 0);
           // First error should be either "root" or a required field error
-          const hasRootError = result.error.some((e) => e.field === "root");
-          const hasRequiredFieldError = result.error.some((e) =>
+          const hasRootError = violations.some((e) => e.field === "root");
+          const hasRequiredFieldError = violations.some((e) =>
             ["working_dir", "app_prompt", "app_schema"].includes(e.field)
           );
           assert(hasRootError || hasRequiredFieldError);
 
           if (hasRootError) {
-            const rootError = result.error.find((e) => e.field === "root");
+            const rootError = violations.find((e) => e.field === "root");
             assertEquals(rootError?.expectedType, "object");
-            assertEquals(rootError?.message, "Configuration must be an object");
+            assertEquals(rootError?.constraint, "Configuration must be an object");
           }
         }
       }
@@ -81,19 +91,16 @@ describe("ConfigValidator Integration Tests", () => {
 
       assert(!result.success);
       if (!result.success) {
-        assertEquals(result.error.length, 3);
+        const violations = getViolations(result.error);
+        assertEquals(violations.length, 3);
 
-        const fieldErrors = result.error.map((e) => e.field);
+        const fieldErrors = violations.map((e) => e.field);
         assert(fieldErrors.includes("working_dir"));
         assert(fieldErrors.includes("app_prompt"));
         assert(fieldErrors.includes("app_schema"));
 
-        for (const error of result.error) {
-          if (error instanceof Error) {
-            assert(error.message?.includes("required"));
-          } else {
-            assert(error.message?.includes("required"));
-          }
+        for (const error of violations) {
+          assert((error.constraint ?? "").includes("required"));
         }
       }
     });
@@ -109,17 +116,18 @@ describe("ConfigValidator Integration Tests", () => {
 
       assert(!result.success);
       if (!result.success) {
-        assertEquals(result.error.length, 3);
+        const violations = getViolations(result.error);
+        assertEquals(violations.length, 3);
 
-        const workingDirError = result.error.find((e) => e.field === "working_dir");
+        const workingDirError = violations.find((e) => e.field === "working_dir");
         assertEquals(workingDirError?.expectedType, "string");
         assertEquals(workingDirError?.value, 123);
 
-        const appPromptError = result.error.find((e) => e.field === "app_prompt");
+        const appPromptError = violations.find((e) => e.field === "app_prompt");
         assertEquals(appPromptError?.expectedType, "object");
         assertEquals(appPromptError?.value, "not an object");
 
-        const appSchemaError = result.error.find((e) => e.field === "app_schema");
+        const appSchemaError = violations.find((e) => e.field === "app_schema");
         assertEquals(appSchemaError?.expectedType, "object");
         assertEquals(appSchemaError?.value, null);
       }
@@ -140,13 +148,14 @@ describe("ConfigValidator Integration Tests", () => {
 
       assert(!result.success);
       if (!result.success) {
-        assertEquals(result.error.length, 2);
+        const violations = getViolations(result.error);
+        assertEquals(violations.length, 2);
 
-        const promptError = result.error.find((e) => e.field === "app_prompt.base_dir");
+        const promptError = violations.find((e) => e.field === "app_prompt.base_dir");
         assertEquals(promptError?.expectedType, "string");
         assertEquals(promptError?.value, 123);
 
-        const schemaError = result.error.find((e) => e.field === "app_schema.base_dir");
+        const schemaError = violations.find((e) => e.field === "app_schema.base_dir");
         assertEquals(schemaError?.expectedType, "string");
         assertEquals(schemaError?.value, undefined);
       }
@@ -169,8 +178,9 @@ describe("ConfigValidator Integration Tests", () => {
 
       assert(!result.success);
       if (!result.success) {
-        const emptyPathErrors = result.error.filter((e) =>
-          e.message?.includes("Path must not be empty")
+        const violations = getViolations(result.error);
+        const emptyPathErrors = violations.filter((e) =>
+          (e.constraint ?? "").includes("Path must not be empty")
         );
         assertEquals(emptyPathErrors.length, 3);
       }
@@ -194,8 +204,9 @@ describe("ConfigValidator Integration Tests", () => {
 
         assert(!result.success);
         if (!result.success) {
-          const invalidCharErrors = result.error.filter((e) =>
-            e.message?.includes("Path contains invalid characters")
+          const violations = getViolations(result.error);
+          const invalidCharErrors = violations.filter((e) =>
+            (e.constraint ?? "").includes("Path contains invalid characters")
           );
           assert(invalidCharErrors.length >= 1);
         }
@@ -217,8 +228,9 @@ describe("ConfigValidator Integration Tests", () => {
 
       assert(!result.success);
       if (!result.success) {
-        const traversalErrors = result.error.filter((e) =>
-          e.message?.includes("Path traversal detected")
+        const violations = getViolations(result.error);
+        const traversalErrors = violations.filter((e) =>
+          (e.constraint ?? "").includes("Path traversal detected")
         );
         assertEquals(traversalErrors.length, 3);
       }
@@ -239,8 +251,9 @@ describe("ConfigValidator Integration Tests", () => {
 
       assert(!result.success);
       if (!result.success) {
-        const absolutePathErrors = result.error.filter((e) =>
-          e.message?.includes("Absolute path not allowed")
+        const violations = getViolations(result.error);
+        const absolutePathErrors = violations.filter((e) =>
+          (e.constraint ?? "").includes("Absolute path not allowed")
         );
         assertEquals(absolutePathErrors.length, 3);
       }
@@ -261,27 +274,29 @@ describe("ConfigValidator Integration Tests", () => {
 
       assert(!result.success);
       if (!result.success) {
+        const violations = getViolations(result.error);
         // working_dir should have multiple errors: absolute, traversal, invalid chars
-        const workingDirErrors = result.error.filter((e) => e.field === "working_dir");
+        const workingDirErrors = violations.filter((e) => e.field === "working_dir");
         assert(workingDirErrors.length >= 1); // At least one error for working_dir
 
         // Check that we have errors for different validation rules
-        const _hasAbsoluteError = result.error.some((e) =>
-          e.field === "working_dir" && e.message?.includes("Absolute path not allowed")
+        const _hasAbsoluteError = violations.some((e) =>
+          e.field === "working_dir" && (e.constraint ?? "").includes("Absolute path not allowed")
         );
-        const _hasTraversalError = result.error.some((e) =>
-          e.field === "working_dir" && e.message?.includes("Path traversal detected")
+        const _hasTraversalError = violations.some((e) =>
+          e.field === "working_dir" && (e.constraint ?? "").includes("Path traversal detected")
         );
-        const _hasInvalidCharError = result.error.some((e) =>
-          e.field === "working_dir" && e.message?.includes("Path contains invalid characters")
+        const _hasInvalidCharError = violations.some((e) =>
+          e.field === "working_dir" &&
+          (e.constraint ?? "").includes("Path contains invalid characters")
         );
 
         // app_prompt.base_dir should have 1 error: empty
-        const promptErrors = result.error.filter((e) => e.field === "app_prompt.base_dir");
+        const promptErrors = violations.filter((e) => e.field === "app_prompt.base_dir");
         assert(promptErrors.length >= 1);
 
         // app_schema.base_dir should have no errors
-        const schemaErrors = result.error.filter((e) => e.field === "app_schema.base_dir");
+        const schemaErrors = violations.filter((e) => e.field === "app_schema.base_dir");
         assertEquals(schemaErrors.length, 0);
       }
     });
@@ -375,11 +390,12 @@ describe("ConfigValidator Integration Tests", () => {
 
         assert(!result.success);
         if (!result.success) {
-          assert(result.error.length > 0);
-          const rootError = result.error.find((e) => e.field === "root");
+          const violations = getViolations(result.error);
+          assert(violations.length > 0);
+          const rootError = violations.find((e) => e.field === "root");
           assertExists(rootError);
           assertEquals(rootError.expectedType, "object");
-          assertEquals(rootError.message, "Configuration must be an object");
+          assertEquals(rootError.constraint, "Configuration must be an object");
         }
       }
 
@@ -459,11 +475,14 @@ describe("ConfigValidator Integration Tests", () => {
 
       assert(!result.success);
       if (!result.success) {
-        const absolutePathError = result.error.find((e) =>
-          e.field === "app_prompt.base_dir" && e.message?.includes("Absolute path not allowed")
+        const violations = getViolations(result.error);
+        const absolutePathError = violations.find((e) =>
+          e.field === "app_prompt.base_dir" &&
+          (e.constraint ?? "").includes("Absolute path not allowed")
         );
-        const traversalError = result.error.find((e) =>
-          e.field === "app_schema.base_dir" && e.message?.includes("Path traversal detected")
+        const traversalError = violations.find((e) =>
+          e.field === "app_schema.base_dir" &&
+          (e.constraint ?? "").includes("Path traversal detected")
         );
 
         assertExists(absolutePathError);
@@ -487,8 +506,9 @@ describe("ConfigValidator Integration Tests", () => {
       const schemaResult = ConfigValidator.validateUserConfig(schemaConfig);
       assert(!schemaResult.success);
       if (!schemaResult.success) {
-        const invalidCharError = schemaResult.error.find((e) =>
-          e.message?.includes("Path contains invalid characters")
+        const violations = getViolations(schemaResult.error);
+        const invalidCharError = violations.find((e) =>
+          (e.constraint ?? "").includes("Path contains invalid characters")
         );
         assertExists(invalidCharError);
       }
@@ -523,9 +543,11 @@ describe("ConfigValidator Integration Tests", () => {
       const invalidConfig = {};
       const result = ConfigValidator.validateAppConfig(invalidConfig);
 
-      const mappedResult = Result.mapErr(result, (errors) => ({
-        errorCount: errors.length,
-        fields: errors.map((e) => e.field),
+      const mappedResult = Result.mapErr(result, (error: UnifiedError) => ({
+        errorCount: error.kind === "CONFIG_VALIDATION_ERROR" ? error.violations.length : 0,
+        fields: error.kind === "CONFIG_VALIDATION_ERROR"
+          ? error.violations.map((v) => v.field)
+          : [],
       }));
 
       assert(!mappedResult.success);
@@ -552,7 +574,10 @@ describe("ConfigValidator Integration Tests", () => {
       const validMessage = Result.match(
         validResult,
         (config) => `Valid config with working dir: ${config.working_dir}`,
-        (errors) => `Validation failed with ${errors.length} errors`,
+        (error: UnifiedError) =>
+          `Validation failed with ${
+            error.kind === "CONFIG_VALIDATION_ERROR" ? error.violations.length : 0
+          } errors`,
       );
       assertEquals(validMessage, "Valid config with working dir: ./.agent/climpt");
 
@@ -560,7 +585,10 @@ describe("ConfigValidator Integration Tests", () => {
       const invalidMessage = Result.match(
         invalidResult,
         (config) => `Valid config with working dir: ${config.working_dir}`,
-        (errors) => `Validation failed with ${errors.length} errors`,
+        (error: UnifiedError) =>
+          `Validation failed with ${
+            error.kind === "CONFIG_VALIDATION_ERROR" ? error.violations.length : 0
+          } errors`,
       );
       assertEquals(invalidMessage, "Validation failed with 3 errors");
     });
@@ -595,24 +623,21 @@ describe("ConfigValidator Integration Tests", () => {
 
       assert(!result.success);
       if (!result.success) {
+        const violations = getViolations(result.error);
         // Should have errors for:
         // 1. working_dir empty
         // 2. app_prompt.base_dir absolute path
         // 3. app_prompt.base_dir path traversal
         // 4. app_prompt.base_dir invalid characters
         // 5. app_schema type error
-        assert(result.error.length >= 5);
+        assert(violations.length >= 5);
 
         // Check error details
-        for (const error of result.error) {
+        for (const error of violations) {
           assertExists(error.field);
           assertExists(error.value);
           assertExists(error.expectedType);
-          if (error instanceof Error) {
-            assertExists(error.message);
-          } else {
-            assertExists(error.message);
-          }
+          assertExists(error.actualType);
         }
       }
     });
@@ -628,14 +653,15 @@ describe("ConfigValidator Integration Tests", () => {
 
       assert(!result.success);
       if (!result.success) {
-        const workingDirError = result.error.find((e) => e.field === "working_dir");
-        assert(workingDirError?.message?.includes("must be a string"));
+        const violations = getViolations(result.error);
+        const workingDirError = violations.find((e) => e.field === "working_dir");
+        assert((workingDirError?.constraint ?? "").includes("must be a string"));
 
-        const appPromptError = result.error.find((e) => e.field === "app_prompt");
-        assert(appPromptError?.message?.includes("must be an object"));
+        const appPromptError = violations.find((e) => e.field === "app_prompt");
+        assert((appPromptError?.constraint ?? "").includes("must be an object"));
 
-        const schemaBaseDirError = result.error.find((e) => e.field === "app_schema.base_dir");
-        assert(schemaBaseDirError?.message?.includes("required"));
+        const schemaBaseDirError = violations.find((e) => e.field === "app_schema.base_dir");
+        assert((schemaBaseDirError?.constraint ?? "").includes("required"));
       }
     });
   });

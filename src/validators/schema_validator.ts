@@ -1,4 +1,5 @@
-import { type ConfigResult, Result, type ValidationError } from "../types/config_result.ts";
+import { Result } from "../types/unified_result.ts";
+import { ErrorFactories, type UnifiedError } from "../errors/unified_errors.ts";
 
 /** Constant representing a successful validation result */
 const VALIDATION_SUCCESS = true as const;
@@ -16,7 +17,7 @@ export interface SchemaField {
   /** Nested schema for object types */
   schema?: Schema;
   /** Custom validation function */
-  validator?: (value: unknown) => ConfigResult<true, ValidationError>;
+  validator?: (value: unknown) => Result<true, UnifiedError>;
 }
 
 /**
@@ -31,7 +32,7 @@ export interface Schema {
  * Schema-based validator for configuration objects
  *
  * Provides flexible schema validation with detailed error reporting
- * using ConfigResult type for safe error handling.
+ * using Result type for safe error handling.
  */
 export class SchemaValidator {
   /**
@@ -44,14 +45,15 @@ export class SchemaValidator {
   static validate(
     value: unknown,
     schema: Schema,
-  ): ConfigResult<true, ValidationError> {
+  ): Result<true, UnifiedError> {
     if (!value || typeof value !== "object") {
-      return Result.err({
+      return Result.err(ErrorFactories.configValidationError("schema_validation", [{
         field: "root",
         value,
         expectedType: "object",
-        message: "Value must be an object",
-      });
+        actualType: typeof value,
+        constraint: "Value must be an object",
+      }]));
     }
 
     const obj = value as Record<string, unknown>;
@@ -62,12 +64,13 @@ export class SchemaValidator {
 
       // Check required fields
       if (field.required && (fieldValue === undefined || fieldValue === null)) {
-        return Result.err({
+        return Result.err(ErrorFactories.configValidationError("schema_validation", [{
           field: field.name,
           value: fieldValue,
           expectedType: field.type,
-          message: `Required field '${field.name}' is missing`,
-        });
+          actualType: typeof fieldValue,
+          constraint: `Required field '${field.name}' is missing`,
+        }]));
       }
 
       // Skip validation for optional fields that are not present
@@ -85,14 +88,18 @@ export class SchemaValidator {
       if (field.type === "object" && field.schema) {
         const nestedResult = this.validate(fieldValue, field.schema);
         if (!nestedResult.success) {
-          // Type guard: nestedResult.error is ValidationError
-          const error = nestedResult.error;
-          return Result.err({
-            field: `${field.name}.${error.field}`,
-            value: error.value,
-            expectedType: error.expectedType,
-            message: error.message ?? `Validation failed for field '${field.name}'`,
-          });
+          if (nestedResult.error.kind === "CONFIG_VALIDATION_ERROR") {
+            const nestedViolation = nestedResult.error.violations[0];
+            return Result.err(ErrorFactories.configValidationError("schema_validation", [{
+              field: `${field.name}.${nestedViolation.field}`,
+              value: nestedViolation.value,
+              expectedType: nestedViolation.expectedType,
+              actualType: nestedViolation.actualType,
+              constraint: nestedViolation.constraint ??
+                `Validation failed for field '${field.name}'`,
+            }]));
+          }
+          return nestedResult;
         }
       }
 
@@ -120,7 +127,7 @@ export class SchemaValidator {
     value: unknown,
     expectedType: "string" | "number" | "boolean" | "object" | "array",
     fieldName: string,
-  ): ConfigResult<true, ValidationError> {
+  ): Result<true, UnifiedError> {
     let actualType: string;
 
     if (value === null) {
@@ -132,12 +139,13 @@ export class SchemaValidator {
     }
 
     if (actualType !== expectedType) {
-      return Result.err({
+      return Result.err(ErrorFactories.configValidationError("schema_validation", [{
         field: fieldName,
         value,
         expectedType,
-        message: `Expected ${expectedType} but got ${actualType}`,
-      });
+        actualType,
+        constraint: `Expected ${expectedType} but got ${actualType}`,
+      }]));
     }
 
     return Result.ok(VALIDATION_SUCCESS);
@@ -245,14 +253,15 @@ export class SchemaValidator {
   private static validateNonEmptyString(
     value: string,
     fieldName: string,
-  ): ConfigResult<true, ValidationError> {
+  ): Result<true, UnifiedError> {
     if (!value || value.trim() === "") {
-      return Result.err({
+      return Result.err(ErrorFactories.configValidationError("schema_validation", [{
         field: fieldName,
         value,
         expectedType: "string",
-        message: `Field '${fieldName}' must be a non-empty string`,
-      });
+        actualType: typeof value,
+        constraint: `Field '${fieldName}' must be a non-empty string`,
+      }]));
     }
     return Result.ok(VALIDATION_SUCCESS);
   }

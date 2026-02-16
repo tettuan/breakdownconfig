@@ -1,62 +1,76 @@
 import type { AppConfig } from "../types/app_config.ts";
 import type { UserConfig } from "../types/user_config.ts";
 import { hasPromptConfig, hasSchemaConfig } from "../types/user_config.ts";
-import { type ConfigResult, Result, type ValidationError } from "../types/config_result.ts";
+import { Result } from "../types/unified_result.ts";
+import {
+  ErrorFactories,
+  type UnifiedError,
+  type ValidationViolation,
+} from "../errors/unified_errors.ts";
 
 export class ConfigValidator {
-  static validateAppConfig(config: unknown): ConfigResult<AppConfig, ValidationError[]> {
-    const errors: ValidationError[] = [];
+  static validateAppConfig(
+    config: unknown,
+    source = "app_config",
+  ): Result<AppConfig, UnifiedError> {
+    const violations: ValidationViolation[] = [];
 
     if (!config || typeof config !== "object") {
-      errors.push({
+      violations.push({
         field: "root",
         value: config,
         expectedType: "object",
-        message: "Configuration must be an object",
+        actualType: typeof config,
+        constraint: "Configuration must be an object",
       });
-      return Result.err(errors);
+      return Result.err(ErrorFactories.configValidationError(source, violations));
     }
 
     const { working_dir, app_prompt, app_schema } = config as Partial<AppConfig>;
 
     if (!working_dir || typeof working_dir !== "string") {
-      errors.push({
+      violations.push({
         field: "working_dir",
         value: working_dir,
         expectedType: "string",
-        message: "working_dir is required and must be a string",
+        actualType: typeof working_dir,
+        constraint: "working_dir is required and must be a string",
       });
     }
 
     if (!app_prompt || typeof app_prompt !== "object") {
-      errors.push({
+      violations.push({
         field: "app_prompt",
         value: app_prompt,
         expectedType: "object",
-        message: "app_prompt is required and must be an object",
+        actualType: typeof app_prompt,
+        constraint: "app_prompt is required and must be an object",
       });
     } else if (!app_prompt.base_dir || typeof app_prompt.base_dir !== "string") {
-      errors.push({
+      violations.push({
         field: "app_prompt.base_dir",
         value: app_prompt.base_dir,
         expectedType: "string",
-        message: "app_prompt.base_dir is required and must be a string",
+        actualType: typeof app_prompt.base_dir,
+        constraint: "app_prompt.base_dir is required and must be a string",
       });
     }
 
     if (!app_schema || typeof app_schema !== "object") {
-      errors.push({
+      violations.push({
         field: "app_schema",
         value: app_schema,
         expectedType: "object",
-        message: "app_schema is required and must be an object",
+        actualType: typeof app_schema,
+        constraint: "app_schema is required and must be an object",
       });
     } else if (!app_schema.base_dir || typeof app_schema.base_dir !== "string") {
-      errors.push({
+      violations.push({
         field: "app_schema.base_dir",
         value: app_schema.base_dir,
         expectedType: "string",
-        message: "app_schema.base_dir is required and must be a string",
+        actualType: typeof app_schema.base_dir,
+        constraint: "app_schema.base_dir is required and must be a string",
       });
     }
 
@@ -64,43 +78,53 @@ export class ConfigValidator {
     if (typeof working_dir === "string") {
       const pathResult = this.validatePath(working_dir, "working_dir");
       if (!pathResult.success) {
-        errors.push(...pathResult.error);
+        if (pathResult.error.kind === "CONFIG_VALIDATION_ERROR") {
+          violations.push(...pathResult.error.violations);
+        }
       }
     }
 
     if (app_prompt && typeof app_prompt.base_dir === "string") {
       const pathResult = this.validatePath(app_prompt.base_dir, "app_prompt.base_dir");
       if (!pathResult.success) {
-        errors.push(...pathResult.error);
+        if (pathResult.error.kind === "CONFIG_VALIDATION_ERROR") {
+          violations.push(...pathResult.error.violations);
+        }
       }
     }
 
     if (app_schema && typeof app_schema.base_dir === "string") {
       const pathResult = this.validatePath(app_schema.base_dir, "app_schema.base_dir");
       if (!pathResult.success) {
-        errors.push(...pathResult.error);
+        if (pathResult.error.kind === "CONFIG_VALIDATION_ERROR") {
+          violations.push(...pathResult.error.violations);
+        }
       }
     }
 
-    if (errors.length > 0) {
-      return Result.err(errors);
+    if (violations.length > 0) {
+      return Result.err(ErrorFactories.configValidationError(source, violations));
     }
 
     return Result.ok(config as AppConfig);
   }
 
-  static validateUserConfig(config: unknown): ConfigResult<UserConfig, ValidationError[]> {
-    const errors: ValidationError[] = [];
+  static validateUserConfig(
+    config: unknown,
+    source = "user_config",
+  ): Result<UserConfig, UnifiedError> {
+    const violations: ValidationViolation[] = [];
 
     // Handle null and undefined as invalid (these should fail validation)
     if (config === null || config === undefined) {
-      errors.push({
+      violations.push({
         field: "root",
         value: config,
         expectedType: "object",
-        message: "Configuration must be an object",
+        actualType: config === null ? "null" : "undefined",
+        constraint: "Configuration must be an object",
       });
-      return Result.err(errors);
+      return Result.err(ErrorFactories.configValidationError(source, violations));
     }
 
     // Handle non-object types as empty user configs
@@ -115,19 +139,21 @@ export class ConfigValidator {
 
     if (hasPromptConfig(userConfig)) {
       if (typeof userConfig.app_prompt !== "object") {
-        errors.push({
+        violations.push({
           field: "app_prompt",
           value: userConfig.app_prompt,
           expectedType: "object",
-          message: "app_prompt must be an object",
+          actualType: typeof userConfig.app_prompt,
+          constraint: "app_prompt must be an object",
         });
       } else if (userConfig.app_prompt.base_dir) {
         if (typeof userConfig.app_prompt.base_dir !== "string") {
-          errors.push({
+          violations.push({
             field: "app_prompt.base_dir",
             value: userConfig.app_prompt.base_dir,
             expectedType: "string",
-            message: "app_prompt.base_dir must be a string",
+            actualType: typeof userConfig.app_prompt.base_dir,
+            constraint: "app_prompt.base_dir must be a string",
           });
         } else {
           const pathResult = this.validatePath(
@@ -135,7 +161,9 @@ export class ConfigValidator {
             "app_prompt.base_dir",
           );
           if (!pathResult.success) {
-            errors.push(...pathResult.error);
+            if (pathResult.error.kind === "CONFIG_VALIDATION_ERROR") {
+              violations.push(...pathResult.error.violations);
+            }
           }
         }
       }
@@ -143,19 +171,21 @@ export class ConfigValidator {
 
     if (hasSchemaConfig(userConfig)) {
       if (typeof userConfig.app_schema !== "object") {
-        errors.push({
+        violations.push({
           field: "app_schema",
           value: userConfig.app_schema,
           expectedType: "object",
-          message: "app_schema must be an object",
+          actualType: typeof userConfig.app_schema,
+          constraint: "app_schema must be an object",
         });
       } else if (userConfig.app_schema.base_dir) {
         if (typeof userConfig.app_schema.base_dir !== "string") {
-          errors.push({
+          violations.push({
             field: "app_schema.base_dir",
             value: userConfig.app_schema.base_dir,
             expectedType: "string",
-            message: "app_schema.base_dir must be a string",
+            actualType: typeof userConfig.app_schema.base_dir,
+            constraint: "app_schema.base_dir must be a string",
           });
         } else {
           const pathResult = this.validatePath(
@@ -163,14 +193,16 @@ export class ConfigValidator {
             "app_schema.base_dir",
           );
           if (!pathResult.success) {
-            errors.push(...pathResult.error);
+            if (pathResult.error.kind === "CONFIG_VALIDATION_ERROR") {
+              violations.push(...pathResult.error.violations);
+            }
           }
         }
       }
     }
 
-    if (errors.length > 0) {
-      return Result.err(errors);
+    if (violations.length > 0) {
+      return Result.err(ErrorFactories.configValidationError(source, violations));
     }
 
     return Result.ok(userConfig);
@@ -179,53 +211,57 @@ export class ConfigValidator {
   private static validatePath(
     path: string,
     fieldName: string,
-  ): ConfigResult<void, ValidationError[]> {
-    const errors: ValidationError[] = [];
+  ): Result<void, UnifiedError> {
+    const violations: ValidationViolation[] = [];
 
-    // パスが空の場合
     if (!path || path.trim() === "") {
-      errors.push({
+      violations.push({
         field: fieldName,
         value: path,
         expectedType: "non-empty string",
-        message: "Path must not be empty",
+        actualType: typeof path,
+        constraint: "Path must not be empty",
       });
-      return Result.err(errors);
+      return Result.err(
+        ErrorFactories.configValidationError(fieldName, violations),
+      );
     }
 
-    // パスに使用できない文字のチェック
     const invalidChars = /[<>:"|?*]/g;
     if (invalidChars.test(path)) {
-      errors.push({
+      violations.push({
         field: fieldName,
         value: path,
         expectedType: "valid path characters",
-        message: `Path contains invalid characters: ${path}`,
+        actualType: typeof path,
+        constraint: `Path contains invalid characters: ${path}`,
       });
     }
 
-    // パストラバーサルのチェック
     if (path.includes("..")) {
-      errors.push({
+      violations.push({
         field: fieldName,
         value: path,
         expectedType: "path without traversal",
-        message: `Path traversal detected in: ${path}`,
+        actualType: typeof path,
+        constraint: `Path traversal detected in: ${path}`,
       });
     }
 
-    // 絶対パスのチェック
     if (path.startsWith("/")) {
-      errors.push({
+      violations.push({
         field: fieldName,
         value: path,
         expectedType: "relative path",
-        message: `Absolute path not allowed: ${path}`,
+        actualType: typeof path,
+        constraint: `Absolute path not allowed: ${path}`,
       });
     }
 
-    if (errors.length > 0) {
-      return Result.err(errors);
+    if (violations.length > 0) {
+      return Result.err(
+        ErrorFactories.configValidationError(fieldName, violations),
+      );
     }
 
     return Result.ok(undefined);

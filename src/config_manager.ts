@@ -6,7 +6,6 @@ import { UserConfigFactory, UserConfigGuards } from "./types/user_config.ts";
 import type { MergedConfig } from "./types/merged_config.ts";
 import { Result } from "./types/unified_result.ts";
 import { ErrorFactories, type UnifiedError } from "./errors/unified_errors.ts";
-import type { ValidationError } from "./types/config_result.ts";
 
 /**
  * Discriminated Union for AppConfig state management
@@ -120,11 +119,7 @@ export class ConfigManager {
     if (result.success) {
       return result.data;
     } else {
-      throw new Error(
-        result.error && typeof result.error === "object" && "message" in result.error
-          ? result.error.message
-          : "Unknown error",
-      );
+      throw new Error(result.error.message);
     }
   }
 
@@ -183,159 +178,68 @@ export class ConfigManager {
   }
 
   /**
-   * Loads the application configuration.
-   *
-   * @returns {Promise<AppConfig>} The loaded application configuration
-   * @throws {Error} If the application configuration is invalid
-   */
-  private async loadAppConfig(): Promise<AppConfig> {
-    const result = await this.loadAppConfigSafe();
-    if (result.success) {
-      return result.data;
-    } else {
-      throw new Error(
-        result.error && typeof result.error === "object" && "message" in result.error
-          ? result.error.message
-          : "Unknown error",
-      );
-    }
-  }
-
-  /**
    * Loads the application configuration (Result-based API).
-   *
-   * @returns {Promise<Result<AppConfig, UnifiedError>>} The loaded application configuration or error
+   * AppConfigLoader.loadSafe() returns Result<AppConfig, UnifiedError> directly.
    */
   private async loadAppConfigSafe(): Promise<Result<AppConfig, UnifiedError>> {
-    // Return cached result if already loaded
     if (this.appConfigState.kind === "loaded") {
       return Result.ok(this.appConfigState.data);
     }
-
-    // Return cached error if in error state
     if (this.appConfigState.kind === "error") {
       return Result.err(this.appConfigState.error);
     }
 
-    // Set loading state
     this.appConfigState = { kind: "loading" };
 
     try {
       const result = await this.appConfigLoader.loadSafe();
       if (result.success) {
         this.appConfigState = { kind: "loaded", data: result.data };
-        return Result.ok(result.data);
-      }
-
-      // Convert ConfigError to UnifiedError
-      const error = result.error;
-      let unifiedError: UnifiedError;
-
-      if (error.kind === "fileNotFound") {
-        unifiedError = ErrorFactories.configFileNotFound(error.path, "app");
-      } else if (error.kind === "parseError") {
-        unifiedError = ErrorFactories.configParseError(
-          error.path,
-          error && typeof error === "object" && "message" in error
-            ? error.message
-            : "Unknown error",
-          error.line,
-          error.column,
-        );
-      } else if (error.kind === "configValidationError") {
-        const violations = error.errors.map((e: ValidationError) => ({
-          field: e.field,
-          value: e.value,
-          expectedType: e.expectedType,
-          actualType: typeof e.value,
-          constraint: e.message,
-        }));
-        unifiedError = ErrorFactories.configValidationError(error.path, violations);
       } else {
-        unifiedError = ErrorFactories.unknown(
-          error ? error : new Error(String(error)),
-          "loadAppConfig",
-        );
+        this.appConfigState = { kind: "error", error: result.error };
       }
-
-      this.appConfigState = { kind: "error", error: unifiedError };
-      return Result.err(unifiedError);
+      return result;
     } catch (error) {
-      const unifiedError = ErrorFactories.unknown(
-        error ? error : new Error(String(error)),
-        "loadAppConfigSafe",
-      );
+      const unifiedError = ErrorFactories.unknown(error, "loadAppConfigSafe");
       this.appConfigState = { kind: "error", error: unifiedError };
       return Result.err(unifiedError);
-    }
-  }
-
-  /**
-   * Loads the user configuration.
-   *
-   * @returns {Promise<UserConfig>} The loaded user configuration
-   * @throws {Error} If the user configuration is invalid
-   */
-  private async loadUserConfig(): Promise<LegacyUserConfig> {
-    const result = await this.loadUserConfigSafe();
-    if (result.success) {
-      return result.data as unknown as LegacyUserConfig;
-    } else {
-      return {} as LegacyUserConfig;
     }
   }
 
   /**
    * Loads the user configuration (Result-based API).
-   *
-   * @returns {Promise<Result<UserConfig, UnifiedError>>} The loaded user configuration or error
+   * UserConfigLoader.load() returns Result<UserConfig | null, UnifiedError> directly.
    */
   private async loadUserConfigSafe(): Promise<Result<UserConfig, UnifiedError>> {
-    // Return cached result if already loaded
     if (this.userConfigState.kind === "loaded") {
       return Result.ok(this.userConfigState.data);
     }
-
-    // Return empty config if already determined not found
     if (this.userConfigState.kind === "not_found") {
       return Result.ok(UserConfigFactory.createEmpty());
     }
-
-    // Return cached error if in error state
     if (this.userConfigState.kind === "error") {
       return Result.err(this.userConfigState.error);
     }
 
-    // Set loading state
     this.userConfigState = { kind: "loading" };
 
     try {
       const result = await this.userConfigLoader.load();
       if (result.success) {
-        // Check if user config data exists (not null)
         if (result.data === null) {
-          // User config file doesn't exist, treat as empty
           this.userConfigState = { kind: "not_found" };
           return Result.ok(UserConfigFactory.createEmpty());
         }
-
-        // For now, maintain backward compatibility with legacy format
-        const userData = result.data as unknown as LegacyUserConfig;
-        // Convert to new discriminated union format for internal state management
-        const discriminatedUserData = UserConfigFactory.fromLegacy(userData);
-        this.userConfigState = { kind: "loaded", data: discriminatedUserData };
-        // But return the legacy format for compatibility
-        return Result.ok(discriminatedUserData);
+        // UserConfigLoader already returns UserConfig (discriminated union)
+        this.userConfigState = { kind: "loaded", data: result.data };
+        return Result.ok(result.data);
       }
 
-      // User config is optional, so we treat failure as "not found"
+      // User config is optional, treat failure as "not found"
       this.userConfigState = { kind: "not_found" };
       return Result.ok(UserConfigFactory.createEmpty());
     } catch (error) {
-      const unifiedError = ErrorFactories.unknown(
-        error ? error : new Error(String(error)),
-        "loadUserConfigSafe",
-      );
+      const unifiedError = ErrorFactories.unknown(error, "loadUserConfigSafe");
       this.userConfigState = { kind: "error", error: unifiedError };
       return Result.err(unifiedError);
     }
@@ -446,24 +350,6 @@ export class ConfigManager {
       }
       return clone;
     }
-  }
-
-  /**
-   * Extract additional fields from nested config objects
-   */
-  private extractAdditionalFields(
-    obj: Record<string, unknown> | undefined,
-    excludeKeys: string[],
-  ): Record<string, unknown> {
-    if (!obj || typeof obj !== "object") return {};
-
-    const additional: Record<string, unknown> = {};
-    for (const [key, value] of Object.entries(obj)) {
-      if (!excludeKeys.includes(key) && value !== undefined) {
-        additional[key] = value;
-      }
-    }
-    return additional;
   }
 
   /**
