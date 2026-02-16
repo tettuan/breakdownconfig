@@ -33,6 +33,14 @@ push前に `scripts/local_ci.sh` を通す。main/develop への直接pushは禁
 
 テストと実装の矛盾でループする場合、`docs/priority.md` で優先度を確認し、記載がなければ `tmp/conflict_of_specifications.md` に問題を記述する。
 
+# テストでのデバッグログ
+
+実行プロセスのデバッグには BreakdownLogger を用いる。テストファイル作成時は `/breakdown-logger` スキルを参照し、以下を守る。
+
+- `LOG_LEVEL=debug LOG_KEY=<対象キー>` で実行し、処理の流れを追えるようにする
+- テスト対象の関数呼び出し前後に `logger.debug()` でステップを記録する
+- 期待値と実際の値の両方をログに出し、失敗時の原因特定を容易にする
+
 # コメント
 
 テストが通った時のみコメントを書く。
