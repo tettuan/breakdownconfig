@@ -41,7 +41,7 @@ jobs:
       - name: Check JSR version availability
         run: |
           DENO_VERSION="${{ steps.get_version.outputs.version }}"
-          JSR_VERSION=$(curl -s https://jsr.io/@tettuan/breakdownconfig/meta.json | jq -r '.latestVersion // "0.0.0"')
+          JSR_VERSION=$(curl -s https://jsr.io/@tettuan/breakdownconfig/meta.json | jq -r '.latest // "0.0.0"')
 
           if [ "$DENO_VERSION" = "$JSR_VERSION" ]; then
             echo "Error: Version $DENO_VERSION already exists on JSR!"
