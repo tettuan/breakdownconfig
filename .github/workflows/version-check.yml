@@ -2,7 +2,7 @@ name: Version Check
 
 on:
   push:
-    branches: [main, "release/*"]
+    branches: ["release/*"]
   pull_request:
     branches: [main, develop]
 
@@ -20,30 +20,13 @@ jobs:
         with:
           deno-version: v2.x
 
-      - name: Clear cache and regenerate lockfile
-        run: |
-          rm -f deno.lock
-          deno cache --reload mod.ts
-
-      - name: Get latest tag
-        id: get_latest_tag
-        run: |
-          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
-          echo "latest_tag=${LATEST_TAG}" >> $GITHUB_OUTPUT
-
       - name: Get version from deno.json
         id: get_version
         run: |
           VERSION=$(deno eval "console.log(JSON.parse(Deno.readTextFileSync('deno.json')).version)")
           echo "version=${VERSION}" >> $GITHUB_OUTPUT
 
-      - name: Get latest JSR version
-        id: get_jsr_version
-        run: |
-          JSR_VERSION=$(curl -s https://jsr.io/@tettuan/breakdownconfig/meta.json | jq -r '.latestVersion // "0.0.0"')
-          echo "jsr_version=${JSR_VERSION}" >> $GITHUB_OUTPUT
-
-      - name: Detect branch context
+      - name: Detect release branch
         id: branch_context
         run: |
           if [ "${{ github.event_name }}" = "push" ]; then
@@ -61,31 +44,6 @@ jobs:
             echo "release_version=" >> $GITHUB_OUTPUT
           fi
 
-          if [ "$BRANCH" = "main" ]; then
-            echo "is_main=true" >> $GITHUB_OUTPUT
-          else
-            echo "is_main=false" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Check version consistency (main only)
-        if: steps.branch_context.outputs.is_main == 'true'
-        run: |
-          if [ "v${{ steps.get_version.outputs.version }}" != "${{ steps.get_latest_tag.outputs.latest_tag }}" ]; then
-            echo "Error: Version mismatch!"
-            echo "deno.json version: ${{ steps.get_version.outputs.version }}"
-            echo "Latest git tag: ${{ steps.get_latest_tag.outputs.latest_tag }}"
-            echo "Please ensure the version in deno.json matches the latest git tag."
-            exit 1
-          fi
-
-          if [ "${{ steps.get_version.outputs.version }}" == "${{ steps.get_jsr_version.outputs.jsr_version }}" ]; then
-            echo "Error: Version ${{ steps.get_version.outputs.version }} already exists on JSR!"
-            echo "Please bump the version before pushing."
-            exit 1
-          fi
-
-          echo "Version check passed! New version: ${{ steps.get_version.outputs.version }}"
-
       - name: Check release branch version consistency
         if: steps.branch_context.outputs.is_release == 'true'
         run: |
@@ -101,3 +59,17 @@ jobs:
           fi
 
           echo "Release branch version check passed: $DENO_VERSION"
+
+      - name: Check JSR version availability
+        if: steps.branch_context.outputs.is_release == 'true'
+        run: |
+          DENO_VERSION="${{ steps.get_version.outputs.version }}"
+          JSR_VERSION=$(curl -s https://jsr.io/@tettuan/breakdownconfig/meta.json | jq -r '.latestVersion // "0.0.0"')
+
+          if [ "$DENO_VERSION" = "$JSR_VERSION" ]; then
+            echo "Error: Version $DENO_VERSION already exists on JSR!"
+            echo "Please bump the version before merging."
+            exit 1
+          fi
+
+          echo "JSR version check passed: $DENO_VERSION (latest on JSR: $JSR_VERSION)"
