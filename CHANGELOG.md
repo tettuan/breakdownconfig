@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.5] - 2026-04-20
+
+### Fixed
+- Accept absolute `baseDir` paths on all platforms. Removed the test-leak allowlist in `BreakdownConfig.create()` that rejected the output of `Deno.cwd()` on user directories (e.g., `/Users/...`, `/home/...`) and macOS realpath-resolved temp dirs (e.g., `/private/tmp/...`) with `ERR1009 ABSOLUTE_PATH_NOT_ALLOWED`. Path traversal (`..`) and invalid-character guards are unchanged.
+
+## [1.2.4]
+
 ### Changed
 - **BREAKING CHANGE**: Reordered BreakdownConfig constructor arguments
   - Constructor signature changed from `(baseDir?: string, configSetName?: string)` to `(configSetName?: string, baseDir?: string)`

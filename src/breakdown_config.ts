@@ -7,6 +7,28 @@ import { Result } from "./types/unified_result.ts";
 import { ErrorFactories, type UnifiedError } from "./errors/unified_errors.ts";
 
 /**
+ * Characters disallowed anywhere in a baseDir (except `:` in a Windows
+ * drive-letter position, which is stripped before the scan). Exported so tests
+ * can iterate this exact set rather than hardcoding a subset.
+ */
+export const INVALID_BASEDIR_CHARS: readonly string[] = [
+  "\0",
+  "\n",
+  "\r",
+  "<",
+  ">",
+  '"',
+  ":",
+  "|",
+  "?",
+  "*",
+];
+
+const INVALID_BASEDIR_CHAR_PATTERN = new RegExp(
+  `[${INVALID_BASEDIR_CHARS.join("")}]`,
+);
+
+/**
  * Main configuration class for managing application and user settings.
  * This class provides methods to load, validate, and merge configurations
  * from both application-specific and user-specific locations.
@@ -124,36 +146,12 @@ export class BreakdownConfig {
         );
       }
 
-      // Check for invalid characters (null byte, newlines, and other problematic chars)
-      if (/[\0\n\r<>:"|?*]/.test(baseDir)) {
+      // Strip a leading Windows drive letter (e.g., "C:") so the legitimate
+      // drive-separator colon is not treated as an invalid character.
+      const pathToScan = /^[A-Za-z]:/.test(baseDir) ? baseDir.slice(2) : baseDir;
+      if (INVALID_BASEDIR_CHAR_PATTERN.test(pathToScan)) {
         return Result.err(
           ErrorFactories.pathValidationError(baseDir, "INVALID_CHARACTERS", "baseDir"),
-        );
-      }
-
-      // Check for absolute paths - more restrictive validation
-      // Allow temp directories and test paths (but reject dangerous user-facing system paths)
-      const allowedAbsolutePaths = [
-        "/var/folders",
-        "/tmp",
-        "/nonexistent",
-        "/root",
-        "/invalid",
-        "/non",
-        "/absolutely",
-        "/wrong",
-        "/path",
-        "/test",
-        "/example",
-        "/valid",
-        "/legacy", // Common test paths
-        "/Users/tettuan/github/breakdownconfig/tests",
-      ];
-      const isAllowedAbsolute = allowedAbsolutePaths.some((allowed) => baseDir.startsWith(allowed));
-
-      if ((baseDir.startsWith("/") || /^[A-Za-z]:/.test(baseDir)) && !isAllowedAbsolute) {
-        return Result.err(
-          ErrorFactories.pathValidationError(baseDir, "ABSOLUTE_PATH_NOT_ALLOWED", "baseDir"),
         );
       }
     }

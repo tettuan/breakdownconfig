@@ -88,3 +88,6 @@ yarn-error.log*
 /worktree-*/
 /.worktree-*
 /.worktree-*/
+
+# Local CI state
+/.ci-local/

@@ -8,6 +8,7 @@
 
 import { assert, assertEquals, assertExists } from "@std/assert";
 import { BreakdownConfig } from "../../mod.ts";
+import { INVALID_BASEDIR_CHARS } from "../../src/breakdown_config.ts";
 import { Result } from "../../src/types/unified_result.ts";
 import { ErrorFactories, type UnifiedError } from "../../src/errors/unified_errors.ts";
 import {
@@ -73,24 +74,34 @@ Deno.test("E2E: Error Boundary - Complete Error Handling Coverage", async (t) =>
   });
 
   await t.step("Boundary: Path Validation Errors", () => {
-    // Test various invalid path patterns
-    const invalidPaths = [
-      { path: "../../../etc/passwd", reason: "path traversal" },
-      { path: "/etc/passwd", reason: "absolute path" },
-      { path: "C:\\Windows\\System32", reason: "Windows absolute path" },
-      { path: "../../..", reason: "multiple traversals" },
-      { path: "./\0/null", reason: "null character" },
-      { path: "path\nwith\nnewlines", reason: "newline characters" },
+    // Derive test cases from the canonical source of truth so adding/removing
+    // an invalid char in src/breakdown_config.ts automatically updates coverage.
+    const traversalCases: Array<{ path: string; expectedReason: string }> = [
+      { path: "../../../etc/passwd", expectedReason: "PATH_TRAVERSAL" },
+      { path: "../../..", expectedReason: "PATH_TRAVERSAL" },
     ];
+    const invalidCharCases = INVALID_BASEDIR_CHARS.map((ch) => ({
+      path: `/ok/path${ch}x`,
+      expectedReason: "INVALID_CHARACTERS" as const,
+    }));
+    const cases = [...traversalCases, ...invalidCharCases];
 
-    for (const { path, reason: _reason } of invalidPaths) {
+    for (const { path, expectedReason } of cases) {
       const result = BreakdownConfig.create(undefined, path);
       assertResultError(result);
       assertPathValidationError(result);
       if (!result.success) {
-        assertEquals(result.error.kind, "PATH_VALIDATION_ERROR");
+        assertEquals(
+          result.error.kind,
+          "PATH_VALIDATION_ERROR",
+          `Path ${JSON.stringify(path)} should fail validation`,
+        );
         if (result.error.kind === "PATH_VALIDATION_ERROR") {
-          assertExists(result.error.reason);
+          assertEquals(
+            result.error.reason,
+            expectedReason,
+            `Path ${JSON.stringify(path)} should map to reason=${expectedReason}`,
+          );
         }
       }
     }
@@ -258,10 +269,10 @@ Deno.test("E2E: Error Boundary - Complete Error Handling Coverage", async (t) =>
     // Test multiple error conditions occurring simultaneously
     const results: Result<BreakdownConfig, UnifiedError>[] = [];
 
-    // Scenario 1: Multiple invalid paths
+    // Scenario 1: Multiple invalid inputs
     results.push(BreakdownConfig.create(undefined, "../../../"));
-    results.push(BreakdownConfig.create(undefined, "/absolute/path"));
     results.push(BreakdownConfig.create("invalid name", "/tmp"));
+    results.push(BreakdownConfig.create(undefined, "bad\0path"));
 
     // All should be errors
     for (const result of results) {
