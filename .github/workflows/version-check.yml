@@ -1,10 +1,8 @@
 name: Version Check
 
 on:
-  push:
-    branches: ["release/*"]
   pull_request:
-    branches: [main, develop]
+    branches: [main]
 
 jobs:
   version-check:
@@ -12,8 +10,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: Setup Deno
         uses: denoland/setup-deno@v2
@@ -26,28 +22,10 @@ jobs:
           VERSION=$(deno eval "console.log(JSON.parse(Deno.readTextFileSync('deno.json')).version)")
           echo "version=${VERSION}" >> $GITHUB_OUTPUT
 
-      - name: Detect release branch
-        id: branch_context
+      - name: Check release branch name matches version
+        if: startsWith(github.head_ref, 'release/')
         run: |
-          if [ "${{ github.event_name }}" = "push" ]; then
-            BRANCH="${GITHUB_REF#refs/heads/}"
-          else
-            BRANCH="${{ github.head_ref }}"
-          fi
-          echo "branch=${BRANCH}" >> $GITHUB_OUTPUT
-
-          if [[ "$BRANCH" == release/* ]]; then
-            echo "is_release=true" >> $GITHUB_OUTPUT
-            echo "release_version=${BRANCH#release/}" >> $GITHUB_OUTPUT
-          else
-            echo "is_release=false" >> $GITHUB_OUTPUT
-            echo "release_version=" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Check release branch version consistency
-        if: steps.branch_context.outputs.is_release == 'true'
-        run: |
-          BRANCH_VERSION="${{ steps.branch_context.outputs.release_version }}"
+          BRANCH_VERSION="${GITHUB_HEAD_REF#release/}"
           DENO_VERSION="${{ steps.get_version.outputs.version }}"
 
           if [ "$BRANCH_VERSION" != "$DENO_VERSION" ]; then
@@ -61,7 +39,6 @@ jobs:
           echo "Release branch version check passed: $DENO_VERSION"
 
       - name: Check JSR version availability
-        if: steps.branch_context.outputs.is_release == 'true'
         run: |
           DENO_VERSION="${{ steps.get_version.outputs.version }}"
           JSR_VERSION=$(curl -s https://jsr.io/@tettuan/breakdownconfig/meta.json | jq -r '.latestVersion // "0.0.0"')
