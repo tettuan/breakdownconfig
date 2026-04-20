@@ -5,7 +5,7 @@
 
 import { assert, assertEquals, assertExists, assertThrows } from "@std/assert";
 // import { BreakdownLogger } from "https://jsr.io/@tettuan/breakdownlogger";
-import { BreakdownConfig } from "./breakdown_config.ts";
+import { BreakdownConfig, INVALID_BASEDIR_CHARS } from "./breakdown_config.ts";
 
 // const logger = new BreakdownLogger("units");
 
@@ -105,47 +105,117 @@ Deno.test("Units: BreakdownConfig.create() Method Behavior", async (t) => {
     // logger.debug("Invalid baseDir handling verified");
   });
 
-  await t.step("create() accepts absolute baseDir on all platforms", () => {
-    // Contract: absolute paths are valid baseDir inputs. File-existence concerns
-    // belong to loadConfig, not to the smart constructor. Only path traversal
-    // and invalid characters are rejected.
-    const absolutePaths = [
-      "/Users/someone/project",
-      "/home/someone/project",
-      "/private/tmp/realpath-resolved",
-      "/opt/app",
-      "/var/lib/something",
-      "C:\\Users\\someone\\project",
-      "D:\\projects\\app",
+  await t.step("create() acceptance is prefix-agnostic (no allowlist)", () => {
+    // Invariant: after removing the legacy allowedAbsolutePaths allowlist, the
+    // leading segment of baseDir must not determine acceptance. Any well-formed
+    // path (no "..", no invalid chars) is accepted regardless of prefix.
+    // Prefixes intentionally include ones that were NOT in the old allowlist
+    // (e.g., "/srv", "/zzz-unusual") so a regressed allowlist would fail here.
+    const prefixes = [
+      "/Users",
+      "/home",
+      "/private/tmp",
+      "/tmp",
+      "/opt",
+      "/srv",
+      "/zzz-unusual",
+      "/",
+      "C:",
+      "D:",
     ];
 
-    for (const baseDir of absolutePaths) {
+    for (const prefix of prefixes) {
+      const baseDir = prefix.endsWith(":")
+        ? `${prefix}\\projects\\app`
+        : `${prefix === "/" ? "" : prefix}/projects/app`;
       const result = BreakdownConfig.create("test", baseDir);
       assert(
         result.success,
-        `Absolute baseDir "${baseDir}" should be accepted by create()`,
+        `Prefix "${prefix}" must not affect acceptance (path="${baseDir}"). ` +
+          `Actual: ${JSON.stringify(result)}. ` +
+          `Fix: ensure src/breakdown_config.ts has no prefix-based allowlist.`,
       );
     }
   });
 
-  await t.step("create() still rejects path traversal and invalid characters", () => {
-    const traversalResult = BreakdownConfig.create("test", "/Users/a/../b");
-    assert(!traversalResult.success, "Path traversal must remain rejected");
-    if (!traversalResult.success) {
-      assertEquals(traversalResult.error.kind, "PATH_VALIDATION_ERROR");
-      if (traversalResult.error.kind === "PATH_VALIDATION_ERROR") {
-        assertEquals(traversalResult.error.reason, "PATH_TRAVERSAL");
-      }
-    }
+  await t.step("create() rejects every char in INVALID_BASEDIR_CHARS", () => {
+    // Source of truth: INVALID_BASEDIR_CHARS exported by breakdown_config.ts.
+    // Iterating the canonical set means adding/removing a char in the source
+    // automatically changes test coverage — no manual sync.
+    assert(INVALID_BASEDIR_CHARS.length > 0, "Canonical char set must be non-empty");
 
-    const nullByteResult = BreakdownConfig.create("test", "/tmp/\0bad");
-    assert(!nullByteResult.success, "Null byte must remain rejected");
-    if (!nullByteResult.success) {
-      assertEquals(nullByteResult.error.kind, "PATH_VALIDATION_ERROR");
-      if (nullByteResult.error.kind === "PATH_VALIDATION_ERROR") {
-        assertEquals(nullByteResult.error.reason, "INVALID_CHARACTERS");
+    for (const ch of INVALID_BASEDIR_CHARS) {
+      // Embed the char in the middle of an otherwise-valid path so only the
+      // char itself triggers rejection.
+      const baseDir = `/ok/path${ch}x`;
+      const result = BreakdownConfig.create("test", baseDir);
+      assert(
+        !result.success,
+        `Char ${JSON.stringify(ch)} must be rejected. ` +
+          `Fix: ensure src/breakdown_config.ts validator covers every member of INVALID_BASEDIR_CHARS.`,
+      );
+      if (!result.success) {
+        assertEquals(
+          result.error.kind,
+          "PATH_VALIDATION_ERROR",
+          `Char ${JSON.stringify(ch)} should produce PATH_VALIDATION_ERROR`,
+        );
+        if (result.error.kind === "PATH_VALIDATION_ERROR") {
+          assertEquals(
+            result.error.reason,
+            "INVALID_CHARACTERS",
+            `Char ${JSON.stringify(ch)} should map to reason=INVALID_CHARACTERS`,
+          );
+        }
       }
     }
+  });
+
+  await t.step("create() rejects path traversal (..)", () => {
+    // Separate from invalid-char rejection because the failure mode differs:
+    // ".." maps to PATH_TRAVERSAL, not INVALID_CHARACTERS.
+    const traversalCases = [
+      "/Users/a/../b",
+      "../relative",
+      "./a/..",
+      "a/../b",
+    ];
+    for (const baseDir of traversalCases) {
+      const result = BreakdownConfig.create("test", baseDir);
+      assert(
+        !result.success,
+        `Path with traversal "${baseDir}" must be rejected. ` +
+          `Actual: ${JSON.stringify(result)}`,
+      );
+      if (!result.success) {
+        assertEquals(result.error.kind, "PATH_VALIDATION_ERROR");
+        if (result.error.kind === "PATH_VALIDATION_ERROR") {
+          assertEquals(
+            result.error.reason,
+            "PATH_TRAVERSAL",
+            `"${baseDir}" should map to reason=PATH_TRAVERSAL`,
+          );
+        }
+      }
+    }
+  });
+
+  await t.step("create() allows ':' inside Windows drive-letter prefix only", () => {
+    // Drive-letter position ("C:") is stripped before the invalid-char scan,
+    // so ':' in that position is accepted; ':' elsewhere must still reject.
+    const drivePath = BreakdownConfig.create("test", "C:\\Users\\x");
+    assert(
+      drivePath.success,
+      `Windows drive-letter path must be accepted. ` +
+        `Actual: ${JSON.stringify(drivePath)}`,
+    );
+
+    const colonElsewhere = BreakdownConfig.create("test", "/foo/a:b");
+    assert(
+      !colonElsewhere.success,
+      `':' outside drive-letter position must still reject. ` +
+        `Actual: ${JSON.stringify(colonElsewhere)}`,
+    );
   });
 
   await t.step("create() should never throw exceptions", () => {

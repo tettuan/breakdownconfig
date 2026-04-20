@@ -7,6 +7,28 @@ import { Result } from "./types/unified_result.ts";
 import { ErrorFactories, type UnifiedError } from "./errors/unified_errors.ts";
 
 /**
+ * Characters disallowed anywhere in a baseDir (except `:` in a Windows
+ * drive-letter position, which is stripped before the scan). Exported so tests
+ * can iterate this exact set rather than hardcoding a subset.
+ */
+export const INVALID_BASEDIR_CHARS: readonly string[] = [
+  "\0",
+  "\n",
+  "\r",
+  "<",
+  ">",
+  '"',
+  ":",
+  "|",
+  "?",
+  "*",
+];
+
+const INVALID_BASEDIR_CHAR_PATTERN = new RegExp(
+  `[${INVALID_BASEDIR_CHARS.join("")}]`,
+);
+
+/**
  * Main configuration class for managing application and user settings.
  * This class provides methods to load, validate, and merge configurations
  * from both application-specific and user-specific locations.
@@ -124,11 +146,10 @@ export class BreakdownConfig {
         );
       }
 
-      // Check for invalid characters (null byte, newlines, and other problematic chars).
       // Strip a leading Windows drive letter (e.g., "C:") so the legitimate
       // drive-separator colon is not treated as an invalid character.
       const pathToScan = /^[A-Za-z]:/.test(baseDir) ? baseDir.slice(2) : baseDir;
-      if (/[\0\n\r<>:"|?*]/.test(pathToScan)) {
+      if (INVALID_BASEDIR_CHAR_PATTERN.test(pathToScan)) {
         return Result.err(
           ErrorFactories.pathValidationError(baseDir, "INVALID_CHARACTERS", "baseDir"),
         );
