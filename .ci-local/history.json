@@ -2,6 +2,257 @@
   "version": 1,
   "executions": [
     {
+      "id": "mo6fi5xf-bdb0194a",
+      "timestamp": "2026-04-20T00:00:24.963Z",
+      "success": true,
+      "totalDuration": 5157.770125,
+      "stages": [
+        {
+          "stage": "git-status-check",
+          "status": "success",
+          "duration": 17.843082999999996
+        },
+        {
+          "stage": "format-check",
+          "status": "success",
+          "duration": 32.103125000000006
+        },
+        {
+          "stage": "lockfile-init",
+          "status": "success",
+          "duration": 934.716666
+        },
+        {
+          "stage": "type-check",
+          "status": "success",
+          "duration": 550.7431659999999
+        },
+        {
+          "stage": "test-execution",
+          "status": "success",
+          "duration": 2900.718333,
+          "strategy": "all",
+          "testSummary": "\u001b[0m\u001b[32mok\u001b[0m | 89 passed (444 steps) | 0 failed \u001b[0m\u001b[38;5;245m(1s)\u001b[0m"
+        },
+        {
+          "stage": "lint-check",
+          "status": "success",
+          "duration": 101.79054199999973
+        },
+        {
+          "stage": "jsr-check",
+          "status": "success",
+          "duration": 610.1653750000005
+        }
+      ],
+      "config": {
+        "mode": "all",
+        "hierarchy": null,
+        "fallbackEnabled": true,
+        "batchSize": 2
+      },
+      "git": {
+        "branch": "release/1.2.5",
+        "commit": "126aa36"
+      }
+    },
+    {
+      "id": "mo6fhp53-8bbc251c",
+      "timestamp": "2026-04-20T00:00:03.207Z",
+      "success": false,
+      "totalDuration": 20972.665584,
+      "stages": [
+        {
+          "stage": "git-status-check",
+          "status": "success",
+          "duration": 16.691000000000003,
+          "fallback": {
+            "from": "batch",
+            "to": "single"
+          }
+        },
+        {
+          "stage": "format-check",
+          "status": "success",
+          "duration": 30.847291999999996,
+          "fallback": {
+            "from": "batch",
+            "to": "single"
+          }
+        },
+        {
+          "stage": "lockfile-init",
+          "status": "success",
+          "duration": 984.2645419999999,
+          "fallback": {
+            "from": "batch",
+            "to": "single"
+          }
+        },
+        {
+          "stage": "type-check",
+          "status": "success",
+          "duration": 689.9462910000002,
+          "fallback": {
+            "from": "batch",
+            "to": "single"
+          }
+        },
+        {
+          "stage": "test-execution",
+          "status": "failure",
+          "duration": 0,
+          "strategy": "batch",
+          "fallback": {
+            "from": "batch",
+            "to": "single"
+          },
+          "error": {
+            "kind": "test-execution",
+            "message": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: Test failed\n"
+          }
+        }
+      ],
+      "config": {
+        "mode": "all",
+        "hierarchy": null,
+        "fallbackEnabled": true,
+        "batchSize": 2
+      },
+      "failedBatchInfo": {
+        "startIndex": 0,
+        "endIndex": 24,
+        "files": [
+          "/Users/tettuan/github/breakdownconfig/src/breakdown_config_architecture_test.ts",
+          "/Users/tettuan/github/breakdownconfig/src/breakdown_config_structure_test.ts",
+          "/Users/tettuan/github/breakdownconfig/src/breakdown_config_units_test.ts",
+          "/Users/tettuan/github/breakdownconfig/src/config_manager_architecture_test.ts",
+          "/Users/tettuan/github/breakdownconfig/src/errors/throw_to_result_units_test.ts",
+          "/Users/tettuan/github/breakdownconfig/src/loaders/safe_config_loader_units_test.ts",
+          "/Users/tettuan/github/breakdownconfig/src/types/merged_config_structure_test.ts",
+          "/Users/tettuan/github/breakdownconfig/src/types/unified_result_units_test.ts",
+          "/Users/tettuan/github/breakdownconfig/src/types/user_config_structure_test.ts",
+          "/Users/tettuan/github/breakdownconfig/src/utils/valid_path_units_test.ts",
+          "/Users/tettuan/github/breakdownconfig/src/validators/schema_validator_units_test.ts",
+          "/Users/tettuan/github/breakdownconfig/tests/3.integrated/breakdown_config_integration_test.ts",
+          "/Users/tettuan/github/breakdownconfig/tests/3.integrated/config_loading_integration_test.ts",
+          "/Users/tettuan/github/breakdownconfig/tests/3.integrated/default_profile_handling_test.ts",
+          "/Users/tettuan/github/breakdownconfig/tests/3.integrated/error_handling_integration_test.ts",
+          "/Users/tettuan/github/breakdownconfig/tests/3.integrated/profile_config_loader_integration_test.ts",
+          "/Users/tettuan/github/breakdownconfig/tests/3.integrated/profile_integration_test.ts",
+          "/Users/tettuan/github/breakdownconfig/tests/3.integrated/unified_error_exports_type_safety_test.ts",
+          "/Users/tettuan/github/breakdownconfig/tests/3.integrated/unified_error_type_safety_test.ts",
+          "/Users/tettuan/github/breakdownconfig/tests/3.integrated/validator_integration_test.ts",
+          "/Users/tettuan/github/breakdownconfig/tests/4.e2e/complete_workflow_test.ts",
+          "/Users/tettuan/github/breakdownconfig/tests/4.e2e/error_boundary_test.ts",
+          "/Users/tettuan/github/breakdownconfig/tests/4.e2e/performance_test.ts",
+          "/Users/tettuan/github/breakdownconfig/tests/4.e2e/real_world_scenarios_test.ts"
+        ]
+      },
+      "git": {
+        "branch": "release/1.2.5",
+        "commit": "126aa36"
+      }
+    },
+    {
+      "id": "mo6fgd9v-35ad5a50",
+      "timestamp": "2026-04-19T23:59:01.171Z",
+      "success": false,
+      "totalDuration": 11848.756249999999,
+      "stages": [
+        {
+          "stage": "git-status-check",
+          "status": "success",
+          "duration": 16.937375000000003,
+          "fallback": {
+            "from": "batch",
+            "to": "single"
+          }
+        },
+        {
+          "stage": "format-check",
+          "status": "success",
+          "duration": 65.761833,
+          "fallback": {
+            "from": "batch",
+            "to": "single"
+          }
+        },
+        {
+          "stage": "lockfile-init",
+          "status": "success",
+          "duration": 1278.79275,
+          "fallback": {
+            "from": "batch",
+            "to": "single"
+          }
+        },
+        {
+          "stage": "type-check",
+          "status": "success",
+          "duration": 1015.4253750000003,
+          "fallback": {
+            "from": "batch",
+            "to": "single"
+          }
+        },
+        {
+          "stage": "test-execution",
+          "status": "failure",
+          "duration": 0,
+          "strategy": "batch",
+          "fallback": {
+            "from": "batch",
+            "to": "single"
+          },
+          "error": {
+            "kind": "test-execution",
+            "message": "\u001b[0m\u001b[1m\u001b[31merror\u001b[0m: Test failed\n"
+          }
+        }
+      ],
+      "config": {
+        "mode": "all",
+        "hierarchy": null,
+        "fallbackEnabled": true,
+        "batchSize": 2
+      },
+      "failedBatchInfo": {
+        "startIndex": 0,
+        "endIndex": 24,
+        "files": [
+          "/Users/tettuan/github/breakdownconfig/src/breakdown_config_architecture_test.ts",
+          "/Users/tettuan/github/breakdownconfig/src/breakdown_config_structure_test.ts",
+          "/Users/tettuan/github/breakdownconfig/src/breakdown_config_units_test.ts",
+          "/Users/tettuan/github/breakdownconfig/src/config_manager_architecture_test.ts",
+          "/Users/tettuan/github/breakdownconfig/src/errors/throw_to_result_units_test.ts",
+          "/Users/tettuan/github/breakdownconfig/src/loaders/safe_config_loader_units_test.ts",
+          "/Users/tettuan/github/breakdownconfig/src/types/merged_config_structure_test.ts",
+          "/Users/tettuan/github/breakdownconfig/src/types/unified_result_units_test.ts",
+          "/Users/tettuan/github/breakdownconfig/src/types/user_config_structure_test.ts",
+          "/Users/tettuan/github/breakdownconfig/src/utils/valid_path_units_test.ts",
+          "/Users/tettuan/github/breakdownconfig/src/validators/schema_validator_units_test.ts",
+          "/Users/tettuan/github/breakdownconfig/tests/3.integrated/breakdown_config_integration_test.ts",
+          "/Users/tettuan/github/breakdownconfig/tests/3.integrated/config_loading_integration_test.ts",
+          "/Users/tettuan/github/breakdownconfig/tests/3.integrated/default_profile_handling_test.ts",
+          "/Users/tettuan/github/breakdownconfig/tests/3.integrated/error_handling_integration_test.ts",
+          "/Users/tettuan/github/breakdownconfig/tests/3.integrated/profile_config_loader_integration_test.ts",
+          "/Users/tettuan/github/breakdownconfig/tests/3.integrated/profile_integration_test.ts",
+          "/Users/tettuan/github/breakdownconfig/tests/3.integrated/unified_error_exports_type_safety_test.ts",
+          "/Users/tettuan/github/breakdownconfig/tests/3.integrated/unified_error_type_safety_test.ts",
+          "/Users/tettuan/github/breakdownconfig/tests/3.integrated/validator_integration_test.ts",
+          "/Users/tettuan/github/breakdownconfig/tests/4.e2e/complete_workflow_test.ts",
+          "/Users/tettuan/github/breakdownconfig/tests/4.e2e/error_boundary_test.ts",
+          "/Users/tettuan/github/breakdownconfig/tests/4.e2e/performance_test.ts",
+          "/Users/tettuan/github/breakdownconfig/tests/4.e2e/real_world_scenarios_test.ts"
+        ]
+      },
+      "git": {
+        "branch": "release/1.2.5",
+        "commit": "126aa36"
+      }
+    },
+    {
       "id": "mlpg3vra-a2178ca0",
       "timestamp": "2026-02-16T17:25:48.550Z",
       "success": true,

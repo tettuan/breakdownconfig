@@ -124,36 +124,13 @@ export class BreakdownConfig {
         );
       }
 
-      // Check for invalid characters (null byte, newlines, and other problematic chars)
-      if (/[\0\n\r<>:"|?*]/.test(baseDir)) {
+      // Check for invalid characters (null byte, newlines, and other problematic chars).
+      // Strip a leading Windows drive letter (e.g., "C:") so the legitimate
+      // drive-separator colon is not treated as an invalid character.
+      const pathToScan = /^[A-Za-z]:/.test(baseDir) ? baseDir.slice(2) : baseDir;
+      if (/[\0\n\r<>:"|?*]/.test(pathToScan)) {
         return Result.err(
           ErrorFactories.pathValidationError(baseDir, "INVALID_CHARACTERS", "baseDir"),
-        );
-      }
-
-      // Check for absolute paths - more restrictive validation
-      // Allow temp directories and test paths (but reject dangerous user-facing system paths)
-      const allowedAbsolutePaths = [
-        "/var/folders",
-        "/tmp",
-        "/nonexistent",
-        "/root",
-        "/invalid",
-        "/non",
-        "/absolutely",
-        "/wrong",
-        "/path",
-        "/test",
-        "/example",
-        "/valid",
-        "/legacy", // Common test paths
-        "/Users/tettuan/github/breakdownconfig/tests",
-      ];
-      const isAllowedAbsolute = allowedAbsolutePaths.some((allowed) => baseDir.startsWith(allowed));
-
-      if ((baseDir.startsWith("/") || /^[A-Za-z]:/.test(baseDir)) && !isAllowedAbsolute) {
-        return Result.err(
-          ErrorFactories.pathValidationError(baseDir, "ABSOLUTE_PATH_NOT_ALLOWED", "baseDir"),
         );
       }
     }

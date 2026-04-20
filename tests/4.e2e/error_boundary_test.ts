@@ -73,14 +73,15 @@ Deno.test("E2E: Error Boundary - Complete Error Handling Coverage", async (t) =>
   });
 
   await t.step("Boundary: Path Validation Errors", () => {
-    // Test various invalid path patterns
+    // Test various invalid path patterns. Absolute paths (including Windows
+    // drive-letter paths) are themselves accepted — only path traversal and
+    // truly invalid characters are rejected.
     const invalidPaths = [
       { path: "../../../etc/passwd", reason: "path traversal" },
-      { path: "/etc/passwd", reason: "absolute path" },
-      { path: "C:\\Windows\\System32", reason: "Windows absolute path" },
       { path: "../../..", reason: "multiple traversals" },
       { path: "./\0/null", reason: "null character" },
       { path: "path\nwith\nnewlines", reason: "newline characters" },
+      { path: "bad<char>", reason: "invalid '<' or '>'" },
     ];
 
     for (const { path, reason: _reason } of invalidPaths) {
@@ -258,10 +259,10 @@ Deno.test("E2E: Error Boundary - Complete Error Handling Coverage", async (t) =>
     // Test multiple error conditions occurring simultaneously
     const results: Result<BreakdownConfig, UnifiedError>[] = [];
 
-    // Scenario 1: Multiple invalid paths
+    // Scenario 1: Multiple invalid inputs
     results.push(BreakdownConfig.create(undefined, "../../../"));
-    results.push(BreakdownConfig.create(undefined, "/absolute/path"));
     results.push(BreakdownConfig.create("invalid name", "/tmp"));
+    results.push(BreakdownConfig.create(undefined, "bad\0path"));
 
     // All should be errors
     for (const result of results) {

@@ -105,6 +105,49 @@ Deno.test("Units: BreakdownConfig.create() Method Behavior", async (t) => {
     // logger.debug("Invalid baseDir handling verified");
   });
 
+  await t.step("create() accepts absolute baseDir on all platforms", () => {
+    // Contract: absolute paths are valid baseDir inputs. File-existence concerns
+    // belong to loadConfig, not to the smart constructor. Only path traversal
+    // and invalid characters are rejected.
+    const absolutePaths = [
+      "/Users/someone/project",
+      "/home/someone/project",
+      "/private/tmp/realpath-resolved",
+      "/opt/app",
+      "/var/lib/something",
+      "C:\\Users\\someone\\project",
+      "D:\\projects\\app",
+    ];
+
+    for (const baseDir of absolutePaths) {
+      const result = BreakdownConfig.create("test", baseDir);
+      assert(
+        result.success,
+        `Absolute baseDir "${baseDir}" should be accepted by create()`,
+      );
+    }
+  });
+
+  await t.step("create() still rejects path traversal and invalid characters", () => {
+    const traversalResult = BreakdownConfig.create("test", "/Users/a/../b");
+    assert(!traversalResult.success, "Path traversal must remain rejected");
+    if (!traversalResult.success) {
+      assertEquals(traversalResult.error.kind, "PATH_VALIDATION_ERROR");
+      if (traversalResult.error.kind === "PATH_VALIDATION_ERROR") {
+        assertEquals(traversalResult.error.reason, "PATH_TRAVERSAL");
+      }
+    }
+
+    const nullByteResult = BreakdownConfig.create("test", "/tmp/\0bad");
+    assert(!nullByteResult.success, "Null byte must remain rejected");
+    if (!nullByteResult.success) {
+      assertEquals(nullByteResult.error.kind, "PATH_VALIDATION_ERROR");
+      if (nullByteResult.error.kind === "PATH_VALIDATION_ERROR") {
+        assertEquals(nullByteResult.error.reason, "INVALID_CHARACTERS");
+      }
+    }
+  });
+
   await t.step("create() should never throw exceptions", () => {
     // logger.debug("Testing exception-free behavior");
 
